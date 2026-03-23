@@ -1,0 +1,317 @@
+import type { BlockDefinition, BlockType } from "@/types";
+
+// ─── The complete block catalog ───────────────────────────────────
+// Every element a user can add inside a section frame.
+
+export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
+  // ── Typography ──────────────────────────────────────────────────
+  heading: {
+    type: "heading",
+    label: "Heading",
+    icon: "Type",
+    category: "typography",
+    description: "Title or heading text (H1–H6)",
+    defaultContent: { text: "Your Heading", level: 2 },
+    defaultStyles: { marginBottom: 16, fontFamily: "heading", fontWeight: 700 },
+  },
+  text: {
+    type: "text",
+    label: "Text",
+    icon: "AlignLeft",
+    category: "typography",
+    description: "Paragraph or body text",
+    defaultContent: { text: "Write your content here..." },
+    defaultStyles: { marginBottom: 12, fontFamily: "body", lineHeight: 1.7, opacity: 0.8 },
+  },
+  quote: {
+    type: "quote",
+    label: "Quote",
+    icon: "Quote",
+    category: "typography",
+    description: "Blockquote with optional attribution",
+    defaultContent: { text: "Design is not just what it looks like. Design is how it works.", author: "Steve Jobs" },
+    defaultStyles: { marginBottom: 16, paddingLeft: 20, borderWidth: 3, borderStyle: "solid", borderColor: "primary", opacity: 0.9 },
+  },
+  list: {
+    type: "list",
+    label: "List",
+    icon: "List",
+    category: "typography",
+    description: "Bullet or numbered list",
+    defaultContent: { items: ["First item", "Second item", "Third item"], ordered: false },
+    defaultStyles: { marginBottom: 12 },
+  },
+  code: {
+    type: "code",
+    label: "Code Block",
+    icon: "Code2",
+    category: "typography",
+    description: "Code snippet with syntax highlighting",
+    defaultContent: { code: "console.log('Hello World');", language: "javascript" },
+    defaultStyles: { marginBottom: 16, fontFamily: "mono", borderRadius: 8, backgroundColor: "surface" },
+  },
+
+  // ── Media ───────────────────────────────────────────────────────
+  image: {
+    type: "image",
+    label: "Image",
+    icon: "Image",
+    category: "media",
+    description: "Image with optional caption",
+    defaultContent: { src: "", alt: "Image", objectFit: "cover", aspectRatio: "16/9" },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16, overflow: "hidden" },
+  },
+  avatar: {
+    type: "avatar",
+    label: "Avatar",
+    icon: "CircleUser",
+    category: "media",
+    description: "Profile picture / avatar",
+    defaultContent: { src: "", alt: "Avatar", size: "lg", ring: true },
+    defaultStyles: { marginBottom: 16 },
+  },
+  icon: {
+    type: "icon",
+    label: "Icon",
+    icon: "Star",
+    category: "media",
+    description: "Single icon element",
+    defaultContent: { name: "Sparkles", size: 32, color: "primary" },
+    defaultStyles: { marginBottom: 8 },
+  },
+  divider: {
+    type: "divider",
+    label: "Divider",
+    icon: "Minus",
+    category: "media",
+    description: "Horizontal separator line",
+    defaultContent: { style: "solid", thickness: 1 },
+    defaultStyles: { marginTop: 24, marginBottom: 24, opacity: 0.2 },
+  },
+  spacer: {
+    type: "spacer",
+    label: "Spacer",
+    icon: "MoveVertical",
+    category: "media",
+    description: "Empty vertical space",
+    defaultContent: { height: 40 },
+    defaultStyles: {},
+  },
+
+  // ── Interactive ─────────────────────────────────────────────────
+  button: {
+    type: "button",
+    label: "Button",
+    icon: "MousePointerClick",
+    category: "interactive",
+    description: "CTA button with link",
+    defaultContent: { text: "Get Started", url: "#", variant: "solid", size: "md" },
+    defaultStyles: { marginBottom: 12, cursor: "pointer" },
+  },
+  link: {
+    type: "link",
+    label: "Link",
+    icon: "Link",
+    category: "interactive",
+    description: "Text hyperlink",
+    defaultContent: { text: "Click here", url: "#" },
+    defaultStyles: { color: "primary", cursor: "pointer" },
+  },
+  social_links: {
+    type: "social_links",
+    label: "Social Links",
+    icon: "Share2",
+    category: "interactive",
+    description: "Row of social media icons",
+    defaultContent: {
+      links: [
+        { platform: "github", url: "https://github.com", icon: "Github" },
+        { platform: "linkedin", url: "https://linkedin.com", icon: "Linkedin" },
+        { platform: "twitter", url: "https://x.com", icon: "Twitter" },
+      ],
+      layout: "row",
+      variant: "ghost",
+    },
+    defaultStyles: { display: "flex", gap: 12, marginBottom: 16 },
+  },
+
+  // ── Data Display ────────────────────────────────────────────────
+  badge: {
+    type: "badge",
+    label: "Badge",
+    icon: "Tag",
+    category: "data",
+    description: "Single tag/badge",
+    defaultContent: { text: "React", variant: "subtle" },
+    defaultStyles: {},
+  },
+  badge_group: {
+    type: "badge_group",
+    label: "Badge Group",
+    icon: "Tags",
+    category: "data",
+    description: "Group of tags/badges",
+    defaultContent: { badges: [{ text: "React" }, { text: "TypeScript" }, { text: "Next.js" }] },
+    defaultStyles: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 },
+  },
+  skill_bar: {
+    type: "skill_bar",
+    label: "Skill Bar",
+    icon: "BarChart3",
+    category: "data",
+    description: "Skill with progress indicator",
+    defaultContent: { name: "JavaScript", level: 90, showPercentage: true },
+    defaultStyles: { marginBottom: 12 },
+  },
+  skill_grid: {
+    type: "skill_grid",
+    label: "Skill Grid",
+    icon: "LayoutGrid",
+    category: "data",
+    description: "Grid of skills with icons",
+    defaultContent: {
+      skills: [
+        { name: "React", level: 90 },
+        { name: "TypeScript", level: 85 },
+        { name: "Node.js", level: 80 },
+        { name: "Python", level: 70 },
+      ],
+      columns: 3,
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+  progress_ring: {
+    type: "progress_ring",
+    label: "Progress Ring",
+    icon: "CircleDot",
+    category: "data",
+    description: "Circular progress indicator",
+    defaultContent: { value: 85, label: "Completion", size: 80 },
+    defaultStyles: { marginBottom: 16 },
+  },
+  stat: {
+    type: "stat",
+    label: "Stat",
+    icon: "Hash",
+    category: "data",
+    description: "Statistic number with label",
+    defaultContent: { value: "50+", label: "Projects Completed" },
+    defaultStyles: { textAlign: "center", marginBottom: 16 },
+  },
+
+  // ── Composite ───────────────────────────────────────────────────
+  project_card: {
+    type: "project_card",
+    label: "Project Card",
+    icon: "FolderKanban",
+    category: "composite",
+    description: "Project showcase card with tech stack",
+    defaultContent: {
+      title: "My Project",
+      description: "A brief description of the project.",
+      techStack: ["React", "Node.js"],
+      liveUrl: "",
+      repoUrl: "",
+    },
+    defaultStyles: { marginBottom: 16, borderRadius: 12, borderWidth: 1, borderColor: "surface", overflow: "hidden" },
+  },
+  experience_item: {
+    type: "experience_item",
+    label: "Experience",
+    icon: "Briefcase",
+    category: "composite",
+    description: "Work experience timeline entry",
+    defaultContent: {
+      company: "Company Name",
+      role: "Software Engineer",
+      startDate: "2023",
+      current: true,
+      description: "Describe your role and achievements.",
+      highlights: [],
+    },
+    defaultStyles: { marginBottom: 24, paddingLeft: 24 },
+  },
+  testimonial: {
+    type: "testimonial",
+    label: "Testimonial",
+    icon: "MessageSquareQuote",
+    category: "composite",
+    description: "Client/colleague testimonial",
+    defaultContent: { quote: "Great to work with!", author: "Jane Doe", role: "CTO" },
+    defaultStyles: { marginBottom: 16, borderRadius: 12, backgroundColor: "surface", paddingTop: 24, paddingBottom: 24, paddingLeft: 24, paddingRight: 24 },
+  },
+  contact_info: {
+    type: "contact_info",
+    label: "Contact Info",
+    icon: "Mail",
+    category: "composite",
+    description: "Email, phone, location display",
+    defaultContent: {
+      items: [
+        { type: "email", label: "Email", value: "hello@example.com", icon: "Mail" },
+        { type: "location", label: "Location", value: "Chennai, India", icon: "MapPin" },
+      ],
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+  contact_form: {
+    type: "contact_form",
+    label: "Contact Form",
+    icon: "FileInput",
+    category: "composite",
+    description: "Contact form with fields",
+    defaultContent: {
+      fields: [
+        { name: "name", label: "Name", type: "text", required: true, placeholder: "Your name" },
+        { name: "email", label: "Email", type: "email", required: true, placeholder: "you@example.com" },
+        { name: "message", label: "Message", type: "textarea", required: true, placeholder: "Your message..." },
+      ],
+      submitText: "Send Message",
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+
+  // ── Layout ──────────────────────────────────────────────────────
+  columns: {
+    type: "columns",
+    label: "Columns",
+    icon: "Columns3",
+    category: "layout",
+    description: "Multi-column layout container",
+    defaultContent: { columns: 2, gap: 24 },
+    defaultStyles: { display: "grid", gap: 24, marginBottom: 16 },
+  },
+  card: {
+    type: "card",
+    label: "Card",
+    icon: "Square",
+    category: "layout",
+    description: "Styled container/card wrapper",
+    defaultContent: { elevation: "sm", border: true, hover: false },
+    defaultStyles: { borderRadius: 12, borderWidth: 1, borderColor: "surface", paddingTop: 24, paddingRight: 24, paddingBottom: 24, paddingLeft: 24, marginBottom: 16 },
+  },
+  embed: {
+    type: "embed",
+    label: "Embed",
+    icon: "Globe",
+    category: "layout",
+    description: "Embed external content via iframe",
+    defaultContent: { url: "", height: 400 },
+    defaultStyles: { width: "100%", borderRadius: 8, marginBottom: 16 },
+  },
+};
+
+// ─── Grouped for the add-block panel ──────────────────────────────
+
+export const BLOCK_CATEGORIES = [
+  { id: "typography" as const, label: "Typography", icon: "Type" },
+  { id: "media" as const, label: "Media", icon: "Image" },
+  { id: "interactive" as const, label: "Interactive", icon: "MousePointerClick" },
+  { id: "data" as const, label: "Data Display", icon: "BarChart3" },
+  { id: "composite" as const, label: "Composite", icon: "Component" },
+  { id: "layout" as const, label: "Layout", icon: "LayoutGrid" },
+] as const;
+
+export function getBlocksByCategory(category: string): BlockDefinition[] {
+  return Object.values(BLOCK_REGISTRY).filter((b) => b.category === category);
+}

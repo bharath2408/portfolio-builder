@@ -1,0 +1,1802 @@
+"use client";
+
+import {
+  AlertCircle,
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  FileJson,
+  Globe,
+  GripVertical,
+  Layers,
+  Layout,
+  LayoutGrid,
+  Loader2,
+  Lock,
+  Maximize,
+  Monitor,
+  Moon,
+  MousePointer2,
+  PanelLeft,
+  PanelRight,
+  Plus,
+  Redo2,
+  Save,
+  Settings,
+  Smartphone,
+  Sun,
+  Tablet,
+  Trash2,
+  Undo2,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import { BlockRenderer } from "@/components/builder/block-renderer";
+import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
+import {
+  CanvasEngine,
+  ZoomControls,
+  type CanvasTransform,
+} from "@/components/builder/canvas-engine";
+import {
+  CanvasElement,
+  CanvasFrame,
+  SmartGuides,
+  type GuideInfo,
+} from "@/components/builder/canvas-element";
+import { ThemeEditor } from "@/components/builder/theme-editor";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  BLOCK_REGISTRY,
+  BLOCK_CATEGORIES,
+  getBlocksByCategory,
+} from "@/config/block-registry";
+import { apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { useBuilderStore } from "@/stores/builder-store";
+import { usePortfolioStore } from "@/stores/portfolio-store";
+import type {
+  PortfolioWithRelations,
+  SectionWithBlocks,
+  BlockWithStyles,
+  BlockType,
+  BlockStyles,
+  ThemeTokens,
+  SectionStyles,
+  PortfolioStatus,
+} from "@/types";
+
+// ─── Constants ───────────────────────────────────────────────────
+
+const DEFAULT_FRAME_WIDTH = 1440;
+const DEFAULT_FRAME_HEIGHT = 800;
+const DEFAULT_BLOCK_W = 600;
+const DEFAULT_BLOCK_H = 0;
+
+type StudioTheme = "dark" | "light";
+
+function getThemeTokens(p: PortfolioWithRelations): ThemeTokens {
+  const t = p.theme;
+  return {
+    mode: t?.mode ?? "DARK",
+    primaryColor: t?.primaryColor ?? "#06b6d4",
+    secondaryColor: t?.secondaryColor ?? "#8b5cf6",
+    accentColor: t?.accentColor ?? "#f43f5e",
+    backgroundColor: t?.backgroundColor ?? "#0f172a",
+    surfaceColor: t?.surfaceColor ?? "#1e293b",
+    textColor: t?.textColor ?? "#f8fafc",
+    mutedColor: t?.mutedColor ?? "#94a3b8",
+    fontHeading: t?.fontHeading ?? "Outfit",
+    fontBody: t?.fontBody ?? "DM Sans",
+    fontMono: t?.fontMono ?? "JetBrains Mono",
+    borderRadius: t?.borderRadius ?? "0.5rem",
+  };
+}
+
+// ─── Layer Block Item ────────────────────────────────────────────
+
+const LayerBlockItem = memo(function LayerBlockItem({
+  block,
+  isSelected,
+  onSelect,
+  onDelete,
+}: {
+  block: BlockWithStyles;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  const def = BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY];
+  const label = def?.label ?? block.type;
+  const content = block.content as Record<string, unknown>;
+  const preview =
+    (content.text as string) ??
+    (content.name as string) ??
+    (content.title as string) ??
+    "";
+
+  return (
+    <div
+      className="builder-layer-item group flex cursor-pointer items-center gap-1.5 px-2.5 py-[5px]"
+      style={{
+        backgroundColor: isSelected ? "var(--b-accent-soft)" : "transparent",
+        color: isSelected ? "var(--b-accent)" : "var(--b-text-2)",
+        opacity: block.isVisible ? 1 : 0.35,
+        borderLeft: isSelected ? "2px solid var(--b-accent)" : "2px solid transparent",
+      }}
+      onClick={onSelect}
+    >
+      <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" />
+      <span
+        className="w-12 flex-shrink-0 truncate text-[9px] font-bold uppercase tracking-wider"
+        style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-4)" }}
+      >
+        {label}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: "var(--b-text-3)" }}>
+        {preview}
+      </span>
+      {block.isLocked && <Lock className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
+      {!block.isVisible && <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100"
+        style={{ color: "var(--b-danger)" }}
+      >
+        <Trash2 className="h-2.5 w-2.5" />
+      </button>
+    </div>
+  );
+});
+
+// ═════════════════════════════════════════════════════════════════
+//  MAIN BUILDER WORKSPACE
+// ═════════════════════════════════════════════════════════════════
+
+interface BuilderWorkspaceProps {
+  portfolio: PortfolioWithRelations;
+}
+
+export function BuilderWorkspace({
+  portfolio: initialPortfolio,
+}: BuilderWorkspaceProps) {
+  const router = useRouter();
+  const builderStore = useBuilderStore();
+  const portfolioStore = usePortfolioStore();
+  const portfolio = portfolioStore.currentPortfolio ?? initialPortfolio;
+  const theme = getThemeTokens(portfolio);
+
+  // ── Studio theme (synced with user's dashboard theme) ─────────
+  const { data: sessionData } = useSession();
+  const [studioTheme, setStudioTheme] = useState<StudioTheme>(
+    (sessionData?.user?.theme as StudioTheme) ?? "dark"
+  );
+
+  useEffect(() => {
+    if (sessionData?.user?.theme) {
+      setStudioTheme(sessionData.user.theme as StudioTheme);
+    }
+  }, [sessionData?.user?.theme]);
+  // Dropdown menus render via a Radix Portal (outside data-builder-theme),
+  // so CSS vars like var(--b-panel) don't resolve. Use real colors instead.
+  const dropdownColors = studioTheme === "dark"
+    ? { bg: "#0c0c10", border: "rgba(255,255,255,0.15)", text: "#e4e4e7", textMuted: "#a1a1aa", hover: "#1f1f24", separator: "rgba(255,255,255,0.08)" }
+    : { bg: "#ffffff", border: "rgba(0,0,0,0.14)", text: "#1c1917", textMuted: "#44403c", hover: "#e8e4dd", separator: "rgba(0,0,0,0.07)" };
+
+  const [leftTab, setLeftTab] = useState<"layers" | "elements">("layers");
+
+  // ── Panel visibility ────────────────────────────────────────────
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+
+  // ── Canvas state ──────────────────────────────────────────────
+  const [transform, setTransform] = useState<CanvasTransform>({
+    x: 100,
+    y: 100,
+    scale: 0.6,
+  });
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null,
+  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(portfolio.sections.map((s) => s.id)),
+  );
+  const [showAddSection, setShowAddSection] = useState(false);
+  const [addSectionName, setAddSectionName] = useState("");
+  const [rightPanel, setRightPanel] = useState<"properties" | "theme">(
+    "properties",
+  );
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [guides, _setGuides] = useState<GuideInfo[]>([]);
+
+  // Memoize sorted sections
+  const sortedSections = useMemo(
+    () => [...portfolio.sections].sort((a, b) => a.sortOrder - b.sortOrder),
+    [portfolio.sections],
+  );
+
+  const visibleSections = useMemo(
+    () => sortedSections.filter((s) => s.isVisible),
+    [sortedSections],
+  );
+
+  const selectedBlock = useMemo(() => {
+    if (!selectedBlockId) return null;
+    for (const s of portfolio.sections) {
+      const b = s.blocks.find((bl) => bl.id === selectedBlockId);
+      if (b) return b;
+    }
+    return null;
+  }, [selectedBlockId, portfolio.sections]);
+
+  const hasNoSections = portfolio.sections.length === 0;
+
+  // ── Selection ─────────────────────────────────────────────────
+
+  const handleCanvasClick = useCallback(() => {
+    setSelectedBlockId(null);
+    setSelectedSectionId(null);
+  }, []);
+
+  const selectBlock = useCallback(
+    (blockId: string, _additive: boolean) => {
+      setSelectedBlockId(blockId);
+      for (const s of portfolio.sections) {
+        if (s.blocks.some((b) => b.id === blockId)) {
+          setSelectedSectionId(s.id);
+          break;
+        }
+      }
+      setRightPanel("properties");
+    },
+    [portfolio.sections],
+  );
+
+  const selectSection = useCallback((sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(null);
+  }, []);
+
+  // ── Block CRUD ────────────────────────────────────────────────
+
+  const addBlock = async (sectionId: string, type: BlockType) => {
+    const def = BLOCK_REGISTRY[type];
+    if (!def) return;
+    const section = portfolio.sections.find((s) => s.id === sectionId);
+    const existingBlocks = section?.blocks ?? [];
+    const maxY = existingBlocks.reduce((max, b) => {
+      const by = (b.styles.y ?? 0) + (b.styles.h ?? 50);
+      return Math.max(max, by);
+    }, 20);
+
+    try {
+      const res = await apiPost<BlockWithStyles>(
+        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks`,
+        {
+          type,
+          sortOrder: existingBlocks.length,
+          content: def.defaultContent,
+          styles: {
+            ...def.defaultStyles,
+            x: 40,
+            y: maxY + 16,
+            w: DEFAULT_BLOCK_W,
+            h: DEFAULT_BLOCK_H,
+          },
+        },
+      );
+      builderStore.pushSnapshot("add-block");
+      portfolioStore.addBlockToSection(sectionId, res);
+      setSelectedBlockId(res.id);
+      setSelectedSectionId(sectionId);
+      setRightPanel("properties");
+    } catch {
+      /* handle */
+    }
+  };
+
+  const moveBlock = useCallback(
+    (blockId: string, newX: number, newY: number) => {
+      if (!selectedSectionId) return;
+      const block = portfolio.sections
+        .find((s) => s.id === selectedSectionId)
+        ?.blocks.find((b) => b.id === blockId);
+      if (!block) return;
+      portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+        styles: { ...(block.styles as BlockStyles), x: newX, y: newY },
+      });
+    },
+    [selectedSectionId, portfolio.sections, portfolioStore],
+  );
+
+  const resizeBlock = useCallback(
+    (
+      blockId: string,
+      newW: number,
+      newH: number,
+      newX: number,
+      newY: number,
+    ) => {
+      if (!selectedSectionId) return;
+      const block = portfolio.sections
+        .find((s) => s.id === selectedSectionId)
+        ?.blocks.find((b) => b.id === blockId);
+      if (!block) return;
+      portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+        styles: { ...(block.styles as BlockStyles), x: newX, y: newY, w: newW, h: newH },
+      });
+    },
+    [selectedSectionId, portfolio.sections, portfolioStore],
+  );
+
+  const updateBlock = (
+    blockId: string,
+    sectionId: string,
+    updates: { content?: Record<string, unknown>; styles?: BlockStyles },
+  ) => {
+    builderStore.pushSnapshot("update-block");
+    // Local-first: update store instantly, no API call.
+    // Changes are persisted via batch save (auto-save or manual).
+    portfolioStore.updateBlockInSection(sectionId, blockId, updates as Partial<BlockWithStyles>);
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  };
+
+  const deleteBlock = async (blockId: string, sectionId: string) => {
+    try {
+      builderStore.pushSnapshot("delete-block");
+      await apiDelete(
+        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks/${blockId}`,
+      );
+      portfolioStore.removeBlockFromSection(sectionId, blockId);
+      if (selectedBlockId === blockId) setSelectedBlockId(null);
+    } catch {
+      /* handle */
+    }
+  };
+
+  const duplicateBlock = async (
+    block: BlockWithStyles,
+    sectionId: string,
+  ) => {
+    builderStore.pushSnapshot("duplicate-block");
+    const section = portfolio.sections.find((s) => s.id === sectionId);
+    try {
+      const res = await apiPost<BlockWithStyles>(
+        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks`,
+        {
+          type: block.type,
+          sortOrder: section?.blocks.length ?? 0,
+          content: block.content,
+          styles: {
+            ...(block.styles as BlockStyles),
+            x: (block.styles.x ?? 0) + 20,
+            y: (block.styles.y ?? 0) + 20,
+          },
+        },
+      );
+      portfolioStore.addBlockToSection(sectionId, res);
+      setSelectedBlockId(res.id);
+    } catch {
+      /* handle */
+    }
+  };
+
+  // ── Section CRUD ──────────────────────────────────────────────
+
+  const addSection = async () => {
+    if (!addSectionName.trim()) return;
+    const yOffset = portfolio.sections.reduce((max, s) => {
+      const ss = s.styles as SectionStyles;
+      return Math.max(
+        max,
+        (ss.frameY ?? 0) + (ss.frameHeight ?? DEFAULT_FRAME_HEIGHT),
+      );
+    }, 0);
+
+    try {
+      const res = await apiPost<SectionWithBlocks>(
+        `/portfolios/${portfolio.id}/sections`,
+        {
+          name: addSectionName.trim(),
+          sortOrder: portfolio.sections.length,
+          styles: {
+            frameX: 0,
+            frameY: yOffset + 80,
+            frameWidth: DEFAULT_FRAME_WIDTH,
+            frameHeight: DEFAULT_FRAME_HEIGHT,
+            layout: "absolute",
+            // No backgroundColor — inherits from theme.backgroundColor dynamically
+          },
+        },
+      );
+      builderStore.pushSnapshot("add-section");
+      portfolioStore.addSection(res);
+      setAddSectionName("");
+      setShowAddSection(false);
+      setExpandedSections((p) => new Set([...p, res.id]));
+    } catch {
+      /* handle */
+    }
+  };
+
+  const deleteSection = async (id: string) => {
+    builderStore.pushSnapshot("delete-section");
+    try {
+      await apiDelete(
+        `/portfolios/${portfolio.id}/sections?sectionId=${id}`,
+      );
+      portfolioStore.removeSection(id);
+      if (selectedSectionId === id) {
+        setSelectedSectionId(null);
+        setSelectedBlockId(null);
+      }
+    } catch {
+      /* handle */
+    }
+  };
+
+  // ── Batch Save (1 request instead of N) ─────────────────────────
+
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false);
+
+  const batchSave = useCallback(async () => {
+    if (isSavingRef.current || portfolio.sections.length === 0) return;
+    isSavingRef.current = true;
+    setSaving(true);
+    try {
+      await apiPut(`/portfolios/${portfolio.id}/batch`, {
+        sections: portfolio.sections.map((s) => ({
+          id: s.id,
+          name: s.name,
+          sortOrder: s.sortOrder,
+          styles: s.styles,
+          isVisible: s.isVisible,
+          blocks: s.blocks.map((b) => ({
+            id: b.id,
+            type: b.type,
+            sortOrder: b.sortOrder,
+            content: b.content,
+            styles: b.styles,
+            isVisible: b.isVisible,
+            isLocked: b.isLocked,
+          })),
+        })),
+      });
+      builderStore.markSaved();
+    } catch {
+      /* handle */
+    }
+    isSavingRef.current = false;
+    setSaving(false);
+  }, [portfolio.sections, portfolio.id, builderStore]);
+
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      batchSave();
+    }, 2000);
+  }, [batchSave]);
+
+  // Cleanup auto-save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, []);
+
+  const handleSave = async () => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    await batchSave();
+  };
+
+  const handlePublish = async () => {
+    if (publishing) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setPublishing(true);
+    setPublishError(null);
+    setPublishSuccess(false);
+    try {
+      await batchSave();
+      await apiPatch<{ status: string }>(`/portfolios/${portfolio.id}`, { status: "PUBLISHED" });
+      // Update local portfolio status so UI reflects the change immediately
+      portfolioStore.setCurrentPortfolio({ ...portfolio, status: "PUBLISHED" as PortfolioStatus });
+      builderStore.markSaved();
+      setPublishSuccess(true);
+      // Auto-dismiss success after 4 seconds
+      setTimeout(() => setPublishSuccess(false), 4000);
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : "Failed to publish");
+      setTimeout(() => setPublishError(null), 5000);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const fitToScreen = useCallback(() => {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const s of portfolio.sections) {
+      const ss = s.styles as SectionStyles;
+      const fx = ss.frameX ?? 0;
+      const fy = ss.frameY ?? 0;
+      const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+      const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+      minX = Math.min(minX, fx);
+      minY = Math.min(minY, fy);
+      maxX = Math.max(maxX, fx + fw);
+      maxY = Math.max(maxY, fy + fh);
+    }
+    if (!isFinite(minX)) {
+      minX = 0;
+      minY = 0;
+      maxX = 1440;
+      maxY = 900;
+    }
+
+    const padding = 80;
+    const contentW = maxX - minX + padding * 2;
+    const contentH = maxY - minY + padding * 2;
+    const scaleX = 900 / contentW;
+    const scaleY = 600 / contentH;
+    const scale = Math.min(scaleX, scaleY, 1);
+
+    setTransform({
+      scale,
+      x: -minX * scale + padding * scale + 50,
+      y: -minY * scale + padding * scale + 50,
+    });
+  }, [portfolio.sections]);
+
+  const toggleSection = (id: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // ── Zoom helpers ────────────────────────────────────────────────
+  const zoomIn = useCallback(() => {
+    setTransform((t) => ({ ...t, scale: Math.min(5, t.scale + 0.1) }));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setTransform((t) => ({ ...t, scale: Math.max(0.1, t.scale - 0.1) }));
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setTransform((t) => ({ ...t, scale: 1 }));
+  }, []);
+
+  // ── Export as JSON ──────────────────────────────────────────────
+  const exportAsJson = useCallback(() => {
+    const data = {
+      title: portfolio.title,
+      slug: portfolio.slug,
+      theme: portfolio.theme,
+      sections: portfolio.sections.map((s) => ({
+        name: s.name,
+        sortOrder: s.sortOrder,
+        styles: s.styles,
+        blocks: s.blocks.map((b) => ({
+          type: b.type,
+          content: b.content,
+          styles: b.styles,
+          sortOrder: b.sortOrder,
+        })),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${portfolio.slug || "portfolio"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [portfolio]);
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+
+      // Ctrl+Shift+Z — Redo (check before plain Z)
+      if (mod && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        const r = builderStore.redo();
+        if (r) { builderStore.setDirty(true); scheduleAutoSave(); }
+        return;
+      }
+      // Ctrl+Z — Undo
+      if (mod && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        const r = builderStore.undo();
+        if (r) { builderStore.setDirty(true); scheduleAutoSave(); }
+        return;
+      }
+
+      // Ctrl+S  → Save
+      if (mod && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+      // Ctrl+E  → Export JSON
+      if (mod && e.key === "e") {
+        e.preventDefault();
+        exportAsJson();
+        return;
+      }
+      // Ctrl+\  → Toggle left panel
+      if (mod && e.key === "\\") {
+        e.preventDefault();
+        setShowLeftPanel((v) => !v);
+        return;
+      }
+      // Ctrl+/  → Toggle right panel
+      if (mod && e.key === "/") {
+        e.preventDefault();
+        setShowRightPanel((v) => !v);
+        return;
+      }
+      // Ctrl+0  → Reset zoom
+      if (mod && e.key === "0") {
+        e.preventDefault();
+        resetZoom();
+        return;
+      }
+      // Ctrl+1  → Fit to screen
+      if (mod && e.key === "1") {
+        e.preventDefault();
+        fitToScreen();
+        return;
+      }
+      // Ctrl+=  → Zoom in
+      if (mod && (e.key === "=" || e.key === "+")) {
+        e.preventDefault();
+        zoomIn();
+        return;
+      }
+      // Ctrl+-  → Zoom out
+      if (mod && e.key === "-") {
+        e.preventDefault();
+        zoomOut();
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleSave, exportAsJson, fitToScreen, zoomIn, zoomOut, resetZoom, builderStore, scheduleAutoSave]);
+
+  // ═════════════════════════════════════════════════════════════
+  //  RENDER
+  // ═════════════════════════════════════════════════════════════
+
+  const deviceWidths: Record<string, number | undefined> = { desktop: undefined, tablet: 768, mobile: 375 };
+  const previewWidth = deviceWidths[builderStore.devicePreview];
+
+  return (
+    <div
+      className="flex h-screen flex-col"
+      style={{ backgroundColor: "var(--b-bg)" }}
+      data-builder-theme={studioTheme}
+    >
+      {/* ── TOP TOOLBAR ──────────────────────────────────────────── */}
+      <div
+        className="builder-toolbar relative z-20 flex h-12 items-center justify-between px-3"
+        style={{ borderBottom: "1px solid var(--b-border)" }}
+      >
+        {/* Left: Back + File + View */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-lg"
+            style={{ color: "var(--b-text-3)" }}
+            asChild
+          >
+            <Link href="/dashboard/portfolios">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+
+          <div
+            className="mx-0.5 h-4 w-px"
+            style={{ backgroundColor: "var(--b-border)" }}
+          />
+
+          {/* ── File Menu ─────────────────────────────────── */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="builder-toolbar-btn flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium"
+                style={{ color: "var(--b-text-2)" }}
+              >
+                File
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-56"
+              style={{
+                backgroundColor: dropdownColors.bg,
+                border: `1px solid ${dropdownColors.border}`,
+                color: dropdownColors.text,
+                boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
+              }}
+            >
+              <DropdownMenuItem
+                onClick={handleSave}
+                disabled={saving}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? "Saving..." : "Save"}
+                <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={exportAsJson}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <FileJson className="h-3.5 w-3.5" />
+                Export as JSON
+                <DropdownMenuShortcut>Ctrl+E</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={() => router.push(`/dashboard/portfolios/${portfolio.id}/preview`)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Preview
+              </DropdownMenuItem>
+              {portfolio.status === "PUBLISHED" && portfolio.user.username && (
+                <DropdownMenuItem
+                  onClick={() => window.open(`/portfolio/${portfolio.user.username}/${portfolio.slug}`, "_blank")}
+                  className="text-[12px] focus:bg-[var(--b-surface-hover)]"
+                  style={{ color: "var(--b-text-2)" }}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View Live Site
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={handlePublish}
+                disabled={publishing || saving}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                {publishing ? "Publishing..." : portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={() => router.push("/dashboard/portfolios")}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Dashboard
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* ── View Menu ─────────────────────────────────── */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="builder-toolbar-btn flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium"
+                style={{ color: "var(--b-text-2)" }}
+              >
+                View
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-56"
+              style={{
+                backgroundColor: dropdownColors.bg,
+                border: `1px solid ${dropdownColors.border}`,
+                color: dropdownColors.text,
+                boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
+              }}
+            >
+              <DropdownMenuCheckboxItem
+                checked={showLeftPanel}
+                onCheckedChange={(v) => setShowLeftPanel(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <PanelLeft className="mr-2 h-3.5 w-3.5" />
+                Left Panel
+                <DropdownMenuShortcut>Ctrl+\</DropdownMenuShortcut>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={showRightPanel}
+                onCheckedChange={(v) => setShowRightPanel(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <PanelRight className="mr-2 h-3.5 w-3.5" />
+                Right Panel
+                <DropdownMenuShortcut>Ctrl+/</DropdownMenuShortcut>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={zoomIn}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <ZoomIn className="h-3.5 w-3.5" />
+                Zoom In
+                <DropdownMenuShortcut>Ctrl+=</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={zoomOut}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <ZoomOut className="h-3.5 w-3.5" />
+                Zoom Out
+                <DropdownMenuShortcut>Ctrl+-</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={resetZoom}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Layout className="h-3.5 w-3.5" />
+                Reset Zoom (100%)
+                <DropdownMenuShortcut>Ctrl+0</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={fitToScreen}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Maximize className="h-3.5 w-3.5" />
+                Fit to Screen
+                <DropdownMenuShortcut>Ctrl+1</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={() => setStudioTheme((t) => (t === "dark" ? "light" : "dark"))}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                {studioTheme === "dark" ? (
+                  <Sun className="h-3.5 w-3.5" />
+                ) : (
+                  <Moon className="h-3.5 w-3.5" />
+                )}
+                {studioTheme === "dark" ? "Light Mode" : "Dark Mode"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div
+            className="mx-0.5 h-4 w-px"
+            style={{ backgroundColor: "var(--b-border)" }}
+          />
+
+          {/* Undo / Redo */}
+          <button
+            className="builder-toolbar-btn flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-25"
+            style={{ color: "var(--b-text-3)" }}
+            onClick={() => {
+              const r = builderStore.undo();
+              if (r) { builderStore.setDirty(true); scheduleAutoSave(); }
+            }}
+            disabled={builderStore.undoStack.length === 0}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className="builder-toolbar-btn flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-25"
+            style={{ color: "var(--b-text-3)" }}
+            onClick={() => {
+              const r = builderStore.redo();
+              if (r) { builderStore.setDirty(true); scheduleAutoSave(); }
+            }}
+            disabled={builderStore.redoStack.length === 0}
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <Redo2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Center: Name + Status */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[13px] font-semibold"
+              style={{ color: "var(--b-text)" }}
+            >
+              {portfolio.title}
+            </span>
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+              style={{
+                backgroundColor:
+                  portfolio.status === "PUBLISHED"
+                    ? "rgba(16,185,129,0.1)"
+                    : "var(--b-accent-soft)",
+                color:
+                  portfolio.status === "PUBLISHED"
+                    ? "var(--b-success)"
+                    : "var(--b-accent)",
+              }}
+            >
+              {portfolio.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Zoom + Theme + Save + Publish */}
+        <div className="flex items-center gap-2">
+          <ZoomControls
+            transform={transform}
+            onTransformChange={setTransform}
+            onFitToScreen={fitToScreen}
+          />
+
+          {/* Device preview toggle */}
+          <div
+            className="flex items-center gap-0.5 rounded-lg p-0.5"
+            style={{ backgroundColor: "var(--b-surface)" }}
+          >
+            {([
+              { id: "desktop" as const, icon: <Monitor className="h-3.5 w-3.5" />, title: "Desktop" },
+              { id: "tablet" as const, icon: <Tablet className="h-3.5 w-3.5" />, title: "Tablet (768px)" },
+              { id: "mobile" as const, icon: <Smartphone className="h-3.5 w-3.5" />, title: "Mobile (375px)" },
+            ]).map((device) => (
+              <button
+                key={device.id}
+                onClick={() => builderStore.setDevicePreview(device.id)}
+                className="flex h-7 w-7 items-center justify-center rounded-md transition-all"
+                style={{
+                  backgroundColor: builderStore.devicePreview === device.id ? "var(--b-accent-soft)" : "transparent",
+                  color: builderStore.devicePreview === device.id ? "var(--b-accent)" : "var(--b-text-3)",
+                }}
+                title={device.title}
+              >
+                {device.icon}
+              </button>
+            ))}
+          </div>
+          <div className="mx-1 h-4 w-px" style={{ backgroundColor: "var(--b-border)" }} />
+
+          <div
+            className="h-4 w-px"
+            style={{ backgroundColor: "var(--b-border)" }}
+          />
+
+          {/* Light/Dark toggle */}
+          <button
+            className="builder-toolbar-btn flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ color: "var(--b-text-3)" }}
+            onClick={() =>
+              setStudioTheme((t) => (t === "dark" ? "light" : "dark"))
+            }
+            title={`Switch to ${studioTheme === "dark" ? "light" : "dark"} mode`}
+          >
+            {studioTheme === "dark" ? (
+              <Sun className="h-3.5 w-3.5" />
+            ) : (
+              <Moon className="h-3.5 w-3.5" />
+            )}
+          </button>
+
+          <div
+            className="h-4 w-px"
+            style={{ backgroundColor: "var(--b-border)" }}
+          />
+
+          <button
+            className="builder-toolbar-btn flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all"
+            style={{ color: "var(--b-text-2)" }}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            <Save className="h-3.5 w-3.5" />
+            {saving ? "Saving..." : "Save"}
+          </button>
+
+          <button
+            className="flex h-8 items-center gap-1.5 rounded-lg px-4 text-[12px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-60"
+            style={{
+              background: publishing
+                ? "var(--b-text-3)"
+                : publishSuccess
+                  ? "linear-gradient(135deg, #10b981, #059669)"
+                  : "linear-gradient(135deg, var(--b-accent), #0891b2)",
+              boxShadow: publishSuccess
+                ? "0 2px 12px rgba(16,185,129,0.3)"
+                : "var(--b-publish-shadow), inset 0 1px 0 rgba(255,255,255,0.1)",
+            }}
+            onClick={handlePublish}
+            disabled={publishing || saving}
+          >
+            {publishing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Publishing...
+              </>
+            ) : publishSuccess ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Published!
+              </>
+            ) : portfolio.status === "PUBLISHED" ? (
+              <>
+                <Globe className="h-3.5 w-3.5" />
+                Update
+              </>
+            ) : (
+              <>
+                <Globe className="h-3.5 w-3.5" />
+                Publish
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Publish feedback bar */}
+        {(publishSuccess || publishError) && (
+          <div
+            className="absolute left-1/2 top-14 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg px-4 py-2 text-[12px] font-medium shadow-lg"
+            style={{
+              backgroundColor: publishSuccess ? "rgba(16,185,129,0.15)" : "rgba(244,63,94,0.15)",
+              color: publishSuccess ? "#10b981" : "#f43f5e",
+              border: `1px solid ${publishSuccess ? "rgba(16,185,129,0.25)" : "rgba(244,63,94,0.25)"}`,
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            {publishSuccess ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Portfolio is live!
+                {portfolio.user.username && (
+                  <a
+                    href={`/portfolio/${portfolio.user.username}/${portfolio.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-80"
+                  >
+                    View site
+                    <ExternalLink className="ml-0.5 inline h-3 w-3" />
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-3.5 w-3.5" />
+                {publishError}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* ── LEFT: Layers / Elements Panel ────────────────────────── */}
+        {showLeftPanel && (
+        <div
+          className="builder-panel flex w-60 flex-shrink-0 flex-col"
+          style={{
+            backgroundColor: "var(--b-panel)",
+            borderRight: "1px solid var(--b-border)",
+          }}
+        >
+          {/* Tab bar */}
+          <div
+            className="flex flex-shrink-0 gap-0.5 p-1.5"
+            style={{ borderBottom: "1px solid var(--b-border)" }}
+          >
+            {([
+              { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
+              { id: "elements" as const, label: "Elements", icon: <LayoutGrid className="h-3 w-3" /> },
+            ]).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setLeftTab(tab.id)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-all duration-150"
+                style={{
+                  color: leftTab === tab.id ? "var(--b-accent)" : "var(--b-text-4)",
+                  backgroundColor: leftTab === tab.id ? "var(--b-accent-soft)" : "transparent",
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Layers Tab ───────────────────────────────────────── */}
+          {leftTab === "layers" && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {/* Toolbar */}
+              <div
+                className="flex flex-shrink-0 items-center justify-between px-3 py-2"
+                style={{ borderBottom: "1px solid var(--b-border)" }}
+              >
+                <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-4)" }}>
+                  Frames ({sortedSections.length})
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => setShowAddSection(true)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+                    style={{ color: "var(--b-text-3)" }}
+                    title="Add frame"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => { setRightPanel("theme"); setSelectedBlockId(null); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+                    style={{ color: "var(--b-text-3)" }}
+                    title="Theme"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Add section input */}
+              {showAddSection && (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-2.5"
+                  style={{ borderBottom: "1px solid var(--b-border)", backgroundColor: "var(--b-surface)" }}
+                >
+                  <Input
+                    value={addSectionName}
+                    onChange={(e) => setAddSectionName(e.target.value)}
+                    placeholder="Frame name..."
+                    className="h-7 border-0 text-[11px]"
+                    style={{ backgroundColor: "var(--b-input-bg)", color: "var(--b-text)" }}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addSection();
+                      if (e.key === "Escape") setShowAddSection(false);
+                    }}
+                  />
+                  <button
+                    onClick={addSection}
+                    className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md"
+                    style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => setShowAddSection(false)}
+                    className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md"
+                    style={{ color: "var(--b-text-4)" }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Section + Block tree */}
+              <div className="flex-1 overflow-y-auto py-1 scrollbar-thin">
+                {hasNoSections && !showAddSection && (
+                  <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: "var(--b-surface)", border: "1px dashed var(--b-border-active)" }}
+                    >
+                      <Layers className="h-4 w-4" style={{ color: "var(--b-text-4)" }} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium" style={{ color: "var(--b-text-3)" }}>No frames yet</p>
+                      <p className="mt-0.5 text-[10px]" style={{ color: "var(--b-text-4)" }}>
+                        Click <strong>+</strong> above to add one
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {sortedSections.map((section) => {
+                  const isExpanded = expandedSections.has(section.id);
+                  const isSectionSelected = selectedSectionId === section.id && !selectedBlockId;
+                  const blockCount = section.blocks.length;
+
+                  return (
+                    <div key={section.id} className="group/sec">
+                      {/* Section (frame) row */}
+                      <div
+                        className="builder-layer-item flex cursor-pointer items-center gap-1.5 px-2 py-[7px]"
+                        style={{
+                          backgroundColor: isSectionSelected ? "var(--b-accent-soft)" : "transparent",
+                          color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-2)",
+                        }}
+                        onClick={() => selectSection(section.id)}
+                      >
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleSection(section.id); }}
+                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
+                          style={{ color: "var(--b-text-4)" }}
+                        >
+                          <ChevronRight
+                            className="h-3 w-3 transition-transform duration-150"
+                            style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}
+                          />
+                        </button>
+                        <Layout className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-3)" }} />
+                        <span className="flex-1 truncate text-[11px] font-semibold">{section.name}</span>
+                        <span className="flex-shrink-0 text-[9px] font-medium" style={{ color: "var(--b-text-4)" }}>
+                          {blockCount}
+                        </span>
+                        {!section.isVisible && (
+                          <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteSection(section.id); }}
+                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/sec:opacity-40 hover:!opacity-100"
+                          style={{ color: "var(--b-danger)" }}
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+
+                      {/* Block children */}
+                      {isExpanded && (
+                        <div
+                          className="ml-[18px] border-l py-0.5"
+                          style={{ borderColor: isSectionSelected ? "var(--b-accent-mid)" : "var(--b-border)" }}
+                        >
+                          {blockCount === 0 && (
+                            <p className="px-4 py-2 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                              No elements — switch to Elements tab to add
+                            </p>
+                          )}
+                          {[...section.blocks]
+                            .sort((a, b) => a.sortOrder - b.sortOrder)
+                            .map((block) => (
+                              <LayerBlockItem
+                                key={block.id}
+                                block={block}
+                                isSelected={block.id === selectedBlockId}
+                                onSelect={() => selectBlock(block.id, false)}
+                                onDelete={() => deleteBlock(block.id, section.id)}
+                              />
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Elements Tab ─────────────────────────────────────── */}
+          {leftTab === "elements" && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {/* Notice */}
+              {!selectedSectionId && (
+                <div
+                  className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: "var(--b-accent-soft)",
+                    color: "var(--b-accent)",
+                    border: "1px solid var(--b-accent-mid)",
+                  }}
+                >
+                  <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
+                  Select a frame first to add elements
+                </div>
+              )}
+
+              {/* Elements list */}
+              <div className="flex-1 overflow-y-auto px-2.5 py-2.5 scrollbar-thin">
+                {BLOCK_CATEGORIES.map((cat) => {
+                  const blocks = getBlocksByCategory(cat.id);
+                  return (
+                    <div key={cat.id} className="mb-4">
+                      <p
+                        className="mb-2 flex items-center gap-1.5 px-1 text-[9px] font-bold uppercase tracking-[0.12em]"
+                        style={{ color: "var(--b-text-4)" }}
+                      >
+                        {cat.label}
+                        <span
+                          className="rounded-sm px-1 text-[8px] font-semibold"
+                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
+                        >
+                          {blocks.length}
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {blocks.map((def) => (
+                          <button
+                            key={def.type}
+                            onClick={() => {
+                              if (selectedSectionId) addBlock(selectedSectionId, def.type);
+                            }}
+                            disabled={!selectedSectionId}
+                            className="group flex flex-col items-start gap-0.5 rounded-lg px-2.5 py-2.5 text-left transition-all duration-150 disabled:opacity-25"
+                            style={{
+                              backgroundColor: "var(--b-surface)",
+                              border: "1px solid var(--b-border)",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (selectedSectionId) {
+                                e.currentTarget.style.borderColor = "var(--b-accent)";
+                                e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "var(--b-border)";
+                              e.currentTarget.style.backgroundColor = "var(--b-surface)";
+                            }}
+                          >
+                            <span
+                              className="text-[10.5px] font-semibold"
+                              style={{ color: "var(--b-text-2)" }}
+                            >
+                              {def.label}
+                            </span>
+                            <span
+                              className="line-clamp-1 text-[8.5px] leading-tight"
+                              style={{ color: "var(--b-text-4)" }}
+                            >
+                              {def.description}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* ── CENTER: Canvas ─────────────────────────────────────── */}
+        <div className="relative flex-1 overflow-hidden">
+          <SmartGuides guides={guides} transform={transform} />
+
+          <CanvasEngine
+            transform={transform}
+            onTransformChange={setTransform}
+            onCanvasClick={handleCanvasClick}
+          >
+            <div style={{ position: "relative" }}>
+              {visibleSections.map((section) => {
+                const ss = section.styles as SectionStyles;
+                const fx = ss.frameX ?? 0;
+                const fy =
+                  ss.frameY ??
+                  portfolio.sections.indexOf(section) *
+                    (DEFAULT_FRAME_HEIGHT + 80);
+                const fw = previewWidth ?? ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+                const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+
+                return (
+                  <CanvasFrame
+                    key={section.id}
+                    id={section.id}
+                    name={section.name}
+                    x={fx}
+                    y={fy}
+                    width={fw}
+                    height={fh}
+                    backgroundColor={
+                      (ss as Record<string, unknown>).backgroundCustom
+                        ? (ss.backgroundColor as string)
+                        : theme.backgroundColor
+                    }
+                    isSelected={
+                      selectedSectionId === section.id && !selectedBlockId
+                    }
+                    onSelect={selectSection}
+                  >
+                    {[...section.blocks]
+                      .filter((b) => b.isVisible)
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((block) => (
+                        <CanvasElement
+                          key={block.id}
+                          id={block.id}
+                          x={block.styles.x ?? 40}
+                          y={block.styles.y ?? 0}
+                          w={block.styles.w ?? DEFAULT_BLOCK_W}
+                          h={block.styles.h ?? 0}
+                          rotation={block.styles.rotation}
+                          isSelected={block.id === selectedBlockId}
+                          isLocked={block.isLocked}
+                          isHidden={!block.isVisible}
+                          canvasScale={transform.scale}
+                          onSelect={selectBlock}
+                          onMove={moveBlock}
+                          onResize={resizeBlock}
+                        >
+                          <BlockRenderer
+                            block={block}
+                            theme={theme}
+                            isEditing
+                          />
+                        </CanvasElement>
+                      ))}
+                  </CanvasFrame>
+                );
+              })}
+            </div>
+          </CanvasEngine>
+
+          {/* Empty canvas state */}
+          {hasNoSections && (
+            <div className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center">
+              <div className="text-center">
+                <div
+                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+                  style={{
+                    backgroundColor: "var(--b-surface)",
+                    border: "1px solid var(--b-border)",
+                  }}
+                >
+                  <LayoutGrid
+                    className="h-7 w-7"
+                    style={{ color: "var(--b-text-4)" }}
+                  />
+                </div>
+                <p
+                  className="text-[15px] font-semibold"
+                  style={{ color: "var(--b-text-2)" }}
+                >
+                  Start with a frame
+                </p>
+                <p
+                  className="mx-auto mt-2 max-w-[240px] text-[12px] leading-relaxed"
+                  style={{ color: "var(--b-text-3)" }}
+                >
+                  Frames are sections of your portfolio. Create one to start
+                  adding elements.
+                </p>
+                <button
+                  onClick={() => setShowAddSection(true)}
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:opacity-90"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--b-accent), #0891b2)",
+                    boxShadow: "var(--b-publish-shadow)",
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Create Frame
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Bottom-left keyboard hint */}
+          <div
+            className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-3 rounded-lg px-3 py-1.5 text-[10px]"
+            style={{
+              color: "var(--b-text-4)",
+              backgroundColor: "var(--b-hint-bg)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid var(--b-border)",
+            }}
+          >
+            <span>
+              <kbd className="builder-kbd">Scroll</kbd> Pan
+            </span>
+            <span>
+              <kbd className="builder-kbd">Ctrl+Scroll</kbd> Zoom
+            </span>
+            <span>
+              <kbd className="builder-kbd">Space</kbd> Drag
+            </span>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Properties Panel ────────────────────────────── */}
+        {showRightPanel && (
+        <div
+          className="builder-panel w-72 flex-shrink-0"
+          style={{
+            backgroundColor: "var(--b-panel)",
+            borderLeft: "1px solid var(--b-border)",
+          }}
+        >
+          {rightPanel === "theme" ? (
+            <ThemeEditor portfolioId={portfolio.id} theme={portfolio.theme} />
+          ) : selectedBlock && selectedSectionId ? (
+            <BlockPropertiesPanel
+              block={selectedBlock}
+              onUpdateContent={(content) =>
+                updateBlock(selectedBlock.id, selectedSectionId, { content })
+              }
+              onUpdateStyles={(styles) =>
+                updateBlock(selectedBlock.id, selectedSectionId, { styles })
+              }
+              onDelete={() =>
+                deleteBlock(selectedBlock.id, selectedSectionId)
+              }
+              onDuplicate={() =>
+                duplicateBlock(selectedBlock, selectedSectionId)
+              }
+              onToggleVisibility={() => {
+                builderStore.pushSnapshot("toggle-visibility");
+                portfolioStore.updateBlockInSection(selectedSectionId, selectedBlock.id, {
+                  isVisible: !selectedBlock.isVisible,
+                });
+                builderStore.setDirty(true);
+                scheduleAutoSave();
+              }}
+              onToggleLock={() => {
+                builderStore.pushSnapshot("toggle-lock");
+                portfolioStore.updateBlockInSection(selectedSectionId, selectedBlock.id, {
+                  isLocked: !selectedBlock.isLocked,
+                });
+                builderStore.setDirty(true);
+                scheduleAutoSave();
+              }}
+            />
+          ) : selectedSectionId ? (
+            /* ── Section/Frame Properties ──────────────────────── */
+            (() => {
+              const sec = portfolio.sections.find((s) => s.id === selectedSectionId);
+              if (!sec) return null;
+              const ss = sec.styles as SectionStyles;
+              const updateSec = (updates: Partial<SectionStyles>) => {
+                portfolioStore.updateSection(selectedSectionId, {
+                  styles: { ...ss, ...updates },
+                });
+                builderStore.setDirty(true);
+                scheduleAutoSave();
+              };
+              return (
+                <div className="flex h-full flex-col">
+                  <div
+                    className="flex items-center justify-between px-3 py-2.5"
+                    style={{ borderBottom: "1px solid var(--b-border)" }}
+                  >
+                    <div>
+                      <div className="text-[12px] font-semibold" style={{ color: "var(--b-text)" }}>
+                        Frame
+                      </div>
+                      <div className="text-[10px]" style={{ color: "var(--b-text-4)" }}>
+                        {sec.name}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteSection(selectedSectionId)}
+                      className="flex h-6 w-6 items-center justify-center rounded-md"
+                      style={{ color: "var(--b-danger)" }}
+                      title="Delete frame"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Name */}
+                    <div style={{ borderBottom: "1px solid var(--b-border)" }} className="px-3 py-3">
+                      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-3)" }}>
+                        Name
+                      </span>
+                      <input
+                        type="text"
+                        value={sec.name}
+                        onChange={(e) => {
+                          portfolioStore.updateSection(selectedSectionId, { name: e.target.value });
+                          builderStore.setDirty(true);
+                        }}
+                        className="h-7 w-full rounded-md border-0 px-2 text-[11px] outline-none"
+                        style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)" }}
+                      />
+                    </div>
+
+                    {/* Background Color */}
+                    <div style={{ borderBottom: "1px solid var(--b-border)" }} className="px-3 py-3">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-3)" }}>
+                          Background
+                        </span>
+                        {!!(ss as Record<string, unknown>).backgroundCustom && (
+                          <button
+                            onClick={() => updateSec({ backgroundCustom: false, backgroundColor: undefined } as Partial<SectionStyles>)}
+                            className="text-[9px] font-medium"
+                            style={{ color: "var(--b-accent)" }}
+                          >
+                            Use theme
+                          </button>
+                        )}
+                      </div>
+                      {!((ss as Record<string, unknown>).backgroundCustom) && (
+                        <div
+                          className="mb-1.5 rounded-md px-2 py-1 text-[10px]"
+                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)" }}
+                        >
+                          Following portfolio theme
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={
+                            (ss as Record<string, unknown>).backgroundCustom && ss.backgroundColor && (ss.backgroundColor as string).startsWith("#")
+                              ? (ss.backgroundColor as string)
+                              : theme.backgroundColor
+                          }
+                          onChange={(e) => updateSec({ backgroundColor: e.target.value, backgroundCustom: true } as Partial<SectionStyles>)}
+                          className="h-7 w-7 flex-shrink-0 cursor-pointer rounded-md border-0 p-0.5"
+                          style={{ backgroundColor: "var(--b-surface)" }}
+                        />
+                        <input
+                          type="text"
+                          value={
+                            (ss as Record<string, unknown>).backgroundCustom
+                              ? ((ss.backgroundColor as string) ?? "")
+                              : theme.backgroundColor
+                          }
+                          onChange={(e) => updateSec({ backgroundColor: e.target.value, backgroundCustom: true } as Partial<SectionStyles>)}
+                          placeholder={theme.backgroundColor}
+                          className="h-7 flex-1 rounded-md border-0 px-2 font-mono text-[11px] outline-none"
+                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Frame Dimensions */}
+                    <div style={{ borderBottom: "1px solid var(--b-border)" }} className="px-3 py-3">
+                      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-3)" }}>
+                        Size
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {([
+                          { label: "W", key: "frameWidth", val: ss.frameWidth ?? 1440 },
+                          { label: "H", key: "frameHeight", val: ss.frameHeight ?? 800 },
+                          { label: "X", key: "frameX", val: ss.frameX ?? 0 },
+                          { label: "Y", key: "frameY", val: ss.frameY ?? 0 },
+                        ] as const).map((f) => (
+                          <div key={f.key} className="relative">
+                            <span
+                              className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-semibold uppercase"
+                              style={{ color: "var(--b-text-4)" }}
+                            >
+                              {f.label}
+                            </span>
+                            <input
+                              type="number"
+                              value={f.val}
+                              onChange={(e) => updateSec({ [f.key]: Number(e.target.value) })}
+                              className="h-7 w-full rounded-md border-0 text-right text-[11px] font-mono tabular-nums outline-none"
+                              style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)", paddingLeft: 22, paddingRight: 8 }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+              <div
+                className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+                style={{
+                  backgroundColor: "var(--b-surface)",
+                  border: "1px solid var(--b-border)",
+                }}
+              >
+                <MousePointer2
+                  className="h-5 w-5"
+                  style={{ color: "var(--b-text-4)" }}
+                />
+              </div>
+              <p
+                className="text-[13px] font-semibold"
+                style={{ color: "var(--b-text-2)" }}
+              >
+                No element selected
+              </p>
+              <p
+                className="mt-1.5 text-[11px] leading-relaxed"
+                style={{ color: "var(--b-text-4)" }}
+              >
+                Click any element on the canvas to inspect and edit its
+                properties
+              </p>
+            </div>
+          )}
+        </div>
+        )}
+      </div>
+    </div>
+  );
+}

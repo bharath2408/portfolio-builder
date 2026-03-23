@@ -1,0 +1,445 @@
+"use client";
+
+import {
+  ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
+  Mail, MapPin, Phone, Quote as QuoteIcon,
+} from "lucide-react";
+import type { BlockWithStyles, ThemeTokens } from "@/types";
+
+interface BlockRendererProps {
+  block: BlockWithStyles;
+  theme: ThemeTokens;
+  isEditing?: boolean;
+}
+
+// Resolve "primary", "secondary", "accent", "text", "muted", "surface" → real colors
+function resolveColor(value: string | undefined, theme: ThemeTokens): string | undefined {
+  if (!value) return undefined;
+  const map: Record<string, string> = {
+    primary: theme.primaryColor,
+    secondary: theme.secondaryColor,
+    accent: theme.accentColor,
+    text: theme.textColor,
+    muted: theme.mutedColor,
+    surface: theme.surfaceColor,
+    background: theme.backgroundColor,
+  };
+  return map[value] ?? value;
+}
+
+function resolveFontFamily(family: string | undefined, theme: ThemeTokens): string | undefined {
+  if (!family) return undefined;
+  const map: Record<string, string> = {
+    heading: theme.fontHeading,
+    body: theme.fontBody,
+    mono: theme.fontMono,
+  };
+  return map[family] ?? family;
+}
+
+function buildInlineStyles(styles: BlockWithStyles["styles"], theme: ThemeTokens): React.CSSProperties {
+  // Start with theme defaults so blocks always follow the active theme
+  const s: React.CSSProperties = {
+    color: theme.textColor,
+  };
+  if (styles.width) s.width = styles.width;
+  if (styles.maxWidth) s.maxWidth = styles.maxWidth;
+  if (styles.minHeight) s.minHeight = styles.minHeight;
+  if (styles.display) s.display = styles.display;
+  if (styles.flexDirection) s.flexDirection = styles.flexDirection;
+  if (styles.alignItems) {
+    const map: Record<string, string> = { start: "flex-start", end: "flex-end", center: "center", stretch: "stretch", between: "space-between" };
+    s.alignItems = map[styles.alignItems] ?? styles.alignItems;
+  }
+  if (styles.justifyContent) {
+    const map: Record<string, string> = { start: "flex-start", end: "flex-end", center: "center", between: "space-between" };
+    s.justifyContent = map[styles.justifyContent] ?? styles.justifyContent;
+  }
+  if (styles.gap) s.gap = styles.gap;
+  if (styles.flexWrap) s.flexWrap = styles.flexWrap;
+  if (styles.paddingTop) s.paddingTop = styles.paddingTop;
+  if (styles.paddingRight) s.paddingRight = styles.paddingRight;
+  if (styles.paddingBottom) s.paddingBottom = styles.paddingBottom;
+  if (styles.paddingLeft) s.paddingLeft = styles.paddingLeft;
+  if (styles.marginTop) s.marginTop = styles.marginTop;
+  if (styles.marginRight) s.marginRight = styles.marginRight;
+  if (styles.marginBottom) s.marginBottom = styles.marginBottom;
+  if (styles.marginLeft) s.marginLeft = styles.marginLeft;
+  if (styles.fontSize) s.fontSize = styles.fontSize;
+  if (styles.fontWeight) s.fontWeight = styles.fontWeight;
+  if (styles.fontFamily) s.fontFamily = resolveFontFamily(styles.fontFamily, theme);
+  if (styles.textAlign) s.textAlign = styles.textAlign;
+  if (styles.lineHeight) s.lineHeight = styles.lineHeight;
+  if (styles.letterSpacing) s.letterSpacing = styles.letterSpacing;
+  if (styles.textTransform) s.textTransform = styles.textTransform;
+  if (styles.color) s.color = resolveColor(styles.color, theme);
+  if (styles.backgroundColor) s.backgroundColor = resolveColor(styles.backgroundColor, theme);
+  if (styles.borderWidth) s.borderWidth = styles.borderWidth;
+  if (styles.borderColor) s.borderColor = resolveColor(styles.borderColor, theme);
+  if (styles.borderRadius) s.borderRadius = styles.borderRadius;
+  if (styles.borderStyle) s.borderStyle = styles.borderStyle;
+  if (styles.opacity !== undefined) s.opacity = styles.opacity;
+  if (styles.overflow) s.overflow = styles.overflow;
+  return s;
+}
+
+const socialIconMap: Record<string, React.ComponentType<{className?: string}>> = {
+  Github, Linkedin, Twitter, Globe, Mail,
+};
+
+export function BlockRenderer({ block, theme, isEditing: _isEditing }: BlockRendererProps) {
+  const c = block.content as Record<string, unknown>;
+  const inlineStyles = buildInlineStyles(block.styles, theme);
+
+  switch (block.type) {
+    // ── HEADING ──
+    case "heading": {
+      const Tag = `h${(c.level as number) ?? 2}` as keyof React.JSX.IntrinsicElements;
+      const sizes: Record<number, number> = { 1: 56, 2: 40, 3: 32, 4: 24, 5: 20, 6: 16 };
+      const level = (c.level as number) ?? 2;
+      return (
+        <Tag style={{ ...inlineStyles, fontSize: inlineStyles.fontSize ?? sizes[level], fontFamily: resolveFontFamily("heading", theme) }}>
+          {(c.highlight as string) ? (
+            <>{(c.text as string).replace(c.highlight as string, "")}<span style={{ color: theme.primaryColor }}>{c.highlight as string}</span></>
+          ) : (c.text as string)}
+        </Tag>
+      );
+    }
+
+    // ── TEXT ──
+    case "text":
+      return c.html ? (
+        <div style={inlineStyles} dangerouslySetInnerHTML={{ __html: c.html as string }} />
+      ) : (
+        <p style={{ ...inlineStyles, fontFamily: resolveFontFamily("body", theme) }}>{c.text as string}</p>
+      );
+
+    // ── QUOTE ──
+    case "quote":
+      return (
+        <blockquote style={{ ...inlineStyles, borderLeftColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.primaryColor }}>
+          <p style={{ fontStyle: "italic", fontSize: inlineStyles.fontSize ?? 18, fontFamily: resolveFontFamily("body", theme) }}>
+            &ldquo;{c.text as string}&rdquo;
+          </p>
+          {(c.author as string) && <cite style={{ fontSize: 14, opacity: 0.6, marginTop: 8, display: "block" }}>— {c.author as string}{(c.role as string) && `, ${c.role as string}`}</cite>}
+        </blockquote>
+      );
+
+    // ── LIST ──
+    case "list": {
+      const items = (c.items as string[]) ?? [];
+      const Tag = (c.ordered as boolean) ? "ol" : "ul";
+      return (
+        <Tag style={{ ...inlineStyles, paddingLeft: 20 }}>
+          {items.map((item, i) => <li key={i} style={{ marginBottom: 4, fontSize: 14, opacity: 0.8 }}>{item}</li>)}
+        </Tag>
+      );
+    }
+
+    // ── CODE ──
+    case "code":
+      return (
+        <div style={{ ...inlineStyles, padding: 16, backgroundColor: resolveColor("surface", theme), overflow: "auto" }}>
+          {(c.filename as string) && <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 8 }}>{c.filename as string}</div>}
+          <pre style={{ margin: 0, fontFamily: resolveFontFamily("mono", theme), fontSize: 13, lineHeight: 1.6 }}>
+            <code>{c.code as string}</code>
+          </pre>
+        </div>
+      );
+
+    // ── IMAGE ──
+    case "image":
+      return (
+        <figure style={{ ...inlineStyles, overflow: "hidden" }}>
+          {(c.src as string) ? (
+            <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"], display: "block" }} />
+          ) : (
+            <div style={{ aspectRatio: (c.aspectRatio as string) ?? "16/9", backgroundColor: resolveColor("surface", theme), display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ opacity: 0.3, fontSize: 14 }}>Image placeholder</span>
+            </div>
+          )}
+          {(c.caption as string) && <figcaption style={{ textAlign: "center", fontSize: 12, opacity: 0.5, marginTop: 8 }}>{c.caption as string}</figcaption>}
+        </figure>
+      );
+
+    // ── AVATAR ──
+    case "avatar": {
+      const sizeMap: Record<string, number> = { sm: 48, md: 64, lg: 96, xl: 128, "2xl": 160 };
+      const sz = sizeMap[(c.size as string) ?? "lg"] ?? 96;
+      return (
+        <div style={{ ...inlineStyles, display: "inline-block" }}>
+          <div style={{
+            width: sz, height: sz, borderRadius: "50%", overflow: "hidden",
+            border: (c.ring as boolean) ? `3px solid ${theme.primaryColor}` : undefined,
+            backgroundColor: resolveColor("surface", theme),
+          }}>
+            {(c.src as string) ? (
+              <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz / 3, opacity: 0.3 }}>?</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ── DIVIDER ──
+    case "divider":
+      return <hr style={{ ...inlineStyles, border: "none", borderTop: `${(c.thickness as number) ?? 1}px ${(c.style as string) ?? "solid"} ${theme.textColor}`, width: "100%" }} />;
+
+    // ── SPACER ──
+    case "spacer":
+      return <div style={{ height: (c.height as number) ?? 40, ...inlineStyles }} />;
+
+    // ── BUTTON ──
+    case "button": {
+      const variant = (c.variant as string) ?? "solid";
+      const size = (c.size as string) ?? "md";
+      const paddings: Record<string, string> = { sm: "8px 16px", md: "10px 24px", lg: "14px 32px" };
+      const btnStyle: React.CSSProperties = {
+        ...inlineStyles,
+        display: "inline-flex", alignItems: "center", gap: 8,
+        padding: paddings[size], borderRadius: theme.borderRadius,
+        fontWeight: 600, fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14,
+        textDecoration: "none", transition: "all 0.2s",
+        cursor: "pointer", border: "none",
+      };
+      if (variant === "solid") { btnStyle.backgroundColor = theme.primaryColor; btnStyle.color = "#fff"; }
+      if (variant === "outline") { btnStyle.border = `2px solid ${theme.primaryColor}`; btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
+      if (variant === "ghost") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
+      if (variant === "link") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; btnStyle.textDecoration = "underline"; }
+      return <a href={(c.url as string) ?? "#"} target={(c.newTab as boolean) ? "_blank" : undefined} rel="noopener noreferrer" style={btnStyle}>{c.text as string}{(c.icon as string) && <ArrowRight size={16} />}</a>;
+    }
+
+    // ── SOCIAL LINKS ──
+    case "social_links": {
+      const links = (c.links as Array<{platform: string; url: string; icon: string}>) ?? [];
+      const variant = (c.variant as string) ?? "ghost";
+      return (
+        <div style={{ ...inlineStyles, display: "flex", gap: inlineStyles.gap ?? 12 }}>
+          {links.map((link, i) => {
+            const Icon = socialIconMap[link.icon] ?? Globe;
+            const linkStyle: React.CSSProperties = {
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 40, height: 40, borderRadius: 8, transition: "all 0.2s",
+              textDecoration: "none", color: theme.textColor,
+            };
+            if (variant === "outline") { linkStyle.border = `1px solid ${theme.surfaceColor}`; }
+            if (variant === "filled") { linkStyle.backgroundColor = theme.surfaceColor; }
+            return <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}><Icon className="w-5 h-5" /></a>;
+          })}
+        </div>
+      );
+    }
+
+    // ── BADGE ──
+    case "badge": {
+      const variant = (c.variant as string) ?? "subtle";
+      const badgeColor = resolveColor((c.color as string) ?? "primary", theme) ?? theme.primaryColor;
+      const s: React.CSSProperties = {
+        display: "inline-flex", alignItems: "center", padding: "4px 12px",
+        borderRadius: 20, fontSize: 12, fontWeight: 600,
+      };
+      if (variant === "solid") { s.backgroundColor = badgeColor; s.color = "#fff"; }
+      if (variant === "outline") { s.border = `1px solid ${badgeColor}`; s.color = badgeColor; }
+      if (variant === "subtle") { s.backgroundColor = `${badgeColor}15`; s.color = badgeColor; }
+      return <span style={s}>{c.text as string}</span>;
+    }
+
+    // ── BADGE GROUP ──
+    case "badge_group": {
+      const badges = (c.badges as Array<{text: string; color?: string}>) ?? [];
+      return (
+        <div style={{ ...inlineStyles, display: "flex", flexWrap: "wrap", gap: inlineStyles.gap ?? 8 }}>
+          {badges.map((b, i) => {
+            const col = resolveColor(b.color ?? "primary", theme) ?? theme.primaryColor;
+            return <span key={i} style={{ display: "inline-flex", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, backgroundColor: `${col}15`, color: col }}>{b.text}</span>;
+          })}
+        </div>
+      );
+    }
+
+    // ── SKILL BAR ──
+    case "skill_bar":
+      return (
+        <div style={inlineStyles}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>{c.name as string}</span>
+            {(c.showPercentage as boolean) && <span style={{ fontSize: 12, opacity: 0.5 }}>{c.level as number}%</span>}
+          </div>
+          <div style={{ height: 6, borderRadius: 3, backgroundColor: `${theme.textColor}15`, overflow: "hidden" }}>
+            <div style={{ width: `${c.level as number}%`, height: "100%", borderRadius: 3, backgroundColor: theme.primaryColor, transition: "width 0.5s" }} />
+          </div>
+        </div>
+      );
+
+    // ── SKILL GRID ──
+    case "skill_grid": {
+      const skills = (c.skills as Array<{name: string; level?: number}>) ?? [];
+      const cols = (c.columns as number) ?? 3;
+      return (
+        <div style={{ ...inlineStyles, display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 12 }}>
+          {skills.map((skill, i) => (
+            <div key={i} style={{ padding: 16, borderRadius: 8, border: `1px solid ${theme.surfaceColor}`, textAlign: "center" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{skill.name}</div>
+              {skill.level !== undefined && (
+                <div style={{ height: 4, borderRadius: 2, backgroundColor: `${theme.textColor}15`, marginTop: 8 }}>
+                  <div style={{ width: `${skill.level}%`, height: "100%", borderRadius: 2, backgroundColor: theme.primaryColor }} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── PROGRESS RING ──
+    case "progress_ring": {
+      const value = (c.value as number) ?? 0;
+      const size = (c.size as number) ?? 80;
+      const r = size / 2 - 6;
+      const circ = 2 * Math.PI * r;
+      const offset = circ - (value / 100) * circ;
+      return (
+        <div style={{ ...inlineStyles, textAlign: "center", display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
+          <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${theme.textColor}15`} strokeWidth={4} />
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={theme.primaryColor} strokeWidth={4} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.5s" }} />
+          </svg>
+          <span style={{ fontSize: 14, fontWeight: 600, marginTop: -size/2 - 8, position: "relative" }}>{value}%</span>
+          <span style={{ fontSize: 12, opacity: 0.6, marginTop: size/2 - 8 }}>{c.label as string}</span>
+        </div>
+      );
+    }
+
+    // ── STAT ──
+    case "stat":
+      return (
+        <div style={inlineStyles}>
+          <div style={{ fontSize: 36, fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor }}>
+            {(c.prefix as string) ?? ""}{c.value as string}{(c.suffix as string) ?? ""}
+          </div>
+          <div style={{ fontSize: 14, opacity: 0.6, marginTop: 4 }}>{c.label as string}</div>
+        </div>
+      );
+
+    // ── PROJECT CARD ──
+    case "project_card": {
+      const techStack = (c.techStack as string[]) ?? [];
+      return (
+        <div style={{ ...inlineStyles, borderColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.surfaceColor }}>
+          {(c.imageUrl as string) && (
+            <div style={{ aspectRatio: "16/9", overflow: "hidden" }}>
+              <img src={c.imageUrl as string} alt={c.title as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+          <div style={{ padding: 20 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: resolveFontFamily("heading", theme) }}>{c.title as string}</h3>
+            {(c.description as string) && <p style={{ fontSize: 14, opacity: 0.7, marginTop: 8, lineHeight: 1.6 }}>{c.description as string}</p>}
+            {techStack.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+                {techStack.map((t) => <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, backgroundColor: `${theme.primaryColor}15`, color: theme.primaryColor }}>{t}</span>)}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+              {(c.liveUrl as string) && <a href={c.liveUrl as string} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600, color: theme.primaryColor, textDecoration: "none" }}><ExternalLink size={14} />Live</a>}
+              {(c.repoUrl as string) && <a href={c.repoUrl as string} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, opacity: 0.6, textDecoration: "none", color: theme.textColor }}><Github size={14} />Source</a>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── EXPERIENCE ITEM ──
+    case "experience_item": {
+      const highlights = (c.highlights as string[]) ?? [];
+      return (
+        <div style={{ ...inlineStyles, borderLeft: `3px solid ${theme.primaryColor}`, position: "relative" }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: theme.primaryColor, position: "absolute", left: -7.5, top: 4 }} />
+          <h4 style={{ fontSize: 16, fontWeight: 700, fontFamily: resolveFontFamily("heading", theme) }}>{c.role as string}</h4>
+          <div style={{ fontSize: 14, color: theme.primaryColor, fontWeight: 600, marginTop: 2 }}>{c.company as string}</div>
+          <div style={{ fontSize: 12, opacity: 0.5, marginTop: 4 }}>
+            {c.startDate as string} — {(c.current as boolean) ? "Present" : (c.endDate as string)}
+            {(c.location as string) && ` · ${c.location as string}`}
+          </div>
+          {(c.description as string) && <p style={{ fontSize: 14, opacity: 0.7, marginTop: 8, lineHeight: 1.6 }}>{c.description as string}</p>}
+          {highlights.length > 0 && (
+            <ul style={{ marginTop: 8, paddingLeft: 16 }}>
+              {highlights.map((h, i) => <li key={i} style={{ fontSize: 13, opacity: 0.6, marginBottom: 4 }}>{h}</li>)}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    // ── TESTIMONIAL ──
+    case "testimonial":
+      return (
+        <div style={inlineStyles}>
+          <QuoteIcon size={24} style={{ opacity: 0.2, marginBottom: 12 }} />
+          <p style={{ fontSize: 16, lineHeight: 1.7, fontStyle: "italic" }}>{c.quote as string}</p>
+          <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
+            {(c.avatar as string) && <img src={c.avatar as string} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} alt="" />}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{c.author as string}</div>
+              {(c.role as string) && <div style={{ fontSize: 12, opacity: 0.5 }}>{c.role as string}</div>}
+            </div>
+          </div>
+        </div>
+      );
+
+    // ── CONTACT INFO ──
+    case "contact_info": {
+      const items = (c.items as Array<{type: string; label: string; value: string; icon?: string}>) ?? [];
+      const iconMap: Record<string, React.ComponentType<{size?: number}>> = { Mail, MapPin, Phone, Globe };
+      return (
+        <div style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}>
+          {items.map((item, i) => {
+            const Icon = iconMap[item.icon ?? ""] ?? Mail;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: 16, borderRadius: 8, border: `1px solid ${theme.surfaceColor}` }}>
+                <div style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: `${theme.primaryColor}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, opacity: 0.5 }}>{item.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{item.value}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ── CONTACT FORM ──
+    case "contact_form": {
+      const fields = (c.fields as Array<{name: string; label: string; type: string; placeholder?: string}>) ?? [];
+      return (
+        <form onSubmit={(e) => e.preventDefault()} style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}>
+          {fields.map((field) => (
+            <div key={field.name}>
+              <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.6, marginBottom: 6 }}>{field.label}</label>
+              {field.type === "textarea" ? (
+                <textarea rows={4} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14, resize: "vertical" }} />
+              ) : (
+                <input type={field.type} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14 }} />
+              )}
+            </div>
+          ))}
+          <button type="submit" style={{ padding: "12px 24px", borderRadius: parseInt(theme.borderRadius) || 6, backgroundColor: theme.primaryColor, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer" }}>
+            {(c.submitText as string) ?? "Send Message"}
+          </button>
+        </form>
+      );
+    }
+
+    // ── FALLBACK ──
+    default:
+      return (
+        <div style={{ ...inlineStyles, padding: 16, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 8, fontSize: 13, opacity: 0.5 }}>
+          Unknown block type: {block.type}
+        </div>
+      );
+  }
+}
