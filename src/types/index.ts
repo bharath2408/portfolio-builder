@@ -188,6 +188,7 @@ export interface BlockStyles {
   hoverOpacity?: number;
   hoverBackgroundColor?: string;
   cursor?: "default"|"pointer";
+  customCss?: string;
 }
 
 // ─── Section Styles (Frame properties) ────────────────────────────

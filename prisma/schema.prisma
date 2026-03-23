@@ -110,6 +110,7 @@ model Portfolio {
   theme    Theme?
   views       PortfolioView[]
   submissions ContactSubmission[]
+  versions    PortfolioVersion[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -247,6 +248,22 @@ model ContactSubmission {
 
   @@index([portfolioId])
   @@map("contact_submissions")
+}
+
+// ─── Version History ──────────────────────────────────────────────
+
+model PortfolioVersion {
+  id          String   @id @default(cuid())
+  portfolioId String
+  data        Json
+  label       String?
+  createdAt   DateTime @default(now())
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioId])
+  @@index([portfolioId, createdAt])
+  @@map("portfolio_versions")
 }
 
 // ─── Analytics ─────────────────────────────────────────────────────

@@ -81,6 +81,23 @@ function buildInlineStyles(styles: BlockWithStyles["styles"], theme: ThemeTokens
   if (styles.borderStyle) s.borderStyle = styles.borderStyle;
   if (styles.opacity !== undefined) s.opacity = styles.opacity;
   if (styles.overflow) s.overflow = styles.overflow;
+
+  // Parse customCss and merge into the style object
+  if (styles.customCss) {
+    const cssText = styles.customCss;
+    cssText.split(';').forEach(rule => {
+      const colonIdx = rule.indexOf(':');
+      if (colonIdx === -1) return;
+      const prop = rule.slice(0, colonIdx).trim();
+      const val = rule.slice(colonIdx + 1).trim();
+      if (prop && val) {
+        // Convert kebab-case to camelCase
+        const camelProp = prop.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase());
+        (s as Record<string, unknown>)[camelProp] = val;
+      }
+    });
+  }
+
   return s;
 }
 

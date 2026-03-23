@@ -21,6 +21,14 @@ interface BuilderState {
   devicePreview: "desktop" | "tablet" | "mobile";
   setDevicePreview: (device: "desktop" | "tablet" | "mobile") => void;
 
+  // Grid / Snap
+  gridSize: number;
+  snapToGrid: boolean;
+  showGrid: boolean;
+  setGridSize: (size: number) => void;
+  setSnapToGrid: (snap: boolean) => void;
+  setShowGrid: (show: boolean) => void;
+
   // Undo / Redo
   undoStack: BuilderSnapshot[];
   redoStack: BuilderSnapshot[];
@@ -62,6 +70,9 @@ const initialState = {
   rightPanelOpen: true,
   activeRightTab: "style" as const,
   devicePreview: "desktop" as const,
+  gridSize: 20,
+  snapToGrid: true,
+  showGrid: true,
   undoStack: [] as BuilderSnapshot[],
   redoStack: [] as BuilderSnapshot[],
 };
@@ -111,6 +122,10 @@ export const useBuilderStore = create<BuilderState>()(
 
       setDevicePreview: (device) =>
         set({ devicePreview: device }, false, "setDevicePreview"),
+
+      setGridSize: (size) => set({ gridSize: size }, false, "setGridSize"),
+      setSnapToGrid: (snap) => set({ snapToGrid: snap }, false, "setSnapToGrid"),
+      setShowGrid: (show) => set({ showGrid: show }, false, "setShowGrid"),
 
       pushSnapshot: (type: string) => {
         const currentPortfolio = usePortfolioStore.getState().currentPortfolio;

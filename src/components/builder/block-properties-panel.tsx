@@ -2,7 +2,7 @@
 
 import {
   AlignCenter, AlignLeft, AlignRight, ChevronDown,
-  Copy, Eye, EyeOff, Link2, Lock, Trash2, Unlock,
+  Code, Copy, Eye, EyeOff, Link2, Lock, Trash2, Unlock,
   Type, Paintbrush, Box, Layers, Move, Sparkles,
   Smartphone, Monitor, SquareDashedBottom,
 } from "lucide-react";
@@ -741,6 +741,23 @@ export function BlockPropertiesPanel({
               <Monitor className="h-3 w-3" style={{ opacity: 0.5 }} />
               Hide on desktop
             </label>
+          </div>
+        </Section>
+
+        {/* ── Custom CSS ────────────────────────────────────── */}
+        <Section title="Custom CSS" icon={<Code className="h-3 w-3" />} defaultOpen={false}>
+          <div>
+            <textarea
+              value={styles.customCss ?? ""}
+              onChange={(e) => updateStyle("customCss", e.target.value)}
+              placeholder={"/* Custom CSS */\nbackground: linear-gradient(...);\nbox-shadow: 0 4px 20px rgba(0,0,0,0.3);"}
+              rows={6}
+              className="w-full rounded-md border px-2.5 py-2 font-mono text-[10px] outline-none transition-colors focus:border-[var(--b-accent)]"
+              style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)", resize: "vertical" }}
+            />
+            <p className="mt-1.5 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+              CSS properties applied directly to this block. Use standard CSS syntax.
+            </p>
           </div>
         </Section>
       </div>

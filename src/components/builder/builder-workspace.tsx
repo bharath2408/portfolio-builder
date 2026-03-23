@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
+  Clock,
   Eye,
   EyeOff,
   ExternalLink,
@@ -79,7 +80,7 @@ import {
   BLOCK_CATEGORIES,
   getBlocksByCategory,
 } from "@/config/block-registry";
-import { apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type {
@@ -360,6 +361,66 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
   );
 }
 
+/* ── Version History Panel ──────────────────────────────────────── */
+
+function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }: { portfolioId: string; onClose: () => void; onRestore: () => void; dropdownColors: { bg: string; border: string; text: string; textMuted: string; hover: string; separator: string } }) {
+  const [versions, setVersions] = useState<Array<{ id: string; label: string | null; createdAt: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGet<Array<{ id: string; label: string | null; createdAt: string }>>(`/portfolios/${portfolioId}/versions`)
+      .then(setVersions)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [portfolioId]);
+
+  const restore = async (versionId: string) => {
+    if (!confirm("Restore this version? Current changes will be overwritten.")) return;
+    setRestoring(versionId);
+    try {
+      await apiPost(`/portfolios/${portfolioId}/versions/${versionId}/restore`, {});
+      onRestore();
+    } catch {} finally { setRestoring(null); }
+  };
+
+  const saveVersion = async () => {
+    await apiPost(`/portfolios/${portfolioId}/versions`, { label: "Manual save" });
+    const data = await apiGet<Array<{ id: string; label: string | null; createdAt: string }>>(`/portfolios/${portfolioId}/versions`);
+    setVersions(data);
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[300] bg-black/50" onClick={onClose} />
+      <div className="fixed right-0 top-0 z-[301] h-full w-80 overflow-y-auto" style={{ backgroundColor: dropdownColors.bg, borderLeft: `1px solid ${dropdownColors.border}` }}>
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
+          <h2 className="text-[14px] font-bold" style={{ color: dropdownColors.text }}>Version History</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={saveVersion} className="rounded-md px-2 py-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}>Save Now</button>
+            <button onClick={onClose} style={{ color: dropdownColors.textMuted }}><X className="h-4 w-4" /></button>
+          </div>
+        </div>
+        <div className="p-3 space-y-1">
+          {loading && <p className="text-[12px] py-8 text-center" style={{ color: dropdownColors.textMuted }}>Loading...</p>}
+          {!loading && versions.length === 0 && <p className="text-[12px] py-8 text-center" style={{ color: dropdownColors.textMuted }}>No versions saved yet</p>}
+          {versions.map((v) => (
+            <div key={v.id} className="flex items-center justify-between rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
+              <div>
+                <p className="text-[12px] font-medium" style={{ color: dropdownColors.text }}>{v.label ?? "Auto-save"}</p>
+                <p className="text-[10px]" style={{ color: dropdownColors.textMuted }}>{new Date(v.createdAt).toLocaleString()}</p>
+              </div>
+              <button onClick={() => restore(v.id)} disabled={restoring === v.id} className="rounded-md px-2 py-1 text-[10px] font-semibold" style={{ color: "var(--b-accent)" }}>
+                {restoring === v.id ? "..." : "Restore"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 interface BuilderWorkspaceProps {
   portfolio: PortfolioWithRelations;
 }
@@ -415,6 +476,7 @@ export function BuilderWorkspace({
   const [showMinimap, setShowMinimap] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -634,11 +696,15 @@ export function BuilderWorkspace({
         .find((s) => s.id === selectedSectionId)
         ?.blocks.find((b) => b.id === blockId);
       if (!block) return;
+      const gs = builderStore.gridSize;
+      const snap = builderStore.snapToGrid;
+      const sx = snap ? Math.round(newX / gs) * gs : newX;
+      const sy = snap ? Math.round(newY / gs) * gs : newY;
       portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-        styles: { ...(block.styles as BlockStyles), x: newX, y: newY },
+        styles: { ...(block.styles as BlockStyles), x: sx, y: sy },
       });
     },
-    [selectedSectionId, portfolio.sections, portfolioStore],
+    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid],
   );
 
   const resizeBlock = useCallback(
@@ -654,11 +720,17 @@ export function BuilderWorkspace({
         .find((s) => s.id === selectedSectionId)
         ?.blocks.find((b) => b.id === blockId);
       if (!block) return;
+      const gs = builderStore.gridSize;
+      const snap = builderStore.snapToGrid;
+      const sx = snap ? Math.round(newX / gs) * gs : newX;
+      const sy = snap ? Math.round(newY / gs) * gs : newY;
+      const sw = snap ? Math.round(newW / gs) * gs : newW;
+      const sh = snap ? Math.round(newH / gs) * gs : newH;
       portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-        styles: { ...(block.styles as BlockStyles), x: newX, y: newY, w: newW, h: newH },
+        styles: { ...(block.styles as BlockStyles), x: sx, y: sy, w: sw, h: sh },
       });
     },
-    [selectedSectionId, portfolio.sections, portfolioStore],
+    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid],
   );
 
   const updateBlock = (
@@ -871,6 +943,8 @@ export function BuilderWorkspace({
       portfolioStore.setCurrentPortfolio({ ...portfolio, status: "PUBLISHED" as PortfolioStatus });
       builderStore.markSaved();
       setPublishSuccess(true);
+      // Save a version snapshot on publish
+      apiPost(`/portfolios/${portfolio.id}/versions`, { label: "Published" }).catch(() => {});
       // Auto-dismiss success after 4 seconds
       setTimeout(() => setPublishSuccess(false), 4000);
     } catch (err) {
@@ -1272,6 +1346,16 @@ ${sectionsHtml}
                 Export as HTML
                 <DropdownMenuShortcut>Ctrl+H</DropdownMenuShortcut>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowVersions(true)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                Version History
+              </DropdownMenuItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
                 onClick={() => setShowPreview(true)}
@@ -1386,6 +1470,27 @@ ${sectionsHtml}
               >
                 <Maximize className="mr-2 h-3.5 w-3.5" />
                 Minimap
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuCheckboxItem
+                checked={builderStore.showGrid}
+                onCheckedChange={(v) => builderStore.setShowGrid(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                Show Grid
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={builderStore.snapToGrid}
+                onCheckedChange={(v) => builderStore.setSnapToGrid(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                Snap to Grid
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
@@ -2031,6 +2136,7 @@ ${sectionsHtml}
             onTransformChange={setTransform}
             onCanvasClick={drawMode ? undefined : handleCanvasClick}
             cursorOverride={drawMode ? "crosshair" : undefined}
+            showGrid={builderStore.showGrid}
           >
             <div style={{ position: "relative" }}>
               {visibleSections.map((section) => {
@@ -2618,6 +2724,43 @@ ${sectionsHtml}
                         ))}
                       </div>
                     </div>
+
+                    {/* Auto Layout */}
+                    <div style={{ borderTop: "1px solid var(--b-border)", padding: "12px" }}>
+                      <button
+                        onClick={() => {
+                          if (!selectedSectionId) return;
+                          const section = portfolio.sections.find(s => s.id === selectedSectionId);
+                          if (!section) return;
+
+                          builderStore.pushSnapshot("auto-layout");
+
+                          const sorted = [...section.blocks].sort((a, b) => a.sortOrder - b.sortOrder);
+                          const padding = 40;
+                          const gap = 16;
+                          let currentY = padding;
+
+                          for (const block of sorted) {
+                            const h = block.styles.h || 60;
+                            portfolioStore.updateBlockInSection(selectedSectionId, block.id, {
+                              styles: { ...(block.styles as BlockStyles), x: padding, y: currentY, w: (ss.frameWidth ? ss.frameWidth - padding * 2 : 1360) },
+                            } as Partial<BlockWithStyles>);
+                            currentY += h + gap;
+                          }
+
+                          builderStore.setDirty(true);
+                          scheduleAutoSave();
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-md py-2 text-[11px] font-semibold transition-colors"
+                        style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-2)", border: "1px solid var(--b-border)" }}
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                        Auto Layout
+                      </button>
+                      <p className="mt-1.5 text-center text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                        Stack all blocks vertically with even spacing
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
@@ -2713,6 +2856,16 @@ ${sectionsHtml}
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Version History Panel ────────────────────────────────── */}
+      {showVersions && (
+        <VersionHistoryPanel
+          portfolioId={portfolio.id}
+          onClose={() => setShowVersions(false)}
+          onRestore={() => { setShowVersions(false); window.location.reload(); }}
+          dropdownColors={dropdownColors}
+        />
       )}
     </div>
   );

@@ -20,6 +20,7 @@ export interface CanvasEngineProps {
   onCanvasClick?: (e: ReactMouseEvent) => void;
   className?: string;
   cursorOverride?: string;
+  showGrid?: boolean;
 }
 
 const MIN_ZOOM = 0.1;
@@ -79,6 +80,7 @@ export function CanvasEngine({
   onCanvasClick,
   className,
   cursorOverride,
+  showGrid = true,
 }: CanvasEngineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -226,11 +228,13 @@ export function CanvasEngine({
       onClick={handleCanvasClick}
     >
       {/* CSS grid background */}
-      <CanvasGrid
-        scale={transform.scale}
-        offsetX={transform.x}
-        offsetY={transform.y}
-      />
+      {showGrid && (
+        <CanvasGrid
+          scale={transform.scale}
+          offsetX={transform.x}
+          offsetY={transform.y}
+        />
+      )}
 
       {/* Subtle radial vignette for depth */}
       <div
