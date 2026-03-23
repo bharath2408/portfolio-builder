@@ -6,7 +6,7 @@ import {
   Type, Paintbrush, Box, Layers, Move, Sparkles,
   Smartphone, Monitor, SquareDashedBottom,
 } from "lucide-react";
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 import { ImageUpload } from "@/components/common/image-upload";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
@@ -302,17 +302,24 @@ export function BlockPropertiesPanel({
     setStyles(block.styles);
   }, [block.id, block.content, block.styles]);
 
+  const contentRef = useRef(content);
+  contentRef.current = content;
+  const stylesRef = useRef(styles);
+  stylesRef.current = styles;
+
   const updateContent = useCallback((key: string, value: unknown) => {
-    const updated = { ...content, [key]: value };
+    const updated = { ...contentRef.current, [key]: value };
+    contentRef.current = updated;
     setContent(updated);
     onUpdateContent(updated);
-  }, [content, onUpdateContent]);
+  }, [onUpdateContent]);
 
   const updateStyle = useCallback((key: keyof BlockStyles, value: unknown) => {
-    const updated = { ...styles, [key]: value };
+    const updated = { ...stylesRef.current, [key]: value };
+    stylesRef.current = updated;
     setStyles(updated);
     onUpdateStyles(updated);
-  }, [styles, onUpdateStyles]);
+  }, [onUpdateStyles]);
 
   const isTextType = ["heading", "text", "quote", "list", "button", "badge", "stat", "link", "code"].includes(block.type);
 
@@ -782,12 +789,20 @@ function ButtonContentEditor({
   const isInternalLink = currentUrl.startsWith("#section-");
   const linkedSectionId = isInternalLink ? currentUrl.replace("#section-", "") : "";
 
+  // Track mode explicitly so toggling to "section" works even with empty URL
+  const [linkMode, setLinkMode] = useState<"url" | "section">(isInternalLink ? "section" : "url");
+
+  // Sync mode when content changes externally
+  useEffect(() => {
+    setLinkMode(currentUrl.startsWith("#section-") ? "section" : "url");
+  }, [currentUrl]);
+
   const linkToSection = (sectionId: string) => {
     if (sectionId) {
       updateContent("url", `#section-${sectionId}`);
       updateContent("newTab", false);
     } else {
-      updateContent("url", "#");
+      updateContent("url", "");
     }
   };
 
@@ -800,10 +815,15 @@ function ButtonContentEditor({
       <div>
         <SubLabel>Link To</SubLabel>
         <ToggleGroup
-          value={isInternalLink ? "section" : "url"}
+          value={linkMode}
           onChange={(v) => {
-            if (v === "section" && sections[0]) linkToSection(sections[0].id);
-            else updateContent("url", "#");
+            const mode = v as "url" | "section";
+            setLinkMode(mode);
+            if (mode === "section") {
+              if (sections[0]) linkToSection(sections[0].id);
+            } else {
+              updateContent("url", "");
+            }
           }}
           options={[
             { value: "url", label: "URL" },
@@ -812,27 +832,35 @@ function ButtonContentEditor({
         />
       </div>
 
-      {isInternalLink ? (
+      {linkMode === "section" ? (
         <div>
           <SubLabel>Target Section</SubLabel>
-          <select
-            value={linkedSectionId}
-            onChange={(e) => linkToSection(e.target.value)}
-            className="h-7 w-full rounded-md border px-2 text-[11px] outline-none"
-            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
-          >
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          {linkedSection && (
-            <div
-              className="mt-1.5 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium"
-              style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
-            >
-              <Link2 className="h-3 w-3" />
-              Scrolls to &quot;{linkedSection.name}&quot;
-            </div>
+          {sections.length > 0 ? (
+            <>
+              <select
+                value={linkedSectionId}
+                onChange={(e) => linkToSection(e.target.value)}
+                className="h-7 w-full rounded-md border px-2 text-[11px] outline-none"
+                style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+              >
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              {linkedSection && (
+                <div
+                  className="mt-1.5 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-medium"
+                  style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+                >
+                  <Link2 className="h-3 w-3" />
+                  Scrolls to &quot;{linkedSection.name}&quot;
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-[10px]" style={{ color: "var(--b-text-4)" }}>
+              No sections available. Add sections to your portfolio first.
+            </p>
           )}
         </div>
       ) : (
@@ -846,7 +874,7 @@ function ButtonContentEditor({
         </>
       )}
 
-      {!isInternalLink && (
+      {linkMode === "url" && (
         <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px]" style={{ color: "var(--b-text-2)" }}>
           <input type="checkbox" checked={(content.newTab as boolean) ?? false} onChange={(e) => updateContent("newTab", e.target.checked)} className="rounded" />
           Open in new tab

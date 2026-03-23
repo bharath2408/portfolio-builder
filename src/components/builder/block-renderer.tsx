@@ -81,6 +81,28 @@ function buildInlineStyles(styles: BlockWithStyles["styles"], theme: ThemeTokens
   if (styles.borderStyle) s.borderStyle = styles.borderStyle;
   if (styles.opacity !== undefined) s.opacity = styles.opacity;
   if (styles.overflow) s.overflow = styles.overflow;
+  if (styles.cursor) s.cursor = styles.cursor;
+
+  // Box shadow presets
+  if (styles.boxShadow && styles.boxShadow !== "none") {
+    const shadowMap: Record<string, string> = {
+      sm: "0 1px 2px 0 rgba(0,0,0,0.05)",
+      md: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)",
+      lg: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+      xl: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+    };
+    s.boxShadow = shadowMap[styles.boxShadow] ?? styles.boxShadow;
+  }
+
+  // Background gradient (overrides backgroundColor)
+  if (styles.backgroundGradient) {
+    s.background = styles.backgroundGradient;
+  }
+
+  // Hover effects via CSS custom properties (consumed by wrapper)
+  if (styles.hoverScale) (s as Record<string, unknown>)["--hover-scale"] = String(styles.hoverScale);
+  if (styles.hoverOpacity !== undefined) (s as Record<string, unknown>)["--hover-opacity"] = String(styles.hoverOpacity);
+  if (styles.hoverBackgroundColor) (s as Record<string, unknown>)["--hover-bg"] = resolveColor(styles.hoverBackgroundColor, theme);
 
   // Parse customCss and merge into the style object
   if (styles.customCss) {
@@ -226,7 +248,44 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       if (variant === "outline") { btnStyle.border = `2px solid ${theme.primaryColor}`; btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
       if (variant === "ghost") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
       if (variant === "link") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; btnStyle.textDecoration = "underline"; }
-      return <a href={(c.url as string) ?? "#"} target={(c.newTab as boolean) ? "_blank" : undefined} rel="noopener noreferrer" style={btnStyle}>{c.text as string}{(c.icon as string) && <ArrowRight size={16} />}</a>;
+      const btnUrl = (c.url as string) ?? "#";
+      const isSection = btnUrl.startsWith("#section-");
+      return (
+        <a
+          href={btnUrl}
+          target={!isSection && (c.newTab as boolean) ? "_blank" : undefined}
+          rel="noopener noreferrer"
+          style={btnStyle}
+          onClick={isSection ? (e) => {
+            e.preventDefault();
+            const el = document.getElementById(btnUrl.slice(1));
+            el?.scrollIntoView({ behavior: "smooth" });
+          } : undefined}
+        >
+          {c.text as string}{(c.icon as string) && <ArrowRight size={16} />}
+        </a>
+      );
+    }
+
+    // ── LINK ──
+    case "link": {
+      const linkUrl = (c.url as string) ?? "#";
+      const isSection = linkUrl.startsWith("#section-");
+      return (
+        <a
+          href={linkUrl}
+          target={!isSection && (c.newTab as boolean) ? "_blank" : undefined}
+          rel="noopener noreferrer"
+          style={{ ...inlineStyles, color: inlineStyles.color ?? theme.primaryColor, textDecoration: "underline", cursor: "pointer" }}
+          onClick={isSection ? (e) => {
+            e.preventDefault();
+            const el = document.getElementById(linkUrl.slice(1));
+            el?.scrollIntoView({ behavior: "smooth" });
+          } : undefined}
+        >
+          {c.text as string}
+        </a>
+      );
     }
 
     // ── SOCIAL LINKS ──

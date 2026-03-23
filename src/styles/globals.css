@@ -337,3 +337,13 @@
   from { opacity: 0; filter: blur(8px); }
   to { opacity: 1; filter: blur(0); }
 }
+
+/* Block hover effects — driven by CSS custom properties set in inline styles */
+.block-hover {
+  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+}
+.block-hover:hover {
+  transform: scale(var(--hover-scale, 1));
+  opacity: var(--hover-opacity, 1);
+  background-color: var(--hover-bg, unset);
+}

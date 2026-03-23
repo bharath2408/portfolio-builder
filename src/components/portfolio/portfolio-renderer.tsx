@@ -238,10 +238,16 @@ function PortfolioSection({
           >
             {visibleBlocks.map((block) => {
               const bs = block.styles as BlockStyles;
+              const responsiveClass = [
+                "absolute",
+                bs.hideOnMobile ? "hidden md:block" : "",
+                bs.hideOnDesktop ? "md:hidden" : "",
+                (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
+              ].filter(Boolean).join(" ");
               return (
                 <div
                   key={block.id}
-                  className="absolute"
+                  className={responsiveClass}
                   data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
                   style={{
                     left: bs.x ?? 0,
@@ -252,6 +258,7 @@ function PortfolioSection({
                       ? `rotate(${bs.rotation}deg)`
                       : undefined,
                     animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
+                    transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
                   }}
                 >
                   <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
@@ -282,12 +289,19 @@ function PortfolioSection({
         >
           {visibleBlocks.map((block) => {
             const bs = block.styles as BlockStyles;
+            const responsiveClass = [
+              bs.hideOnMobile ? "hidden md:block" : "",
+              bs.hideOnDesktop ? "md:hidden" : "",
+              (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
+            ].filter(Boolean).join(" ") || undefined;
             return (
               <div
                 key={block.id}
+                className={responsiveClass}
                 data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
                 style={{
                   animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
+                  transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
                 }}
               >
                 <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
