@@ -112,7 +112,12 @@ function PortfolioSection({
   theme: ThemeTokens;
 }) {
   const ss = section.styles as SectionStyles;
-  const isAbsolute = ss.layout === "absolute";
+  // Detect absolute layout: if any block has explicit x/y coordinates, or if frameWidth is set, use absolute positioning
+  const hasAbsoluteBlocks = section.blocks.some((b) => {
+    const bs = b.styles as BlockStyles;
+    return (bs.x !== undefined && bs.x !== 0) || (bs.y !== undefined && bs.y !== 0);
+  });
+  const isAbsolute = ss.layout === "absolute" || hasAbsoluteBlocks || ss.frameWidth !== undefined;
   const frameWidth = ss.frameWidth ?? 1440;
   const frameHeight = ss.frameHeight ?? 800;
 
@@ -159,6 +164,20 @@ function PortfolioSection({
 
   if (visibleBlocks.length === 0) return null;
 
+  // Calculate actual content height from block positions
+  // Use the lowest block's y + estimated height, capped at frame height
+  const contentHeight = isAbsolute ? (() => {
+    let maxBottom = 0;
+    for (const block of visibleBlocks) {
+      const bs = block.styles as BlockStyles;
+      const blockY = (bs.y ?? 0);
+      const blockH = (bs.h && bs.h > 0) ? bs.h : 80; // estimate auto-height blocks at 80px
+      maxBottom = Math.max(maxBottom, blockY + blockH);
+    }
+    // Add some padding at the bottom, but don't exceed frame height
+    return Math.min(maxBottom + 60, frameHeight);
+  })() : frameHeight;
+
   return (
     <section ref={containerRef} id={`section-${section.id}`} style={sectionStyle}>
       {isAbsolute ? (
@@ -168,7 +187,7 @@ function PortfolioSection({
           style={{
             width: "100%",
             maxWidth: frameWidth,
-            height: frameHeight * scale,
+            height: contentHeight * scale,
           }}
         >
           <div
@@ -177,7 +196,7 @@ function PortfolioSection({
               top: 0,
               left: 0,
               width: frameWidth,
-              height: frameHeight,
+              height: contentHeight,
               transform: `scale(${scale})`,
               transformOrigin: "top left",
             }}
