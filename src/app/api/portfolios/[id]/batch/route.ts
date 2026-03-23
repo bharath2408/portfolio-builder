@@ -55,10 +55,12 @@ export const PUT = withErrorHandler(async (req, ctx) => {
     return successResponse({ saved: true });
   }
 
-  // Build all upsert operations for a single transaction
-  const operations = [];
+  // Build all operations for a single transaction
+  const operations: Prisma.PrismaPromise<unknown>[] = [];
 
   for (const section of body.sections) {
+    const blockIdsInStore = section.blocks.map((b: BatchBlock) => b.id);
+
     // Upsert section
     operations.push(
       db.section.update({
@@ -69,6 +71,13 @@ export const PUT = withErrorHandler(async (req, ctx) => {
           styles: section.styles as Prisma.InputJsonValue,
           isVisible: section.isVisible ?? true,
         },
+      }),
+    );
+
+    // Delete blocks that are NOT in the store (were deleted client-side)
+    operations.push(
+      db.block.deleteMany({
+        where: { sectionId: section.id, id: { notIn: blockIdsInStore } },
       }),
     );
 

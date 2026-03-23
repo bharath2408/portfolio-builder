@@ -665,24 +665,24 @@ export function BuilderWorkspace({
 
     // Local-first: generate ID client-side, add to store instantly
     // Block is persisted via batch save (auto-save or manual)
-    const newBlock: BlockWithStyles = {
+    const newBlock = {
       id: crypto.randomUUID(),
       sectionId,
       type,
       sortOrder: existingBlocks.length,
       isVisible: true,
       isLocked: false,
-      content: def.defaultContent as Record<string, unknown>,
+      content: def.defaultContent,
       styles: {
         ...def.defaultStyles,
         x: 40,
         y: maxY + 16,
         w: DEFAULT_BLOCK_W,
         h: DEFAULT_BLOCK_H,
-      } as BlockStyles,
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    } as unknown as BlockWithStyles;
 
     builderStore.pushSnapshot("add-block");
     portfolioStore.addBlockToSection(sectionId, newBlock);
@@ -750,17 +750,15 @@ export function BuilderWorkspace({
     scheduleAutoSave();
   };
 
-  const deleteBlock = async (blockId: string, sectionId: string) => {
-    try {
-      builderStore.pushSnapshot("delete-block");
-      await apiDelete(
-        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks/${blockId}`,
-      );
-      portfolioStore.removeBlockFromSection(sectionId, blockId);
-      if (selectedBlockId === blockId) setSelectedBlockId(null);
-    } catch {
-      /* handle */
-    }
+  const deleteBlock = (blockId: string, sectionId: string) => {
+    builderStore.pushSnapshot("delete-block");
+    // Remove from store instantly (local-first)
+    portfolioStore.removeBlockFromSection(sectionId, blockId);
+    if (selectedBlockId === blockId) setSelectedBlockId(null);
+    // Delete from DB in background
+    apiDelete(`/portfolios/${portfolio.id}/sections/${sectionId}/blocks/${blockId}`).catch(() => {});
+    builderStore.setDirty(true);
+    scheduleAutoSave();
   };
 
   const duplicateBlock = async (
@@ -1209,18 +1207,18 @@ ${sectionsHtml}
         const section = portfolio.sections.find(s => s.id === selectedSectionId);
         const existingBlocks = section?.blocks ?? [];
         const maxY = existingBlocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20);
-        const pastedBlock: BlockWithStyles = {
+        const pastedBlock = {
           id: crypto.randomUUID(),
           sectionId: selectedSectionId,
           type: clip.type,
           sortOrder: existingBlocks.length,
           isVisible: true,
           isLocked: false,
-          content: structuredClone(clip.content) as Record<string, unknown>,
-          styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 } as BlockStyles,
+          content: structuredClone(clip.content),
+          styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 },
           createdAt: new Date(),
           updatedAt: new Date(),
-        };
+        } as unknown as BlockWithStyles;
         builderStore.pushSnapshot("paste-block");
         portfolioStore.addBlockToSection(selectedSectionId, pastedBlock);
         setSelectedBlockId(pastedBlock.id);
