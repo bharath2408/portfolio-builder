@@ -12,11 +12,11 @@ export const authConfig: NextAuthConfig = {
     error: "/login",
   },
   providers: [
-    GitHub({
+    GitHub({ allowDangerousEmailAccountLinking: true,
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
     }),
-    Google({
+    Google({ allowDangerousEmailAccountLinking: true,
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),

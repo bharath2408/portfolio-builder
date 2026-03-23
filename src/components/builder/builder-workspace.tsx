@@ -1675,9 +1675,7 @@ ${sectionsHtml}
           <button
             className="builder-toolbar-btn flex h-8 w-8 items-center justify-center rounded-lg"
             style={{ color: "var(--b-text-3)" }}
-            onClick={() =>
-              setStudioTheme((t) => (t === "dark" ? "light" : "dark"))
-            }
+            onClick={toggleStudioTheme}
             title={`Switch to ${studioTheme === "dark" ? "light" : "dark"} mode`}
           >
             {studioTheme === "dark" ? (

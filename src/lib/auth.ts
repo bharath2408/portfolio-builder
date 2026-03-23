@@ -71,23 +71,54 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider !== "credentials" && user.email) {
         const existing = await db.user.findUnique({
           where: { email: user.email },
-          select: { username: true },
+          select: { id: true, username: true },
         });
 
-        if (!existing?.username) {
-          const baseUsername = user.email.split("@")[0]?.replace(/[^a-z0-9]/gi, "") ?? "user";
-          let username = baseUsername;
-          let counter = 1;
+        if (existing) {
+          // Link this OAuth account to the existing user if not already linked
+          const linkedAccount = await db.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+          });
 
-          while (await db.user.findUnique({ where: { username } })) {
-            username = `${baseUsername}${counter}`;
-            counter++;
+          if (!linkedAccount) {
+            await db.account.create({
+              data: {
+                userId: existing.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state as string | undefined,
+              },
+            });
           }
 
-          await db.user.update({
-            where: { email: user.email },
-            data: { username },
-          });
+          // Set username if missing
+          if (!existing.username) {
+            const baseUsername = user.email.split("@")[0]?.replace(/[^a-z0-9]/gi, "") ?? "user";
+            let username = baseUsername;
+            let counter = 1;
+
+            while (await db.user.findUnique({ where: { username } })) {
+              username = `${baseUsername}${counter}`;
+              counter++;
+            }
+
+            await db.user.update({
+              where: { id: existing.id },
+              data: { username },
+            });
+          }
         }
       }
 
