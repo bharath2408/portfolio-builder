@@ -458,25 +458,38 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
 
     // ── RECTANGLE ──
     case "rectangle": {
+      const fillType = (c.fillType as string) ?? "color";
       const fill = (c.fill as string) || block.styles.backgroundColor || "#6366f1";
+      const imageSrc = c.imageSrc as string;
+      const objectFit = ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"];
       const bw = (c.borderWidth as number) ?? 0;
       const bc = (c.borderColor as string) || "transparent";
+      const radius = block.styles.borderRadius ?? 8;
       return (
         <div style={{
           ...inlineStyles,
           width: "100%",
           height: "100%",
           minHeight: 40,
-          backgroundColor: fill,
+          backgroundColor: fillType === "image" ? "transparent" : fill,
           border: bw > 0 ? `${bw}px solid ${bc}` : "none",
-          borderRadius: block.styles.borderRadius ?? 8,
-        }} />
+          borderRadius: radius,
+          overflow: "hidden",
+          position: "relative",
+        }}>
+          {fillType === "image" && imageSrc && (
+            <img src={imageSrc} alt="" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: radius }} />
+          )}
+        </div>
       );
     }
 
     // ── CIRCLE ──
     case "circle": {
+      const fillType = (c.fillType as string) ?? "color";
       const fill = (c.fill as string) || block.styles.backgroundColor || "#06b6d4";
+      const imageSrc = c.imageSrc as string;
+      const objectFit = ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"];
       const bw = (c.borderWidth as number) ?? 0;
       const bc = (c.borderColor as string) || "transparent";
       return (
@@ -485,10 +498,16 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           width: "100%",
           height: "100%",
           minHeight: 40,
-          backgroundColor: fill,
+          backgroundColor: fillType === "image" ? "transparent" : fill,
           border: bw > 0 ? `${bw}px solid ${bc}` : "none",
           borderRadius: "50%",
-        }} />
+          overflow: "hidden",
+          position: "relative",
+        }}>
+          {fillType === "image" && imageSrc && (
+            <img src={imageSrc} alt="" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: "50%" }} />
+          )}
+        </div>
       );
     }
 

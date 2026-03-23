@@ -983,13 +983,43 @@ function ContentEditor({
         </div>
       );
     case "rectangle":
-    case "circle":
+    case "circle": {
+      const fillType = (content.fillType as string) ?? "color";
       return (
         <div className="space-y-2.5">
+          {/* Fill type toggle */}
           <div>
-            <SubLabel>Fill Color</SubLabel>
-            <ColorInput value={(content.fill as string) ?? ""} onChange={(v) => updateContent("fill", v)} placeholder="#6366f1" />
+            <SubLabel>Fill Type</SubLabel>
+            <ToggleGroup
+              value={fillType}
+              onChange={(v) => updateContent("fillType", v)}
+              options={[
+                { value: "color", label: "Color" },
+                { value: "image", label: "Image" },
+              ]}
+            />
           </div>
+
+          {fillType === "color" ? (
+            <div>
+              <SubLabel>Fill Color</SubLabel>
+              <ColorInput value={(content.fill as string) ?? ""} onChange={(v) => updateContent("fill", v)} placeholder="#6366f1" />
+            </div>
+          ) : (
+            <div>
+              <SubLabel>Image</SubLabel>
+              <ImageUpload
+                value={(content.imageSrc as string) ?? ""}
+                onChange={(v) => updateContent("imageSrc", v)}
+              />
+              {field("Object Fit", "objectFit", { type: "select", options: [
+                { label: "Cover", value: "cover" },
+                { label: "Contain", value: "contain" },
+                { label: "Fill", value: "fill" },
+              ]})}
+            </div>
+          )}
+
           <div>
             <SubLabel>Border Color</SubLabel>
             <ColorInput value={(content.borderColor as string) ?? ""} onChange={(v) => updateContent("borderColor", v)} placeholder="none" />
@@ -997,6 +1027,7 @@ function ContentEditor({
           {field("Border Width", "borderWidth", { type: "number", placeholder: "0" })}
         </div>
       );
+    }
     case "line":
       return (
         <div className="space-y-2.5">

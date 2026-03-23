@@ -9,8 +9,8 @@ interface ImageUploadProps {
   compact?: boolean;
 }
 
-const CLOUD_NAME = "db2y398gb";
-const UPLOAD_PRESET = "foliocraft";
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "";
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
 
 export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
