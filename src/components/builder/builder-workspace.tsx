@@ -653,7 +653,7 @@ export function BuilderWorkspace({
 
   // ── Block CRUD ────────────────────────────────────────────────
 
-  const addBlock = async (sectionId: string, type: BlockType) => {
+  const addBlock = (sectionId: string, type: BlockType) => {
     const def = BLOCK_REGISTRY[type];
     if (!def) return;
     const section = portfolio.sections.find((s) => s.id === sectionId);
@@ -663,30 +663,34 @@ export function BuilderWorkspace({
       return Math.max(max, by);
     }, 20);
 
-    try {
-      const res = await apiPost<BlockWithStyles>(
-        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks`,
-        {
-          type,
-          sortOrder: existingBlocks.length,
-          content: def.defaultContent,
-          styles: {
-            ...def.defaultStyles,
-            x: 40,
-            y: maxY + 16,
-            w: DEFAULT_BLOCK_W,
-            h: DEFAULT_BLOCK_H,
-          },
-        },
-      );
-      builderStore.pushSnapshot("add-block");
-      portfolioStore.addBlockToSection(sectionId, res);
-      setSelectedBlockId(res.id);
-      setSelectedSectionId(sectionId);
-      setRightPanel("properties");
-    } catch {
-      /* handle */
-    }
+    // Local-first: generate ID client-side, add to store instantly
+    // Block is persisted via batch save (auto-save or manual)
+    const newBlock: BlockWithStyles = {
+      id: crypto.randomUUID(),
+      sectionId,
+      type,
+      sortOrder: existingBlocks.length,
+      isVisible: true,
+      isLocked: false,
+      content: def.defaultContent as Record<string, unknown>,
+      styles: {
+        ...def.defaultStyles,
+        x: 40,
+        y: maxY + 16,
+        w: DEFAULT_BLOCK_W,
+        h: DEFAULT_BLOCK_H,
+      } as BlockStyles,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    builderStore.pushSnapshot("add-block");
+    portfolioStore.addBlockToSection(sectionId, newBlock);
+    setSelectedBlockId(newBlock.id);
+    setSelectedSectionId(sectionId);
+    setRightPanel("properties");
+    builderStore.setDirty(true);
+    scheduleAutoSave();
   };
 
   const moveBlock = useCallback(
@@ -1198,27 +1202,31 @@ ${sectionsHtml}
         }
         return;
       }
-      // Ctrl+V → Paste block with copied content & styles
+      // Ctrl+V → Paste block with copied content & styles (local-first)
       if (mod && e.key === "v" && builderStore.clipboard && selectedSectionId) {
         e.preventDefault();
         const clip = builderStore.clipboard;
         const section = portfolio.sections.find(s => s.id === selectedSectionId);
         const existingBlocks = section?.blocks ?? [];
         const maxY = existingBlocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20);
-        apiPost<BlockWithStyles>(
-          `/portfolios/${portfolio.id}/sections/${selectedSectionId}/blocks`,
-          {
-            type: clip.type,
-            sortOrder: existingBlocks.length,
-            content: clip.content,
-            styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 },
-          },
-        ).then((res) => {
-          builderStore.pushSnapshot("paste-block");
-          portfolioStore.addBlockToSection(selectedSectionId, res);
-          setSelectedBlockId(res.id);
-          setRightPanel("properties");
-        }).catch(() => {});
+        const pastedBlock: BlockWithStyles = {
+          id: crypto.randomUUID(),
+          sectionId: selectedSectionId,
+          type: clip.type,
+          sortOrder: existingBlocks.length,
+          isVisible: true,
+          isLocked: false,
+          content: structuredClone(clip.content) as Record<string, unknown>,
+          styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 } as BlockStyles,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        builderStore.pushSnapshot("paste-block");
+        portfolioStore.addBlockToSection(selectedSectionId, pastedBlock);
+        setSelectedBlockId(pastedBlock.id);
+        setRightPanel("properties");
+        builderStore.setDirty(true);
+        scheduleAutoSave();
         return;
       }
 

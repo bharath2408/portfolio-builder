@@ -72,12 +72,22 @@ export const PUT = withErrorHandler(async (req, ctx) => {
       }),
     );
 
-    // Upsert each block
+    // Upsert each block (supports client-generated IDs for new blocks)
     for (const block of section.blocks) {
       operations.push(
-        db.block.update({
+        db.block.upsert({
           where: { id: block.id },
-          data: {
+          update: {
+            type: block.type,
+            sortOrder: block.sortOrder,
+            content: block.content as Prisma.InputJsonValue,
+            styles: block.styles as Prisma.InputJsonValue,
+            isVisible: block.isVisible ?? true,
+            isLocked: block.isLocked ?? false,
+          },
+          create: {
+            id: block.id,
+            sectionId: section.id,
             type: block.type,
             sortOrder: block.sortOrder,
             content: block.content as Prisma.InputJsonValue,
