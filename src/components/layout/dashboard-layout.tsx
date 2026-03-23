@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/config/constants";
@@ -69,6 +69,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, update: updateSession } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
+
+  // Re-fetch session when settings page broadcasts an update
+  useEffect(() => {
+    const handler = () => { updateSession(); };
+    window.addEventListener("session-updated", handler);
+    return () => window.removeEventListener("session-updated", handler);
+  }, [updateSession]);
 
   const currentTheme = session?.user?.theme ?? "light";
   const isDark = currentTheme === "dark";
@@ -288,9 +295,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* User avatar */}
-            <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[10px] font-bold text-teal-600 ring-1 ring-teal-500/15 dark:text-teal-400 lg:flex">
-              {getInitials(session?.user?.name)}
-            </div>
+            {session?.user?.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name ?? "Profile"}
+                className="hidden h-8 w-8 rounded-full object-cover ring-1 ring-teal-500/15 lg:block"
+              />
+            ) : (
+              <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[10px] font-bold text-teal-600 ring-1 ring-teal-500/15 dark:text-teal-400 lg:flex">
+                {getInitials(session?.user?.name)}
+              </div>
+            )}
           </div>
         </header>
 

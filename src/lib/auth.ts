@@ -39,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { id: true, role: true, username: true, theme: true },
+          select: { id: true, role: true, username: true, theme: true, image: true },
         });
 
         if (dbUser) {
@@ -47,6 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.role = dbUser.role;
           token.username = dbUser.username;
           token.theme = dbUser.theme;
+          token.userImage = dbUser.image;
         }
       }
 
@@ -54,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = session.name as string | undefined;
         token.username = session.username as string | undefined;
         if (session.theme) token.theme = session.theme as string;
+        if (session.image !== undefined) token.userImage = session.image as string;
       }
 
       return token;
@@ -64,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as string;
         session.user.username = token.username as string | null;
         session.user.theme = (token.theme as string) ?? "light";
+        session.user.image = (token.userImage as string) || (token.picture as string) || null;
       }
       return session;
     },
