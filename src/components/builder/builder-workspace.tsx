@@ -1507,10 +1507,10 @@ ${sectionsHtml}
         </div>
 
         {/* Center: Name + Status */}
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <div className="flex items-center gap-2">
+        <div className="pointer-events-none absolute inset-0 hidden items-center justify-center md:flex">
+          <div className="flex items-center gap-2 px-4">
             <span
-              className="text-[13px] font-semibold"
+              className="max-w-[200px] truncate text-[13px] font-semibold"
               style={{ color: "var(--b-text)" }}
             >
               {portfolio.title}
@@ -1533,14 +1533,8 @@ ${sectionsHtml}
           </div>
         </div>
 
-        {/* Right: Zoom + Theme + Save + Publish */}
+        {/* Right: Theme + Save + Publish */}
         <div className="flex items-center gap-2">
-          <ZoomControls
-            transform={transform}
-            onTransformChange={setTransform}
-            onFitToScreen={fitToScreen}
-          />
-
           {/* Device preview toggle */}
           <div
             className="flex items-center gap-0.5 rounded-lg p-0.5"
@@ -2432,26 +2426,15 @@ ${sectionsHtml}
             );
           })()}
 
-          {/* Bottom-left keyboard hint */}
-          <div
-            className="pointer-events-none absolute left-3 top-3 flex items-center gap-3 rounded-lg px-3 py-1.5 text-[10px]"
-            style={{
-              color: "var(--b-text-4)",
-              backgroundColor: "var(--b-hint-bg)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid var(--b-border)",
-            }}
-          >
-            <span>
-              <kbd className="builder-kbd">Scroll</kbd> Pan
-            </span>
-            <span>
-              <kbd className="builder-kbd">Ctrl+Scroll</kbd> Zoom
-            </span>
-            <span>
-              <kbd className="builder-kbd">Space</kbd> Drag
-            </span>
+          {/* Zoom controls — bottom left */}
+          <div className="absolute bottom-3 left-3 z-30">
+            <ZoomControls
+              transform={transform}
+              onTransformChange={setTransform}
+              onFitToScreen={fitToScreen}
+            />
           </div>
+
         </div>
 
         {/* ── RIGHT: Properties Panel ────────────────────────────── */}

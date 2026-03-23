@@ -15,12 +15,13 @@ export default function PortfoliosLoading() {
       {/* Portfolio list */}
       <div className="space-y-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border bg-card p-4">
+          <div key={i} className="rounded-xl border border-border/50 bg-card p-4">
             <div className="flex items-center gap-4">
               <Skeleton className="h-2.5 w-2.5 flex-shrink-0 rounded-full" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
                   <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-14 rounded-full" />
                   <Skeleton className="h-4 w-14 rounded-full" />
                 </div>
                 <div className="mt-2 flex items-center gap-4">

@@ -19,7 +19,6 @@ function StudioLoader() {
   const bg = isDark ? "#09090b" : "#f5f3ef";
   const panelBg = isDark ? "#0c0c10" : "#ffffff";
   const border = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
-  const shimmer = isDark ? "bg-zinc-800" : "bg-stone-300";
   const shimmerSoft = isDark ? "bg-zinc-800/40" : "bg-stone-200";
   const shimmerFaint = isDark ? "bg-zinc-800/30" : "bg-stone-200/70";
   const shimmerSubtle = isDark ? "bg-zinc-800/20" : "bg-stone-200/50";
@@ -37,35 +36,57 @@ function StudioLoader() {
   const canvasGlow2 = isDark ? "rgba(139,92,246,0.015)" : "rgba(139,92,246,0.02)";
   const iconBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
   const iconBorder = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+  const toolbarItemBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+  const bottomBarBg = isDark ? "#18181b" : "#ffffff";
+  const bottomBarBorder = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
+  const bottomBarShadow = "0 4px 24px rgba(0,0,0,0.25)";
 
   return (
     <div className="flex h-screen w-screen flex-col" style={{ backgroundColor: bg }}>
-      {/* Toolbar */}
+      {/* ── Top Toolbar: Back | File, View | Undo, Redo || Title+Status || Device | Theme | SEO, Preview, Save, Publish ── */}
       <div
-        className="flex h-12 items-center justify-between px-4"
+        className="flex h-12 items-center justify-between px-3"
         style={{ borderBottom: `1px solid ${border}` }}
       >
-        <div className="flex items-center gap-3">
-          <div className={`h-7 w-7 animate-pulse rounded-lg ${shimmer}/60`} />
-          <div className="h-px w-4" style={{ backgroundColor: border }} />
-          <div className={`h-4 w-10 animate-pulse rounded ${shimmerSoft}`} />
-          <div className={`h-4 w-10 animate-pulse rounded ${shimmerSoft}`} />
+        {/* Left: Back + divider + File + View + divider + Undo + Redo */}
+        <div className="flex items-center gap-1">
+          <div className={`h-8 w-8 animate-pulse rounded-lg ${shimmerSoft}`} />
+          <div className="mx-0.5 h-4 w-px" style={{ backgroundColor: border }} />
+          <div className={`h-7 w-10 animate-pulse rounded-md ${shimmerSoft}`} />
+          <div className={`h-7 w-10 animate-pulse rounded-md ${shimmerSoft}`} />
+          <div className="mx-0.5 h-4 w-px" style={{ backgroundColor: border }} />
+          <div className={`h-8 w-8 animate-pulse rounded-lg ${shimmerFaint}`} />
+          <div className={`h-8 w-8 animate-pulse rounded-lg ${shimmerFaint}`} />
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className={`h-4 w-28 animate-pulse rounded ${shimmerSoft}`} />
-          <div className="h-5 w-14 animate-pulse rounded-full bg-teal-500/10" />
+
+        {/* Center: Title + Status badge */}
+        <div className="pointer-events-none absolute inset-0 hidden items-center justify-center md:flex">
+          <div className="flex items-center gap-2">
+            <div className={`h-4 w-28 animate-pulse rounded ${shimmerSoft}`} />
+            <div className="h-5 w-14 animate-pulse rounded-full bg-teal-500/10" />
+          </div>
         </div>
+
+        {/* Right: Device toggle | Theme | divider | SEO | Preview | Save | Publish */}
         <div className="flex items-center gap-2">
-          <div className={`flex items-center gap-0.5 rounded-lg border px-1 py-0.5`} style={{ borderColor: border }}>
-            <div className={`h-6 w-6 animate-pulse rounded ${shimmerFaint}`} />
-            <div className={`h-5 w-10 animate-pulse rounded ${shimmerFaint}`} />
-            <div className={`h-6 w-6 animate-pulse rounded ${shimmerFaint}`} />
+          {/* Device preview toggle */}
+          <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ backgroundColor: toolbarItemBg }}>
+            <div className={`h-7 w-7 animate-pulse rounded-md ${shimmerFaint}`} />
+            <div className={`h-7 w-7 animate-pulse rounded-md ${shimmerFaint}`} />
+            <div className={`h-7 w-7 animate-pulse rounded-md ${shimmerFaint}`} />
           </div>
           <div className="mx-1 h-4 w-px" style={{ backgroundColor: border }} />
-          <div className={`h-7 w-7 animate-pulse rounded-lg ${shimmerFaint}`} />
-          <div className="mx-1 h-4 w-px" style={{ backgroundColor: border }} />
-          <div className={`h-7 w-16 animate-pulse rounded-lg ${shimmerSoft}`} />
-          <div className="h-7 w-20 animate-pulse rounded-lg bg-gradient-to-r from-teal-500/15 to-cyan-500/15" />
+          {/* Theme toggle */}
+          <div className={`h-8 w-8 animate-pulse rounded-lg ${shimmerFaint}`} />
+          <div className="h-4 w-px" style={{ backgroundColor: border }} />
+          {/* SEO */}
+          <div className={`h-8 w-14 animate-pulse rounded-lg ${shimmerFaint}`} />
+          {/* Preview */}
+          <div className={`h-8 w-20 animate-pulse rounded-lg ${shimmerSoft}`} />
+          {/* Save */}
+          <div className={`h-8 w-16 animate-pulse rounded-lg ${shimmerSoft}`} />
+          {/* Publish */}
+          <div className="h-8 w-20 animate-pulse rounded-lg bg-gradient-to-r from-teal-500/15 to-cyan-500/15" />
         </div>
       </div>
 
@@ -160,6 +181,30 @@ function StudioLoader() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Bottom design toolbar skeleton */}
+          <div
+            className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-xl px-1.5 py-1"
+            style={{
+              backgroundColor: bottomBarBg,
+              border: `1px solid ${bottomBarBorder}`,
+              boxShadow: bottomBarShadow,
+            }}
+          >
+            {/* Cursor tool */}
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerSoft}`} />
+            <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: border }} />
+            {/* Shape tools: rect, circle, line */}
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: border }} />
+            {/* Quick-add: H, T, img, btn */}
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
+            <div className={`h-9 w-9 animate-pulse rounded-lg ${shimmerFaint}`} />
           </div>
 
           {/* Keyboard hints */}

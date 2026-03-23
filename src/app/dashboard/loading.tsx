@@ -4,10 +4,12 @@ export default function DashboardLoading() {
   return (
     <div className="space-y-8">
       {/* Welcome banner */}
-      <div className="rounded-2xl border border-border/50 p-6 lg:p-8">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="mt-3 h-8 w-72" />
-        <Skeleton className="mt-2 h-4 w-80" />
+      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-teal-500/[0.06] via-transparent to-cyan-500/[0.04] p-6 lg:p-8">
+        <div className="relative">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="mt-3 h-8 w-72" />
+          <Skeleton className="mt-2 h-4 w-80" />
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -37,6 +39,7 @@ export default function DashboardLoading() {
                   <Skeleton className="h-3.5 w-28" />
                   <Skeleton className="h-3 w-36" />
                 </div>
+                <Skeleton className="h-4 w-4" />
               </div>
             ))}
           </div>
@@ -49,17 +52,24 @@ export default function DashboardLoading() {
             <Skeleton className="h-3 w-14" />
           </div>
           <div className="rounded-xl border border-border/50 bg-card">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
                 className={`flex items-center gap-3.5 px-4 py-3.5 ${i !== 0 ? "border-t border-border/40" : ""}`}
               >
                 <Skeleton className="h-2 w-2 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-40" />
-                  <Skeleton className="h-2.5 w-24" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-4 w-14 rounded-md" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-2.5 w-12" />
+                    <Skeleton className="h-2.5 w-16" />
+                  </div>
                 </div>
                 <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-3.5 w-3.5" />
               </div>
             ))}
           </div>
