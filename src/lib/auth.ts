@@ -1,43 +1,27 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
 
+import { authConfig } from "@/lib/auth.config";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validations/auth";
 
-export const authConfig: NextAuthConfig = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(db),
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
+    ...authConfig.providers,
     Credentials({
       async authorize(credentials) {
         const validated = loginSchema.safeParse(credentials);
-
         if (!validated.success) return null;
 
         const { email, password } = validated.data;
-
         const user = await db.user.findUnique({ where: { email } });
-
         if (!user?.password) return null;
 
         const isValid = await bcrypt.compare(password, user.password);
-
         if (!isValid) return null;
 
         return {
@@ -50,6 +34,7 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
       if (user) {
         const dbUser = await db.user.findUnique({
@@ -65,7 +50,6 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
-      // Handle session updates (e.g., username change)
       if (trigger === "update" && session) {
         token.name = session.name as string | undefined;
         token.username = session.username as string | undefined;
@@ -84,7 +68,6 @@ export const authConfig: NextAuthConfig = {
       return session;
     },
     async signIn({ user, account }) {
-      // Auto-generate username for OAuth users
       if (account?.provider !== "credentials" && user.email) {
         const existing = await db.user.findUnique({
           where: { email: user.email },
@@ -113,7 +96,6 @@ export const authConfig: NextAuthConfig = {
   },
   events: {
     async createUser({ user }) {
-      // Generate username on first sign up
       if (user.email && user.id) {
         const baseUsername = user.email.split("@")[0]?.replace(/[^a-z0-9]/gi, "") ?? "user";
         let username = baseUsername;
@@ -131,6 +113,4 @@ export const authConfig: NextAuthConfig = {
       }
     },
   },
-};
-
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+});
