@@ -49,6 +49,7 @@ import {
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
+import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import {
   CanvasEngine,
   ZoomControls,
@@ -374,7 +375,7 @@ export function BuilderWorkspace({
   const theme = getThemeTokens(portfolio);
 
   // ── Studio theme (synced with user's dashboard theme) ─────────
-  const { data: sessionData } = useSession();
+  const { data: sessionData, update: updateSession } = useSession();
   const [studioTheme, setStudioTheme] = useState<StudioTheme>(
     (sessionData?.user?.theme as StudioTheme) ?? "dark"
   );
@@ -384,6 +385,23 @@ export function BuilderWorkspace({
       setStudioTheme(sessionData.user.theme as StudioTheme);
     }
   }, [sessionData?.user?.theme]);
+
+  const toggleStudioTheme = async () => {
+    const newTheme = studioTheme === "dark" ? "light" : "dark";
+    setStudioTheme(newTheme);
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    try {
+      await apiPatch("/users/me", { theme: newTheme });
+      await updateSession({ theme: newTheme });
+    } catch {
+      setStudioTheme(studioTheme);
+    }
+  };
+
   // Dropdown menus render via a Radix Portal (outside data-builder-theme),
   // so CSS vars like var(--b-panel) don't resolve. Use real colors instead.
   const dropdownColors = studioTheme === "dark"
@@ -397,6 +415,7 @@ export function BuilderWorkspace({
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [showMinimap, setShowMinimap] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -950,6 +969,101 @@ export function BuilderWorkspace({
     URL.revokeObjectURL(url);
   }, [portfolio]);
 
+  // ── Export as HTML ────────────────────────────────────────────────
+  const exportAsHtml = useCallback(() => {
+    const t = theme;
+    const fonts = [t.fontHeading, t.fontBody].filter(Boolean);
+    const fontParam = fonts.map(f => f.replace(/ /g, '+')).join('&family=');
+
+    const sections = [...portfolio.sections]
+      .filter(s => s.isVisible)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+    let sectionsHtml = '';
+    for (const section of sections) {
+      const blocks = [...section.blocks]
+        .filter(b => b.isVisible)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+
+      let blocksHtml = '';
+      for (const block of blocks) {
+        const c = block.content as Record<string, unknown>;
+        const s = block.styles as Record<string, unknown>;
+
+        switch (block.type) {
+          case 'heading': {
+            const level = (c.level as number) ?? 2;
+            const text = (c.text as string) ?? '';
+            const highlight = c.highlight as string;
+            let displayText = text;
+            if (highlight && text.includes(highlight)) {
+              displayText = text.replace(highlight, `<span style="color:${t.primaryColor}">${highlight}</span>`);
+            }
+            blocksHtml += `<h${level} style="font-size:${s.fontSize ?? 32}px;font-weight:${s.fontWeight ?? 700};text-align:${s.textAlign ?? 'left'};font-family:'${t.fontHeading}',sans-serif;line-height:${s.lineHeight ?? 1.2};margin-bottom:${s.marginBottom ?? 16}px">${displayText}</h${level}>`;
+            break;
+          }
+          case 'text':
+            blocksHtml += `<p style="font-size:${s.fontSize ?? 16}px;line-height:${s.lineHeight ?? 1.7};opacity:${s.opacity ?? 1};text-align:${s.textAlign ?? 'left'};font-family:'${t.fontBody}',sans-serif;margin-bottom:${s.marginBottom ?? 12}px">${(c.text as string) ?? ''}</p>`;
+            break;
+          case 'button':
+            blocksHtml += `<a href="${(c.url as string) ?? '#'}" style="display:inline-block;padding:12px 32px;background:${t.primaryColor};color:#fff;border-radius:${t.borderRadius};font-weight:600;text-decoration:none;font-size:16px;text-align:center">${(c.text as string) ?? 'Button'}</a>`;
+            break;
+          case 'skill_bar': {
+            const name = (c.name as string) ?? '';
+            const level = (c.level as number) ?? 0;
+            blocksHtml += `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:14px"><span>${name}</span><span>${level}%</span></div><div style="height:6px;background:${t.surfaceColor};border-radius:3px"><div style="height:100%;width:${level}%;background:${t.primaryColor};border-radius:3px"></div></div></div>`;
+            break;
+          }
+          case 'project_card': {
+            const title = (c.title as string) ?? '';
+            const desc = (c.description as string) ?? '';
+            const tech = (c.techStack as string[]) ?? [];
+            blocksHtml += `<div style="border:1px solid ${t.surfaceColor};border-radius:12px;padding:24px;margin-bottom:16px"><h3 style="font-size:20px;font-weight:700;font-family:'${t.fontHeading}',sans-serif;margin-bottom:8px">${title}</h3><p style="font-size:14px;opacity:0.7;margin-bottom:12px">${desc}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${tech.map((t2: string) => `<span style="font-size:12px;padding:4px 10px;border:1px solid ${t.surfaceColor};border-radius:6px">${t2}</span>`).join('')}</div></div>`;
+            break;
+          }
+          case 'stat': {
+            blocksHtml += `<div style="text-align:center;margin-bottom:16px"><div style="font-size:36px;font-weight:800;color:${t.primaryColor};font-family:'${t.fontHeading}',sans-serif">${(c.value as string) ?? ''}</div><div style="font-size:13px;opacity:0.6">${(c.label as string) ?? ''}</div></div>`;
+            break;
+          }
+          default:
+            if (c.text) blocksHtml += `<div style="margin-bottom:12px">${c.text as string}</div>`;
+            break;
+        }
+      }
+
+      sectionsHtml += `<section style="max-width:1100px;margin:0 auto;padding:80px 24px">${blocksHtml}</section>`;
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${portfolio.title}</title>
+<meta name="description" content="${portfolio.description ?? ''}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900&display=swap">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: ${t.backgroundColor}; color: ${t.textColor}; font-family: '${t.fontBody}', sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: ${t.primaryColor}; }
+::selection { background: ${t.primaryColor}33; }
+</style>
+</head>
+<body>
+${sectionsHtml}
+<footer style="text-align:center;padding:32px;opacity:0.3;font-size:13px">&copy; ${new Date().getFullYear()} ${portfolio.user?.name ?? portfolio.title}</footer>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${portfolio.slug}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [portfolio, theme]);
+
   // ── Keyboard shortcuts ──────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -960,7 +1074,11 @@ export function BuilderWorkspace({
         setShowShortcuts((v) => !v);
         return;
       }
-      // Escape closes shortcuts overlay
+      // Escape closes shortcuts overlay or preview
+      if (e.key === "Escape" && showPreview) {
+        setShowPreview(false);
+        return;
+      }
       if (e.key === "Escape" && showShortcuts) {
         setShowShortcuts(false);
         return;
@@ -1006,6 +1124,18 @@ export function BuilderWorkspace({
         exportAsJson();
         return;
       }
+      // Ctrl+H  → Export HTML
+      if (mod && e.key === "h") {
+        e.preventDefault();
+        exportAsHtml();
+        return;
+      }
+      // Ctrl+P  → Preview
+      if (mod && e.key === "p") {
+        e.preventDefault();
+        setShowPreview(true);
+        return;
+      }
       // Ctrl+\  → Toggle left panel
       if (mod && e.key === "\\") {
         e.preventDefault();
@@ -1045,7 +1175,7 @@ export function BuilderWorkspace({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleSave, exportAsJson, fitToScreen, zoomIn, zoomOut, resetZoom, builderStore, scheduleAutoSave, showShortcuts]);
+  }, [handleSave, exportAsJson, exportAsHtml, fitToScreen, zoomIn, zoomOut, resetZoom, builderStore, scheduleAutoSave, showShortcuts, showPreview]);
 
   // ═════════════════════════════════════════════════════════════
   //  RENDER
@@ -1132,9 +1262,20 @@ export function BuilderWorkspace({
                 Export as JSON
                 <DropdownMenuShortcut>Ctrl+E</DropdownMenuShortcut>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={exportAsHtml}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                Export as HTML
+                <DropdownMenuShortcut>Ctrl+H</DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
-                onClick={() => router.push(`/dashboard/portfolios/${portfolio.id}/preview`)}
+                onClick={() => setShowPreview(true)}
                 className="text-[12px]"
                 style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
                 onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
@@ -1144,6 +1285,7 @@ export function BuilderWorkspace({
               >
                 <Eye className="h-3.5 w-3.5" />
                 Preview
+                <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
               </DropdownMenuItem>
               {portfolio.status === "PUBLISHED" && portfolio.user.username && (
                 <DropdownMenuItem
@@ -1301,7 +1443,7 @@ export function BuilderWorkspace({
               </DropdownMenuItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
-                onClick={() => setStudioTheme((t) => (t === "dark" ? "light" : "dark"))}
+                onClick={toggleStudioTheme}
                 className="text-[12px]"
                 style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
                 onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
@@ -1460,6 +1602,16 @@ export function BuilderWorkspace({
           >
             <Globe className="h-3.5 w-3.5" />
             SEO
+          </button>
+
+          <button
+            onClick={() => setShowPreview(true)}
+            className="builder-toolbar-btn flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium"
+            style={{ color: "var(--b-text-2)" }}
+            title="Preview (Ctrl+P)"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Preview
           </button>
 
           <button
@@ -2490,6 +2642,25 @@ export function BuilderWorkspace({
         )}
       </div>
 
+      {/* ── Preview Overlay ──────────────────────────────────────── */}
+      {showPreview && (
+        <div className="fixed inset-0 z-[400] flex flex-col" style={{ backgroundColor: theme.backgroundColor }}>
+          {/* Preview toolbar */}
+          <div className="flex h-12 items-center justify-between px-4" style={{ backgroundColor: "var(--b-panel)", borderBottom: "1px solid var(--b-border)" }}>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowPreview(false)} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium" style={{ color: "var(--b-text-2)" }}>
+                <X className="h-3.5 w-3.5" /> Close Preview
+              </button>
+              <span className="text-[11px] font-medium" style={{ color: "var(--b-text-4)" }}>Preview Mode — This is how your portfolio looks to visitors</span>
+            </div>
+          </div>
+          {/* Portfolio content */}
+          <div className="flex-1 overflow-y-auto">
+            <PortfolioRenderer portfolio={portfolio} />
+          </div>
+        </div>
+      )}
+
       {/* ── Keyboard Shortcuts Overlay ─────────────────────────── */}
       {showShortcuts && (
         <>
@@ -2505,6 +2676,8 @@ export function BuilderWorkspace({
                 ["Ctrl+Z", "Undo"],
                 ["Ctrl+Shift+Z", "Redo"],
                 ["Ctrl+E", "Export JSON"],
+                ["Ctrl+P", "Preview"],
+                ["Ctrl+H", "Export HTML"],
                 ["Ctrl+\\", "Toggle left panel"],
                 ["Ctrl+/", "Toggle right panel"],
                 ["Ctrl+0", "Reset zoom"],

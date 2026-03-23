@@ -48,6 +48,31 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
       }
     : DEFAULT_THEME;
 
+  // Dynamically load Google Fonts for the chosen theme fonts
+  useEffect(() => {
+    const fonts = [theme.fontHeading, theme.fontBody, theme.fontMono].filter(Boolean);
+    const uniqueFonts = [...new Set(fonts)];
+    if (uniqueFonts.length === 0) return;
+
+    const fontParam = uniqueFonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    const linkId = 'portfolio-google-fonts';
+
+    // Remove existing if any
+    const existing = document.getElementById(linkId);
+    if (existing) existing.remove();
+
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+
+    return () => {
+      const el = document.getElementById(linkId);
+      if (el) el.remove();
+    };
+  }, [theme.fontHeading, theme.fontBody, theme.fontMono]);
+
   const visibleSections = [...portfolio.sections]
     .filter((s) => s.isVisible)
     .sort((a, b) => a.sortOrder - b.sortOrder);
