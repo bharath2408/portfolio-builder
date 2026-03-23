@@ -22,6 +22,7 @@ interface CanvasElementProps {
   w: number;
   h: number;
   rotation?: number;
+  sortOrder?: number;
   isSelected: boolean;
   isLocked?: boolean;
   isHidden?: boolean;
@@ -30,6 +31,7 @@ interface CanvasElementProps {
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, w: number, h: number, x: number, y: number) => void;
   onDoubleClick?: (id: string) => void;
+  onContextMenu?: (id: string, x: number, y: number) => void;
   children: React.ReactNode;
   onDragStart?: () => void;
   onDragEnd?: () => void;
@@ -132,6 +134,8 @@ export const CanvasElement = memo(function CanvasElement({
   onMove,
   onResize,
   onDoubleClick,
+  onContextMenu: onCtxMenu,
+  sortOrder = 0,
   onDragStart,
   onDragEnd,
   children,
@@ -283,7 +287,7 @@ export const CanvasElement = memo(function CanvasElement({
         width: w,
         height: h === 0 ? "auto" : h,
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
-        zIndex: isSelected ? 100 : isDragging ? 99 : 1,
+        zIndex: isSelected ? 100 : isDragging ? 99 : sortOrder + 1,
         opacity: isHidden ? 0.3 : 1,
       }}
     >
@@ -310,6 +314,12 @@ export const CanvasElement = memo(function CanvasElement({
         }}
         onMouseDown={handleMouseDown}
         onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelect(id, false);
+          onCtxMenu?.(id, e.clientX, e.clientY);
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onDoubleClick={(e) => {

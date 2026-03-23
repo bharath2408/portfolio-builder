@@ -222,7 +222,7 @@ export function BuilderWorkspace({
   });
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
-    null,
+    portfolio.sections[0]?.id ?? null,
   );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(portfolio.sections.map((s) => s.id)),
@@ -237,6 +237,26 @@ export function BuilderWorkspace({
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [guides, _setGuides] = useState<GuideInfo[]>([]);
+
+  // ── Draw mode (Figma-style click-drag to create) ──────────────
+  const [drawMode, setDrawMode] = useState<BlockType | null>(null);
+  const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
+  const [drawRect, setDrawRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const drawContainerRef = useRef<HTMLDivElement>(null);
+
+  // ── Context menu ──────────────────────────────────────────────
+  const [ctxMenu, setCtxMenu] = useState<{ blockId: string; sectionId: string; x: number; y: number } | null>(null);
+
+  const handleBlockContextMenu = (blockId: string, x: number, y: number) => {
+    for (const s of portfolio.sections) {
+      if (s.blocks.some((b) => b.id === blockId)) {
+        setCtxMenu({ blockId, sectionId: s.id, x, y });
+        return;
+      }
+    }
+  };
+
+  const closeCtxMenu = () => setCtxMenu(null);
 
   // Memoize sorted sections
   const sortedSections = useMemo(
@@ -259,6 +279,87 @@ export function BuilderWorkspace({
   }, [selectedBlockId, portfolio.sections]);
 
   const hasNoSections = portfolio.sections.length === 0;
+
+  // ── Draw mode: add block at specific position/size ──────────
+  const addBlockAt = async (sectionId: string, type: BlockType, x: number, y: number, w: number, h: number) => {
+    const def = BLOCK_REGISTRY[type];
+    if (!def) return;
+    const section = portfolio.sections.find((s) => s.id === sectionId);
+    const existingBlocks = section?.blocks ?? [];
+    try {
+      const res = await apiPost<BlockWithStyles>(
+        `/portfolios/${portfolio.id}/sections/${sectionId}/blocks`,
+        {
+          type,
+          sortOrder: existingBlocks.length,
+          content: def.defaultContent,
+          styles: { ...def.defaultStyles, x, y, w, h },
+        },
+      );
+      builderStore.pushSnapshot("draw-block");
+      portfolioStore.addBlockToSection(sectionId, res);
+      setSelectedBlockId(res.id);
+      setSelectedSectionId(sectionId);
+      setRightPanel("properties");
+    } catch { /* handle */ }
+  };
+
+  // ── Draw mode handlers ────────────────────────────────────────
+  const handleDrawMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!drawMode || !selectedSectionId || !drawContainerRef.current) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = drawContainerRef.current.getBoundingClientRect();
+    // Convert screen coords to canvas coords
+    const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+    const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+    // Find the section frame to get relative position
+    const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+    if (!section) return;
+    const ss = section.styles as SectionStyles;
+    const fx = ss.frameX ?? 0;
+    const fy = ss.frameY ?? portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80);
+    const relX = canvasX - fx;
+    const relY = canvasY - fy;
+    setDrawStart({ x: relX, y: relY });
+    setDrawRect({ x: relX, y: relY, w: 0, h: 0 });
+  }, [drawMode, selectedSectionId, transform, portfolio.sections]);
+
+  const handleDrawMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!drawStart || !drawContainerRef.current) return;
+    const rect = drawContainerRef.current.getBoundingClientRect();
+    const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+    if (!section) return;
+    const ss = section.styles as SectionStyles;
+    const fx = ss.frameX ?? 0;
+    const fy = ss.frameY ?? portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80);
+    const canvasX = (e.clientX - rect.left - transform.x) / transform.scale;
+    const canvasY = (e.clientY - rect.top - transform.y) / transform.scale;
+    const relX = canvasX - fx;
+    const relY = canvasY - fy;
+    setDrawRect({
+      x: Math.min(drawStart.x, relX),
+      y: Math.min(drawStart.y, relY),
+      w: Math.abs(relX - drawStart.x),
+      h: Math.abs(relY - drawStart.y),
+    });
+  }, [drawStart, selectedSectionId, transform, portfolio.sections]);
+
+  const handleDrawMouseUp = useCallback(() => {
+    if (!drawMode || !selectedSectionId || !drawRect) {
+      setDrawMode(null);
+      setDrawStart(null);
+      setDrawRect(null);
+      return;
+    }
+    const minSize = 20;
+    const w = Math.max(drawRect.w, minSize);
+    const h = Math.max(drawRect.h, minSize);
+    addBlockAt(selectedSectionId, drawMode, Math.round(drawRect.x), Math.round(drawRect.y), Math.round(w), Math.round(h));
+    setDrawMode(null);
+    setDrawStart(null);
+    setDrawRect(null);
+  }, [drawMode, selectedSectionId, drawRect, addBlockAt]);
 
   // ── Selection ─────────────────────────────────────────────────
 
@@ -649,6 +750,19 @@ export function BuilderWorkspace({
         if (r) { builderStore.setDirty(true); scheduleAutoSave(); }
         return;
       }
+
+      // V → Select tool
+      if (!mod && e.key === "v") { setDrawMode(null); return; }
+      // R → Rectangle draw
+      if (!mod && e.key === "r") { setDrawMode("rectangle"); return; }
+      // O → Circle draw
+      if (!mod && e.key === "o") { setDrawMode("circle"); return; }
+      // L → Line draw
+      if (!mod && e.key === "l") { setDrawMode("line"); return; }
+      // T → Add text
+      if (!mod && e.key === "t" && selectedSectionId) { addBlock(selectedSectionId, "text"); return; }
+      // Escape → Exit draw mode
+      if (e.key === "Escape" && drawMode) { setDrawMode(null); setDrawStart(null); setDrawRect(null); return; }
 
       // Ctrl+S  → Save
       if (mod && e.key === "s") {
@@ -1445,13 +1559,46 @@ export function BuilderWorkspace({
         )}
 
         {/* ── CENTER: Canvas ─────────────────────────────────────── */}
-        <div className="relative flex-1 overflow-hidden">
+        <div
+          ref={drawContainerRef}
+          className="relative flex-1 overflow-hidden"
+          style={{ cursor: drawMode ? "crosshair" : undefined }}
+          onMouseDown={drawMode ? handleDrawMouseDown : undefined}
+          onMouseMove={drawMode && drawStart ? handleDrawMouseMove : undefined}
+          onMouseUp={drawMode && drawStart ? handleDrawMouseUp : undefined}
+        >
           <SmartGuides guides={guides} transform={transform} />
+
+          {/* Draw preview rectangle */}
+          {drawMode && drawRect && drawStart && selectedSectionId && (
+            (() => {
+              const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+              if (!section) return null;
+              const ss = section.styles as SectionStyles;
+              const fx = ss.frameX ?? 0;
+              const fy = ss.frameY ?? portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80);
+              return (
+                <div
+                  className="pointer-events-none absolute z-50"
+                  style={{
+                    left: (fx + drawRect.x) * transform.scale + transform.x,
+                    top: (fy + drawRect.y) * transform.scale + transform.y,
+                    width: drawRect.w * transform.scale,
+                    height: drawRect.h * transform.scale,
+                    border: "2px dashed var(--b-accent)",
+                    borderRadius: drawMode === "circle" ? "50%" : drawMode === "line" ? 0 : 4,
+                    backgroundColor: "var(--b-accent-soft)",
+                  }}
+                />
+              );
+            })()
+          )}
 
           <CanvasEngine
             transform={transform}
             onTransformChange={setTransform}
-            onCanvasClick={handleCanvasClick}
+            onCanvasClick={drawMode ? undefined : handleCanvasClick}
+            cursorOverride={drawMode ? "crosshair" : undefined}
           >
             <div style={{ position: "relative" }}>
               {visibleSections.map((section) => {
@@ -1502,6 +1649,8 @@ export function BuilderWorkspace({
                           onSelect={selectBlock}
                           onMove={moveBlock}
                           onResize={resizeBlock}
+                          sortOrder={block.sortOrder}
+                          onContextMenu={handleBlockContextMenu}
                         >
                           <BlockRenderer
                             block={block}
@@ -1558,6 +1707,173 @@ export function BuilderWorkspace({
                 </button>
               </div>
             </div>
+          )}
+
+          {/* ── Bottom Design Toolbar ─────────────────────────────── */}
+          {selectedSectionId && (
+            <div
+              className="absolute bottom-4 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-0.5 rounded-xl px-1.5 py-1"
+              style={{
+                backgroundColor: dropdownColors.bg,
+                border: `1px solid ${dropdownColors.border}`,
+                boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
+                pointerEvents: "auto",
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Draw mode indicator */}
+              {drawMode && (
+                <div className="mr-1 flex items-center gap-1.5 rounded-lg px-2 py-1" style={{ backgroundColor: "var(--b-accent-soft)" }}>
+                  <div className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ backgroundColor: "var(--b-accent)" }} />
+                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "var(--b-accent)" }}>
+                    Draw {drawMode}
+                  </span>
+                  <button
+                    onClick={() => setDrawMode(null)}
+                    className="ml-0.5 text-[10px] font-bold" style={{ color: "var(--b-accent)" }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Cursor (select) tool */}
+              <button
+                onClick={() => setDrawMode(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg transition-all"
+                style={{
+                  backgroundColor: !drawMode ? dropdownColors.hover : "transparent",
+                  color: !drawMode ? dropdownColors.text : dropdownColors.textMuted,
+                }}
+                title="Select (V)"
+              >
+                <MousePointer2 className="h-4 w-4" />
+              </button>
+
+              <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: dropdownColors.separator }} />
+
+              {/* Shape draw tools */}
+              {([
+                { type: "rectangle" as BlockType, icon: <span className="h-3.5 w-3.5 rounded-[3px] border-2" style={{ borderColor: "currentColor" }} />, label: "Rectangle (R)" },
+                { type: "circle" as BlockType, icon: <span className="h-3.5 w-3.5 rounded-full border-2" style={{ borderColor: "currentColor" }} />, label: "Circle (O)" },
+                { type: "line" as BlockType, icon: <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: "currentColor" }} />, label: "Line (L)" },
+              ]).map((shape) => (
+                <button
+                  key={shape.type}
+                  onClick={() => setDrawMode(drawMode === shape.type ? null : shape.type)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-all"
+                  style={{
+                    backgroundColor: drawMode === shape.type ? "var(--b-accent-soft)" : "transparent",
+                    color: drawMode === shape.type ? "var(--b-accent)" : dropdownColors.textMuted,
+                  }}
+                  title={shape.label}
+                >
+                  {shape.icon}
+                </button>
+              ))}
+
+              <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: dropdownColors.separator }} />
+
+              {/* Quick-add elements (click to insert immediately) */}
+              {([
+                { type: "heading" as BlockType, icon: <span className="text-[12px] font-bold">H</span>, label: "Heading" },
+                { type: "text" as BlockType, icon: <span className="text-[12px]">T</span>, label: "Text" },
+                { type: "image" as BlockType, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>, label: "Image" },
+                { type: "button" as BlockType, icon: <span className="rounded border px-1 text-[8px] font-bold" style={{ borderColor: "currentColor" }}>BTN</span>, label: "Button" },
+              ]).map((el) => (
+                <button
+                  key={el.type}
+                  onClick={() => { setDrawMode(null); addBlock(selectedSectionId, el.type); }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-all"
+                  style={{ color: dropdownColors.textMuted }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                  title={el.label}
+                >
+                  {el.icon}
+                </button>
+              ))}
+
+              <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: dropdownColors.separator }} />
+
+              {/* Quick insert (no draw, just add) */}
+              <button
+                onClick={() => addBlock(selectedSectionId, "image")}
+                className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold transition-all hover:brightness-110 active:scale-95"
+                style={{
+                  background: `linear-gradient(135deg, ${studioTheme === "dark" ? "#06b6d4" : "#0d9488"}, ${studioTheme === "dark" ? "#0891b2" : "#0f766e"})`,
+                  color: "#fff",
+                  boxShadow: "0 2px 8px rgba(6,182,212,0.2)",
+                }}
+                title="Quick add image"
+              >
+                <Plus className="h-3 w-3" />
+                Image
+              </button>
+            </div>
+          )}
+
+          {/* ── Context Menu ──────────────────────────────────────── */}
+          {ctxMenu && (
+            <>
+              {/* Backdrop to close */}
+              <div className="fixed inset-0 z-[200]" onClick={closeCtxMenu} onContextMenu={(e) => { e.preventDefault(); closeCtxMenu(); }} />
+              {/* Menu */}
+              <div
+                className="fixed z-[201] min-w-[180px] overflow-hidden rounded-lg py-1"
+                style={{
+                  left: ctxMenu.x,
+                  top: ctxMenu.y,
+                  backgroundColor: dropdownColors.bg,
+                  border: `1px solid ${dropdownColors.border}`,
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+                }}
+              >
+                {(() => {
+                  const { sectionId: sid, blockId: bid } = ctxMenu;
+                  const sec = portfolio.sections.find((s) => s.id === sid);
+                  const blk = sec?.blocks.find((b) => b.id === bid);
+                  const maxOrd = sec ? Math.max(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
+                  const minOrd = sec ? Math.min(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
+
+                  const act = (fn: () => void) => () => { setCtxMenu(null); fn(); };
+                  const reorder = (order: number) => act(() => { portfolioStore.updateBlockInSection(sid, bid, { sortOrder: order } as Partial<BlockWithStyles>); builderStore.setDirty(true); });
+
+                  return [
+                    { label: "Bring to Front", shortcut: "]", action: reorder(maxOrd + 1), icon: "⇈" },
+                    { label: "Bring Forward", shortcut: "↑", action: reorder((blk?.sortOrder ?? 0) + 1), icon: "↑" },
+                    { label: "Send Backward", shortcut: "↓", action: reorder(Math.max(0, (blk?.sortOrder ?? 0) - 1)), icon: "↓" },
+                    { label: "Send to Back", shortcut: "[", action: reorder(minOrd - 1), icon: "⇊" },
+                    { label: "---" },
+                    { label: "Duplicate", shortcut: "Ctrl+D", action: act(() => { if (blk) duplicateBlock(blk, sid); }), icon: "⧉" },
+                    { label: blk?.isLocked ? "Unlock" : "Lock", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
+                    { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
+                    { label: "---" },
+                    { label: "Delete", shortcut: "⌫", action: act(() => deleteBlock(bid, sid)), danger: true, icon: "🗑" },
+                  ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
+                })().map((item, i) =>
+                  item.label === "---" ? (
+                    <div key={i} className="mx-2 my-1 h-px" style={{ backgroundColor: dropdownColors.separator }} />
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={item.action}
+                      className="flex w-full items-center gap-2.5 px-3 py-[6px] text-left text-[12px] transition-colors"
+                      style={{ color: item.danger ? "#f43f5e" : dropdownColors.textMuted }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                    >
+                      <span className="w-4 text-center text-[10px]">{item.icon}</span>
+                      <span className="flex-1 font-medium">{item.label}</span>
+                      {item.shortcut && (
+                        <span className="text-[10px] opacity-40">{item.shortcut}</span>
+                      )}
+                    </button>
+                  ),
+                )}
+              </div>
+            </>
           )}
 
           {/* Bottom-left keyboard hint */}

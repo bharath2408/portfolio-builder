@@ -69,6 +69,9 @@ export const BLOCK_TYPES = {
   COLUMNS: "columns",
   CARD: "card",
   EMBED: "embed",
+  RECTANGLE: "rectangle",
+  CIRCLE: "circle",
+  LINE: "line",
 } as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];
@@ -289,7 +292,7 @@ export interface BlockDefinition {
   type: BlockType;
   label: string;
   icon: string;
-  category: "typography"|"media"|"interactive"|"data"|"composite"|"layout";
+  category: "typography"|"media"|"interactive"|"data"|"composite"|"layout"|"shapes";
   description: string;
   defaultContent: Record<string, unknown>;
   defaultStyles: BlockStyles;

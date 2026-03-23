@@ -434,6 +434,59 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing }: BlockRend
       );
     }
 
+    // ── RECTANGLE ──
+    case "rectangle": {
+      const fill = (c.fill as string) || block.styles.backgroundColor || "#6366f1";
+      const bw = (c.borderWidth as number) ?? 0;
+      const bc = (c.borderColor as string) || "transparent";
+      return (
+        <div style={{
+          ...inlineStyles,
+          width: "100%",
+          height: "100%",
+          minHeight: 40,
+          backgroundColor: fill,
+          border: bw > 0 ? `${bw}px solid ${bc}` : "none",
+          borderRadius: block.styles.borderRadius ?? 8,
+        }} />
+      );
+    }
+
+    // ── CIRCLE ──
+    case "circle": {
+      const fill = (c.fill as string) || block.styles.backgroundColor || "#06b6d4";
+      const bw = (c.borderWidth as number) ?? 0;
+      const bc = (c.borderColor as string) || "transparent";
+      return (
+        <div style={{
+          ...inlineStyles,
+          width: "100%",
+          height: "100%",
+          minHeight: 40,
+          backgroundColor: fill,
+          border: bw > 0 ? `${bw}px solid ${bc}` : "none",
+          borderRadius: "50%",
+        }} />
+      );
+    }
+
+    // ── LINE ──
+    case "line": {
+      const color = (c.color as string) || block.styles.backgroundColor || "#a1a1aa";
+      const thickness = (c.thickness as number) ?? 2;
+      const dir = (c.direction as string) ?? "horizontal";
+      return (
+        <div style={{
+          ...inlineStyles,
+          width: dir === "horizontal" ? "100%" : `${thickness}px`,
+          height: dir === "horizontal" ? `${thickness}px` : "100%",
+          minHeight: dir === "horizontal" ? thickness : 40,
+          backgroundColor: color,
+          borderRadius: thickness,
+        }} />
+      );
+    }
+
     // ── FALLBACK ──
     default:
       return (

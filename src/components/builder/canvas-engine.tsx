@@ -19,6 +19,7 @@ export interface CanvasEngineProps {
   onTransformChange: (t: CanvasTransform) => void;
   onCanvasClick?: (e: ReactMouseEvent) => void;
   className?: string;
+  cursorOverride?: string;
 }
 
 const MIN_ZOOM = 0.1;
@@ -77,6 +78,7 @@ export function CanvasEngine({
   onTransformChange,
   onCanvasClick,
   className,
+  cursorOverride,
 }: CanvasEngineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -215,7 +217,7 @@ export function CanvasEngine({
       ref={containerRef}
       className={`builder-canvas relative h-full w-full overflow-hidden ${className ?? ""}`}
       style={{
-        cursor: isPanning ? "grabbing" : isSpaceHeld ? "grab" : "default",
+        cursor: isPanning ? "grabbing" : isSpaceHeld ? "grab" : cursorOverride ?? "default",
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

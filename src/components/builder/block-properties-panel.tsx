@@ -960,6 +960,32 @@ function ContentEditor({
           {field("Description", "description", { type: "textarea" })}
         </div>
       );
+    case "rectangle":
+    case "circle":
+      return (
+        <div className="space-y-2.5">
+          <div>
+            <SubLabel>Fill Color</SubLabel>
+            <ColorInput value={(content.fill as string) ?? ""} onChange={(v) => updateContent("fill", v)} placeholder="#6366f1" />
+          </div>
+          <div>
+            <SubLabel>Border Color</SubLabel>
+            <ColorInput value={(content.borderColor as string) ?? ""} onChange={(v) => updateContent("borderColor", v)} placeholder="none" />
+          </div>
+          {field("Border Width", "borderWidth", { type: "number", placeholder: "0" })}
+        </div>
+      );
+    case "line":
+      return (
+        <div className="space-y-2.5">
+          <div>
+            <SubLabel>Color</SubLabel>
+            <ColorInput value={(content.color as string) ?? ""} onChange={(v) => updateContent("color", v)} placeholder="#a1a1aa" />
+          </div>
+          {field("Thickness", "thickness", { type: "number", placeholder: "2" })}
+          {field("Direction", "direction", { type: "select", options: [{ label: "Horizontal", value: "horizontal" }, { label: "Vertical", value: "vertical" }] })}
+        </div>
+      );
     default:
       return (
         <div>

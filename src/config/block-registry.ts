@@ -299,6 +299,35 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultContent: { url: "", height: 400 },
     defaultStyles: { width: "100%", borderRadius: 8, marginBottom: 16 },
   },
+
+  // ── Shapes (Figma-style primitives) ────────────────────────────────
+  rectangle: {
+    type: "rectangle",
+    label: "Rectangle",
+    icon: "Square",
+    category: "shapes",
+    description: "Rectangle shape with fill and border",
+    defaultContent: { fill: "#6366f1", borderColor: "", borderWidth: 0 },
+    defaultStyles: { w: 200, h: 120, borderRadius: 8, backgroundColor: "#6366f1" },
+  },
+  circle: {
+    type: "circle",
+    label: "Circle",
+    icon: "Circle",
+    category: "shapes",
+    description: "Circle or ellipse shape",
+    defaultContent: { fill: "#06b6d4", borderColor: "", borderWidth: 0 },
+    defaultStyles: { w: 120, h: 120, borderRadius: 9999, backgroundColor: "#06b6d4" },
+  },
+  line: {
+    type: "line",
+    label: "Line",
+    icon: "Minus",
+    category: "shapes",
+    description: "Horizontal or vertical line",
+    defaultContent: { color: "#a1a1aa", thickness: 2, direction: "horizontal" },
+    defaultStyles: { w: 200, h: 2, backgroundColor: "#a1a1aa" },
+  },
 };
 
 // ─── Grouped for the add-block panel ──────────────────────────────
@@ -310,6 +339,7 @@ export const BLOCK_CATEGORIES = [
   { id: "data" as const, label: "Data Display", icon: "BarChart3" },
   { id: "composite" as const, label: "Composite", icon: "Component" },
   { id: "layout" as const, label: "Layout", icon: "LayoutGrid" },
+  { id: "shapes" as const, label: "Shapes", icon: "Pentagon" },
 ] as const;
 
 export function getBlocksByCategory(category: string): BlockDefinition[] {
