@@ -105,13 +105,20 @@ export async function generateMetadata({ params }: PublicPortfolioPageProps): Pr
 
   if (!portfolio) return { title: "Portfolio Not Found" };
 
-  const title = `${portfolio.user.name ?? username} — Portfolio`;
-  const description = portfolio.description ?? `${portfolio.user.name}'s professional portfolio`;
+  const title = portfolio.seoTitle ?? `${portfolio.user.name ?? username} — Portfolio`;
+  const description = portfolio.seoDescription ?? portfolio.description ?? `${portfolio.user.name}'s professional portfolio`;
 
   return {
     title,
     description,
-    openGraph: { title, description, type: "website", url: `${APP_URL}/portfolio/${username}`, siteName: APP_NAME },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `${APP_URL}/portfolio/${username}`,
+      siteName: APP_NAME,
+      ...(portfolio.ogImageUrl ? { images: [{ url: portfolio.ogImageUrl }] } : {}),
+    },
     twitter: { card: "summary_large_image", title, description },
   };
 }

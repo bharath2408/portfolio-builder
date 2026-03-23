@@ -1,5 +1,5 @@
 # Studio Tier 1 Features — Design Spec
-
+we
 **Date:** 2026-03-23
 **Scope:** 5 high-impact features for the portfolio builder studio
 **Status:** Approved

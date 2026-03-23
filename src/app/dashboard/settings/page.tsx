@@ -12,6 +12,8 @@ import {
   Sun,
   Moon,
   Monitor,
+  Globe,
+  Copy as CopyIcon,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -370,6 +372,29 @@ export default function SettingsPage() {
                 </span>
               </div>
             </div>
+
+            {/* Subdomain URL */}
+            {session?.user?.username && process.env.NEXT_PUBLIC_ROOT_DOMAIN && (
+              <div className="grid gap-1.5 px-6 py-5 sm:grid-cols-[180px_1fr] sm:items-center sm:gap-6">
+                <label className="flex items-center gap-2 text-[13px] font-medium text-foreground/80">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  Your Site
+                </label>
+                <div className="flex items-center gap-2">
+                  <code className="rounded-md bg-muted px-2.5 py-1 text-[12px] font-medium text-foreground/80">
+                    {session.user.username}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(`https://${session.user.username}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`)}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground"
+                    title="Copy URL"
+                  >
+                    <CopyIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

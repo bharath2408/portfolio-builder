@@ -175,10 +175,27 @@ export function usePortfolioMutations() {
     [store],
   );
 
+  const duplicatePortfolio = useCallback(
+    async (id: string) => {
+      setError(null);
+      try {
+        const data = await apiPost<PortfolioListItem>(`/portfolios/${id}/duplicate`, {});
+        store.addPortfolio(data);
+        return data;
+      } catch (err) {
+        const message = err instanceof ApiClientError ? err.message : "Failed to duplicate portfolio";
+        setError(message);
+        throw err;
+      }
+    },
+    [store],
+  );
+
   return {
     createPortfolio,
     updatePortfolio,
     deletePortfolio,
+    duplicatePortfolio,
     isPending,
     error,
   };

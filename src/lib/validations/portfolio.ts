@@ -25,6 +25,9 @@ export const createPortfolioSchema = z.object({
 export const updatePortfolioSchema = createPortfolioSchema.partial().extend({
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   isDefault: z.boolean().optional(),
+  seoTitle: z.string().max(60, "SEO title must be under 60 characters").optional().or(z.literal("")),
+  seoDescription: z.string().max(160, "SEO description must be under 160 characters").optional().or(z.literal("")),
+  ogImageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 // ─── Section ──────────────────────────────────────────────────────

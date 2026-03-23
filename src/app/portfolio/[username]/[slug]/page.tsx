@@ -94,8 +94,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!portfolio) return { title: "Portfolio Not Found" };
 
-  const title = `${portfolio.title} — ${portfolio.user.name ?? username}`;
+  const title = portfolio.seoTitle ?? `${portfolio.title} — ${portfolio.user.name ?? username}`;
   const description =
+    portfolio.seoDescription ??
     portfolio.description ??
     `${portfolio.user.name}'s portfolio: ${portfolio.title}`;
 
@@ -108,6 +109,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       url: `${APP_URL}/portfolio/${username}/${slug}`,
       siteName: APP_NAME,
+      ...(portfolio.ogImageUrl ? { images: [{ url: portfolio.ogImageUrl }] } : {}),
     },
   };
 }

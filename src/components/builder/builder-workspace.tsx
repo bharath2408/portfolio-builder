@@ -90,6 +90,20 @@ import type {
   SectionStyles,
   PortfolioStatus,
 } from "@/types";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ─── Constants ───────────────────────────────────────────────────
 
@@ -118,6 +132,20 @@ function getThemeTokens(p: PortfolioWithRelations): ThemeTokens {
   };
 }
 
+// ─── Sortable Wrapper ────────────────────────────────────────────
+
+function SortableItem({ id, children }: { id: string; children: (props: { style: React.CSSProperties; ref: (el: HTMLElement | null) => void; listeners: ReturnType<typeof useSortable>["listeners"]; attributes: ReturnType<typeof useSortable>["attributes"]; isDragging: boolean }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: "relative" as const,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return <>{children({ style, ref: setNodeRef, listeners, attributes, isDragging })}</>;
+}
+
 // ─── Layer Block Item ────────────────────────────────────────────
 
 const LayerBlockItem = memo(function LayerBlockItem({
@@ -125,11 +153,13 @@ const LayerBlockItem = memo(function LayerBlockItem({
   isSelected,
   onSelect,
   onDelete,
+  dragHandleProps,
 }: {
   block: BlockWithStyles;
   isSelected: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const def = BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY];
   const label = def?.label ?? block.type;
@@ -151,7 +181,7 @@ const LayerBlockItem = memo(function LayerBlockItem({
       }}
       onClick={onSelect}
     >
-      <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" />
+      <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" {...(dragHandleProps ?? {})} />
       <span
         className="w-12 flex-shrink-0 truncate text-[9px] font-bold uppercase tracking-wider"
         style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-4)" }}
@@ -177,6 +207,116 @@ const LayerBlockItem = memo(function LayerBlockItem({
 // ═════════════════════════════════════════════════════════════════
 //  MAIN BUILDER WORKSPACE
 // ═════════════════════════════════════════════════════════════════
+
+/* ── SEO Editor Panel ─────────────────────────────────────────── */
+
+function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio: PortfolioWithRelations }) {
+  const [seoTitle, setSeoTitle] = useState(portfolio.seoTitle ?? "");
+  const [seoDesc, setSeoDesc] = useState(portfolio.seoDescription ?? "");
+  const [ogImage, setOgImage] = useState(portfolio.ogImageUrl ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await apiPatch(`/portfolios/${portfolioId}`, {
+        seoTitle: seoTitle || undefined,
+        seoDescription: seoDesc || undefined,
+        ogImageUrl: ogImage || undefined,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch { /* ignore */ }
+    setSaving(false);
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-3.5 py-3" style={{ borderBottom: "1px solid var(--b-border)" }}>
+        <div className="text-[12px] font-semibold" style={{ color: "var(--b-text)" }}>SEO Settings</div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-md px-3 py-1 text-[10px] font-semibold transition-all"
+          style={{ backgroundColor: saved ? "rgba(16,185,129,0.15)" : "var(--b-accent-soft)", color: saved ? "#10b981" : "var(--b-accent)" }}
+        >
+          {saving ? "Saving..." : saved ? "Saved!" : "Save"}
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+        {/* Meta Title */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>Meta Title</span>
+            <span className="text-[9px] font-mono" style={{ color: seoTitle.length > 60 ? "var(--b-danger)" : "var(--b-text-4)" }}>{seoTitle.length}/60</span>
+          </div>
+          <input
+            type="text"
+            value={seoTitle}
+            onChange={(e) => setSeoTitle(e.target.value)}
+            placeholder={portfolio.title}
+            maxLength={60}
+            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+          />
+        </div>
+
+        {/* Meta Description */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>Meta Description</span>
+            <span className="text-[9px] font-mono" style={{ color: seoDesc.length > 160 ? "var(--b-danger)" : "var(--b-text-4)" }}>{seoDesc.length}/160</span>
+          </div>
+          <textarea
+            value={seoDesc}
+            onChange={(e) => setSeoDesc(e.target.value)}
+            placeholder={portfolio.description ?? "Describe your portfolio..."}
+            maxLength={160}
+            rows={3}
+            className="w-full rounded-md border px-2.5 py-2 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)] resize-none"
+            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+          />
+        </div>
+
+        {/* OG Image */}
+        <div>
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>OG Image URL</span>
+          <input
+            type="text"
+            value={ogImage}
+            onChange={(e) => setOgImage(e.target.value)}
+            placeholder="https://example.com/og-image.png"
+            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+          />
+          {ogImage && (
+            <div className="mt-2 overflow-hidden rounded-md border" style={{ borderColor: "var(--b-border)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ogImage} alt="OG Preview" className="w-full h-auto" style={{ maxHeight: 120, objectFit: "cover" }} />
+            </div>
+          )}
+        </div>
+
+        {/* Google Preview */}
+        <div>
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>Search Preview</span>
+          <div className="rounded-lg border p-3" style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)" }}>
+            <p className="truncate text-[13px] font-medium" style={{ color: "#8ab4f8" }}>
+              {seoTitle || portfolio.title}
+            </p>
+            <p className="truncate text-[11px] mt-0.5" style={{ color: "#bdc1c6" }}>
+              foliocraft.com/portfolio/{portfolio.user?.username}/{portfolio.slug}
+            </p>
+            <p className="mt-1 text-[11px] line-clamp-2 leading-relaxed" style={{ color: "var(--b-text-3)" }}>
+              {seoDesc || portfolio.description || "No description set."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface BuilderWorkspaceProps {
   portfolio: PortfolioWithRelations;
@@ -230,7 +370,7 @@ export function BuilderWorkspace({
   );
   const [showAddSection, setShowAddSection] = useState(false);
   const [addSectionName, setAddSectionName] = useState("");
-  const [rightPanel, setRightPanel] = useState<"properties" | "theme">(
+  const [rightPanel, setRightPanel] = useState<"properties" | "theme" | "seo">(
     "properties",
   );
   const [saving, setSaving] = useState(false);
@@ -616,6 +756,41 @@ export function BuilderWorkspace({
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, []);
+
+  // ── DnD reorder (layers panel) ─────────────────────────────────
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = sortedSections.findIndex((s) => s.id === active.id);
+    const newIndex = sortedSections.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const newOrder = [...sortedSections];
+    const [moved] = newOrder.splice(oldIndex, 1) as [SectionWithBlocks];
+    newOrder.splice(newIndex, 0, moved);
+    portfolioStore.reorderSections(newOrder.map((s) => s.id));
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  };
+
+  const handleBlockDragEnd = (sectionId: string) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const section = portfolio.sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const blocks = [...section.blocks].sort((a, b) => a.sortOrder - b.sortOrder);
+    const oldIndex = blocks.findIndex((b) => b.id === active.id);
+    const newIndex = blocks.findIndex((b) => b.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const [moved] = blocks.splice(oldIndex, 1) as [BlockWithStyles];
+    blocks.splice(newIndex, 0, moved);
+    portfolioStore.reorderBlocksInSection(sectionId, blocks.map((b) => b.id));
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  };
 
   const handleSave = async () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -1210,6 +1385,16 @@ export function BuilderWorkspace({
           />
 
           <button
+            onClick={() => { setRightPanel("seo"); setSelectedBlockId(null); }}
+            className="builder-toolbar-btn flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-medium"
+            style={{ color: "var(--b-text-2)" }}
+            title="SEO Settings"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            SEO
+          </button>
+
+          <button
             className="builder-toolbar-btn flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium transition-all"
             style={{ color: "var(--b-text-2)" }}
             onClick={handleSave}
@@ -1414,76 +1599,96 @@ export function BuilderWorkspace({
                   </div>
                 )}
 
-                {sortedSections.map((section) => {
-                  const isExpanded = expandedSections.has(section.id);
-                  const isSectionSelected = selectedSectionId === section.id && !selectedBlockId;
-                  const blockCount = section.blocks.length;
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+                  <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                    {sortedSections.map((section) => {
+                      const isExpanded = expandedSections.has(section.id);
+                      const isSectionSelected = selectedSectionId === section.id && !selectedBlockId;
+                      const blockCount = section.blocks.length;
+                      const sortedBlocks = [...section.blocks].sort((a, b) => a.sortOrder - b.sortOrder);
 
-                  return (
-                    <div key={section.id} className="group/sec">
-                      {/* Section (frame) row */}
-                      <div
-                        className="builder-layer-item flex cursor-pointer items-center gap-1.5 px-2 py-[7px]"
-                        style={{
-                          backgroundColor: isSectionSelected ? "var(--b-accent-soft)" : "transparent",
-                          color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-2)",
-                        }}
-                        onClick={() => selectSection(section.id)}
-                      >
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleSection(section.id); }}
-                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
-                          style={{ color: "var(--b-text-4)" }}
-                        >
-                          <ChevronRight
-                            className="h-3 w-3 transition-transform duration-150"
-                            style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}
-                          />
-                        </button>
-                        <Layout className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-3)" }} />
-                        <span className="flex-1 truncate text-[11px] font-semibold">{section.name}</span>
-                        <span className="flex-shrink-0 text-[9px] font-medium" style={{ color: "var(--b-text-4)" }}>
-                          {blockCount}
-                        </span>
-                        {!section.isVisible && (
-                          <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteSection(section.id); }}
-                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/sec:opacity-40 hover:!opacity-100"
-                          style={{ color: "var(--b-danger)" }}
-                        >
-                          <Trash2 className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
+                      return (
+                        <SortableItem id={section.id} key={section.id}>
+                          {({ style, ref, listeners, attributes }) => (
+                            <div ref={ref} style={style} className="group/sec">
+                              {/* Section (frame) row */}
+                              <div
+                                className="builder-layer-item flex cursor-pointer items-center gap-1.5 px-2 py-[7px]"
+                                style={{
+                                  backgroundColor: isSectionSelected ? "var(--b-accent-soft)" : "transparent",
+                                  color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-2)",
+                                }}
+                                onClick={() => selectSection(section.id)}
+                              >
+                                <span className="flex h-4 w-4 flex-shrink-0 cursor-grab items-center justify-center" {...listeners} {...attributes}>
+                                  <GripVertical className="h-3 w-3 opacity-0 transition-opacity group-hover/sec:opacity-30" style={{ color: "var(--b-text-4)" }} />
+                                </span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleSection(section.id); }}
+                                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
+                                  style={{ color: "var(--b-text-4)" }}
+                                >
+                                  <ChevronRight
+                                    className="h-3 w-3 transition-transform duration-150"
+                                    style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}
+                                  />
+                                </button>
+                                <Layout className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-3)" }} />
+                                <span className="flex-1 truncate text-[11px] font-semibold">{section.name}</span>
+                                <span className="flex-shrink-0 text-[9px] font-medium" style={{ color: "var(--b-text-4)" }}>
+                                  {blockCount}
+                                </span>
+                                {!section.isVisible && (
+                                  <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />
+                                )}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); deleteSection(section.id); }}
+                                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/sec:opacity-40 hover:!opacity-100"
+                                  style={{ color: "var(--b-danger)" }}
+                                >
+                                  <Trash2 className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
 
-                      {/* Block children */}
-                      {isExpanded && (
-                        <div
-                          className="ml-[18px] border-l py-0.5"
-                          style={{ borderColor: isSectionSelected ? "var(--b-accent-mid)" : "var(--b-border)" }}
-                        >
-                          {blockCount === 0 && (
-                            <p className="px-4 py-2 text-[9px]" style={{ color: "var(--b-text-4)" }}>
-                              No elements — switch to Elements tab to add
-                            </p>
+                              {/* Block children */}
+                              {isExpanded && (
+                                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleBlockDragEnd(section.id)}>
+                                  <SortableContext items={sortedBlocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                                    <div
+                                      className="ml-[18px] border-l py-0.5"
+                                      style={{ borderColor: isSectionSelected ? "var(--b-accent-mid)" : "var(--b-border)" }}
+                                    >
+                                      {blockCount === 0 && (
+                                        <p className="px-4 py-2 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                                          No elements — switch to Elements tab to add
+                                        </p>
+                                      )}
+                                      {sortedBlocks.map((block) => (
+                                        <SortableItem id={block.id} key={block.id}>
+                                          {({ style: blockStyle, ref: blockRef, listeners: blockListeners, attributes: blockAttributes }) => (
+                                            <div ref={blockRef} style={blockStyle}>
+                                              <LayerBlockItem
+                                                block={block}
+                                                isSelected={block.id === selectedBlockId}
+                                                onSelect={() => selectBlock(block.id, false)}
+                                                onDelete={() => deleteBlock(block.id, section.id)}
+                                                dragHandleProps={{ ...blockListeners, ...blockAttributes }}
+                                              />
+                                            </div>
+                                          )}
+                                        </SortableItem>
+                                      ))}
+                                    </div>
+                                  </SortableContext>
+                                </DndContext>
+                              )}
+                            </div>
                           )}
-                          {[...section.blocks]
-                            .sort((a, b) => a.sortOrder - b.sortOrder)
-                            .map((block) => (
-                              <LayerBlockItem
-                                key={block.id}
-                                block={block}
-                                isSelected={block.id === selectedBlockId}
-                                onSelect={() => selectBlock(block.id, false)}
-                                onDelete={() => deleteBlock(block.id, section.id)}
-                              />
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        </SortableItem>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </div>
             </div>
           )}
@@ -2010,6 +2215,8 @@ export function BuilderWorkspace({
         >
           {rightPanel === "theme" ? (
             <ThemeEditor portfolioId={portfolio.id} theme={portfolio.theme} />
+          ) : rightPanel === "seo" ? (
+            <SeoEditor portfolioId={portfolio.id} portfolio={portfolio} />
           ) : selectedBlock && selectedSectionId ? (
             <BlockPropertiesPanel
               block={selectedBlock}

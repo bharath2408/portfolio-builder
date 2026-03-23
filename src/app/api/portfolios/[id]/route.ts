@@ -46,6 +46,9 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
       ...(body.status && { status: body.status }),
       ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
       ...(body.templateId !== undefined && { templateId: body.templateId }),
+      ...(body.seoTitle !== undefined && { seoTitle: body.seoTitle || null }),
+      ...(body.seoDescription !== undefined && { seoDescription: body.seoDescription || null }),
+      ...(body.ogImageUrl !== undefined && { ogImageUrl: body.ogImageUrl || null }),
     },
     include: {
       sections: {

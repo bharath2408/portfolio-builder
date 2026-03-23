@@ -7,6 +7,20 @@ const authRoutes = ["/login", "/register"];
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ── Subdomain detection ─────────────────────────────────────
+  const host = req.headers.get("host") ?? "";
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "";
+
+  if (rootDomain && host !== rootDomain && host !== `www.${rootDomain}` && host.endsWith(`.${rootDomain}`)) {
+    const subdomain = host.replace(`.${rootDomain}`, "");
+    const reserved = ["www", "api", "app", "dashboard", "admin"];
+
+    if (subdomain && !reserved.includes(subdomain)) {
+      // Rewrite to portfolio page — URL stays as subdomain
+      return NextResponse.rewrite(new URL(`/portfolio/${subdomain}`, req.url));
+    }
+  }
+
   // Check for NextAuth session token cookie
   const token =
     req.cookies.get("__Secure-authjs.session-token")?.value ??

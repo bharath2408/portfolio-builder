@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Copy,
   Edit,
   ExternalLink,
   Eye,
@@ -21,7 +22,7 @@ import { APP_URL } from "@/config/constants";
 export default function PortfoliosPage() {
   const { data: session } = useSession();
   const { portfolios, isLoading } = usePortfolios();
-  const { deletePortfolio } = usePortfolioMutations();
+  const { deletePortfolio, duplicatePortfolio } = usePortfolioMutations();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const username = session?.user?.username;
 
@@ -162,6 +163,17 @@ export default function PortfoliosPage() {
                     <BarChart3 className="h-3.5 w-3.5" />
                     Analytics
                   </Link>
+
+                  <button
+                    onClick={async () => {
+                      try { await duplicatePortfolio(portfolio.id); } catch {}
+                    }}
+                    className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    title="Duplicate"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Duplicate
+                  </button>
 
                   {portfolio.status === "PUBLISHED" && username && (
                     <a
