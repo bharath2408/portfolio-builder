@@ -2,8 +2,6 @@ import {
   ArrowRight,
   Sparkles,
   Palette,
-  Zap,
-  Globe,
   Layout,
   Search,
   BarChart3,
