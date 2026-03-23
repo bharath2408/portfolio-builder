@@ -1185,6 +1185,29 @@ ${sectionsHtml}
       // Escape → Exit draw mode
       if (e.key === "Escape" && drawMode) { setDrawMode(null); setDrawStart(null); setDrawRect(null); return; }
 
+      // Ctrl+C → Copy block
+      if (mod && e.key === "c" && selectedBlockId) {
+        e.preventDefault();
+        const block = portfolio.sections.flatMap(s => s.blocks).find(b => b.id === selectedBlockId);
+        if (block) {
+          builderStore.copyBlock({
+            type: block.type,
+            content: structuredClone(block.content as Record<string, unknown>),
+            styles: structuredClone(block.styles as Record<string, unknown>),
+          });
+        }
+        return;
+      }
+      // Ctrl+V → Paste block
+      if (mod && e.key === "v" && builderStore.clipboard && selectedSectionId) {
+        e.preventDefault();
+        const clip = builderStore.clipboard;
+        const section = portfolio.sections.find(s => s.id === selectedSectionId);
+        const maxY = section?.blocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20) ?? 20;
+        addBlock(selectedSectionId, clip.type as any);
+        return;
+      }
+
       // Ctrl+S  → Save
       if (mod && e.key === "s") {
         e.preventDefault();
@@ -2826,6 +2849,8 @@ ${sectionsHtml}
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-1 p-5">
               {[
+                ["Ctrl+C", "Copy block"],
+                ["Ctrl+V", "Paste block"],
                 ["Ctrl+S", "Save"],
                 ["Ctrl+Z", "Undo"],
                 ["Ctrl+Shift+Z", "Redo"],

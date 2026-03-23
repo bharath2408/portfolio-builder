@@ -29,6 +29,10 @@ interface BuilderState {
   setSnapToGrid: (snap: boolean) => void;
   setShowGrid: (show: boolean) => void;
 
+  // Clipboard
+  clipboard: BlockClipboard | null;
+  copyBlock: (block: BlockClipboard) => void;
+
   // Undo / Redo
   undoStack: BuilderSnapshot[];
   redoStack: BuilderSnapshot[];
@@ -52,6 +56,12 @@ interface BuilderState {
   reset: () => void;
 }
 
+interface BlockClipboard {
+  type: string;
+  content: Record<string, unknown>;
+  styles: Record<string, unknown>;
+}
+
 interface BuilderSnapshot {
   type: string;
   portfolioState: PortfolioWithRelations;
@@ -70,6 +80,7 @@ const initialState = {
   rightPanelOpen: true,
   activeRightTab: "style" as const,
   devicePreview: "desktop" as const,
+  clipboard: null as BlockClipboard | null,
   gridSize: 20,
   snapToGrid: true,
   showGrid: true,
@@ -126,6 +137,8 @@ export const useBuilderStore = create<BuilderState>()(
       setGridSize: (size) => set({ gridSize: size }, false, "setGridSize"),
       setSnapToGrid: (snap) => set({ snapToGrid: snap }, false, "setSnapToGrid"),
       setShowGrid: (show) => set({ showGrid: show }, false, "setShowGrid"),
+
+      copyBlock: (block) => set({ clipboard: block }, false, "copyBlock"),
 
       pushSnapshot: (type: string) => {
         const currentPortfolio = usePortfolioStore.getState().currentPortfolio;
