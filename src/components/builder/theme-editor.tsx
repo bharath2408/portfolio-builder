@@ -140,6 +140,37 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
     setDirty(true);
   };
 
+  // Apply a full mode preset (Light / Dark)
+  const applyMode = (m: ThemeMode) => {
+    setMode(m);
+    pushToStore("mode", m);
+
+    if (m === "LIGHT") {
+      const light = {
+        backgroundColor: "#ffffff",
+        textColor: "#1a1a2e",
+        surfaceColor: "#f5f5f7",
+        mutedColor: "#6b7280",
+      };
+      setBackgroundColor(light.backgroundColor);
+      setTextColor(light.textColor);
+      updateTheme({ mode: m, ...light });
+      setDirty(true);
+    } else if (m === "DARK") {
+      const dark = {
+        backgroundColor: "#0f172a",
+        textColor: "#f8fafc",
+        surfaceColor: "#1e293b",
+        mutedColor: "#94a3b8",
+      };
+      setBackgroundColor(dark.backgroundColor);
+      setTextColor(dark.textColor);
+      updateTheme({ mode: m, ...dark });
+      setDirty(true);
+    }
+    // CUSTOM: keep current colors, just change mode
+  };
+
   // Helper: update local state + push to store in one call
   const change = (field: string, setter: (v: string) => void, value: string) => {
     setter(value);
@@ -180,21 +211,47 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
 
         {/* ── Mode ─────────────────────────────────────────────── */}
         <Section title="Mode">
-          <div className="flex rounded-md" style={{ backgroundColor: "var(--b-surface)" }}>
-            {(["LIGHT", "DARK", "CUSTOM"] as ThemeMode[]).map((m) => (
+          <div className="flex gap-1.5">
+            {([
+              { id: "LIGHT" as ThemeMode, label: "Light", desc: "White background", bg: "#ffffff", fg: "#1a1a2e" },
+              { id: "DARK" as ThemeMode, label: "Dark", desc: "Dark background", bg: "#0f172a", fg: "#f8fafc" },
+              { id: "CUSTOM" as ThemeMode, label: "Custom", desc: "Your own colors", bg: backgroundColor, fg: textColor },
+            ]).map((m) => (
               <button
-                key={m}
-                onClick={() => { setMode(m); pushToStore("mode", m); }}
-                className="flex-1 rounded-md py-1.5 text-[10px] font-semibold transition-colors"
+                key={m.id}
+                onClick={() => applyMode(m.id)}
+                className="flex flex-1 flex-col items-center gap-1.5 rounded-lg p-2 transition-all"
                 style={{
-                  backgroundColor: mode === m ? "var(--b-accent-soft)" : "transparent",
-                  color: mode === m ? "var(--b-accent)" : "var(--b-text-3)",
+                  backgroundColor: mode === m.id ? "var(--b-accent-soft)" : "var(--b-surface)",
+                  border: mode === m.id ? "1px solid var(--b-accent-mid)" : "1px solid var(--b-border)",
                 }}
               >
-                {m === "LIGHT" ? "Light" : m === "DARK" ? "Dark" : "Custom"}
+                <div
+                  className="h-8 w-full rounded-md"
+                  style={{
+                    backgroundColor: m.bg,
+                    border: "1px solid var(--b-border)",
+                  }}
+                >
+                  <div className="flex h-full flex-col items-center justify-center gap-0.5 px-1">
+                    <div className="h-1 w-6 rounded-full" style={{ backgroundColor: m.fg, opacity: 0.8 }} />
+                    <div className="h-0.5 w-4 rounded-full" style={{ backgroundColor: m.fg, opacity: 0.3 }} />
+                  </div>
+                </div>
+                <span
+                  className="text-[9px] font-bold uppercase tracking-wider"
+                  style={{ color: mode === m.id ? "var(--b-accent)" : "var(--b-text-4)" }}
+                >
+                  {m.label}
+                </span>
               </button>
             ))}
           </div>
+          {mode !== "CUSTOM" && (
+            <p className="mt-2 text-center text-[9px]" style={{ color: "var(--b-text-4)" }}>
+              Switch to Custom for full color control
+            </p>
+          )}
         </Section>
 
         {/* ── Presets ──────────────────────────────────────────── */}
@@ -234,13 +291,18 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
         </Section>
 
         {/* ── Colors ──────────────────────────────────────────── */}
-        <Section title="Colors">
+        <Section title={mode === "CUSTOM" ? "Colors (Full Control)" : "Accent Colors"}>
           <div className="space-y-2">
             <ColorRow label="Primary" value={primaryColor} onChange={(v) => change("primaryColor", setPrimaryColor, v)} />
             <ColorRow label="Secondary" value={secondaryColor} onChange={(v) => change("secondaryColor", setSecondaryColor, v)} />
             <ColorRow label="Accent" value={accentColor} onChange={(v) => change("accentColor", setAccentColor, v)} />
-            <ColorRow label="Background" value={backgroundColor} onChange={(v) => change("backgroundColor", setBackgroundColor, v)} />
-            <ColorRow label="Text" value={textColor} onChange={(v) => change("textColor", setTextColor, v)} />
+            {mode === "CUSTOM" && (
+              <>
+                <div className="my-1.5 h-px" style={{ backgroundColor: "var(--b-border)" }} />
+                <ColorRow label="Background" value={backgroundColor} onChange={(v) => change("backgroundColor", setBackgroundColor, v)} />
+                <ColorRow label="Text" value={textColor} onChange={(v) => change("textColor", setTextColor, v)} />
+              </>
+            )}
           </div>
         </Section>
 

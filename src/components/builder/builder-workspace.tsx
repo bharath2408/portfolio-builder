@@ -214,6 +214,7 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
   const [seoTitle, setSeoTitle] = useState(portfolio.seoTitle ?? "");
   const [seoDesc, setSeoDesc] = useState(portfolio.seoDescription ?? "");
   const [ogImage, setOgImage] = useState(portfolio.ogImageUrl ?? "");
+  const [accessPassword, setAccessPassword] = useState(portfolio.accessPassword ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -224,6 +225,7 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
         seoTitle: seoTitle || undefined,
         seoDescription: seoDesc || undefined,
         ogImageUrl: ogImage || undefined,
+        accessPassword: accessPassword || "",
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -313,6 +315,46 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
             </p>
           </div>
         </div>
+
+        {/* Twitter Card Preview */}
+        <div>
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>Twitter Card Preview</span>
+          <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--b-border)" }}>
+            {ogImage && (
+              <div style={{ aspectRatio: "2/1", overflow: "hidden", backgroundColor: "var(--b-surface)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ogImage} alt="Twitter Card" className="h-full w-full" style={{ objectFit: "cover" }} />
+              </div>
+            )}
+            <div className="p-2.5" style={{ backgroundColor: "var(--b-surface)" }}>
+              <p className="truncate text-[12px] font-semibold" style={{ color: "var(--b-text)" }}>
+                {seoTitle || portfolio.title}
+              </p>
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug" style={{ color: "var(--b-text-3)" }}>
+                {seoDesc || portfolio.description || "No description set."}
+              </p>
+              <p className="mt-1 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                foliocraft.com
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Password Protection */}
+        <div>
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>Password Protection</span>
+          <input
+            type="text"
+            value={accessPassword}
+            onChange={(e) => setAccessPassword(e.target.value)}
+            placeholder="Leave empty for public access"
+            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+          />
+          <p className="mt-1 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+            {accessPassword ? "Visitors must enter this password to view your portfolio." : "Portfolio is publicly accessible."}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -354,6 +396,7 @@ export function BuilderWorkspace({
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -912,6 +955,17 @@ export function BuilderWorkspace({
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
 
+      // ? → Toggle shortcuts overlay
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        setShowShortcuts((v) => !v);
+        return;
+      }
+      // Escape closes shortcuts overlay
+      if (e.key === "Escape" && showShortcuts) {
+        setShowShortcuts(false);
+        return;
+      }
+
       // Ctrl+Shift+Z — Redo (check before plain Z)
       if (mod && e.key === "z" && e.shiftKey) {
         e.preventDefault();
@@ -991,7 +1045,7 @@ export function BuilderWorkspace({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleSave, exportAsJson, fitToScreen, zoomIn, zoomOut, resetZoom, builderStore, scheduleAutoSave]);
+  }, [handleSave, exportAsJson, fitToScreen, zoomIn, zoomOut, resetZoom, builderStore, scheduleAutoSave, showShortcuts]);
 
   // ═════════════════════════════════════════════════════════════
   //  RENDER
@@ -1261,6 +1315,20 @@ export function BuilderWorkspace({
                   <Moon className="h-3.5 w-3.5" />
                 )}
                 {studioTheme === "dark" ? "Light Mode" : "Dark Mode"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={() => setShowShortcuts(true)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Keyboard Shortcuts
+                <DropdownMenuShortcut>?</DropdownMenuShortcut>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -2421,6 +2489,45 @@ export function BuilderWorkspace({
         </div>
         )}
       </div>
+
+      {/* ── Keyboard Shortcuts Overlay ─────────────────────────── */}
+      {showShortcuts && (
+        <>
+          <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
+          <div className="fixed left-1/2 top-1/2 z-[301] w-[520px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl" style={{ backgroundColor: dropdownColors.bg, border: `1px solid ${dropdownColors.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
+              <h2 className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>Keyboard Shortcuts</h2>
+              <button onClick={() => setShowShortcuts(false)} style={{ color: dropdownColors.textMuted }}><X className="h-4 w-4" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1 p-5">
+              {[
+                ["Ctrl+S", "Save"],
+                ["Ctrl+Z", "Undo"],
+                ["Ctrl+Shift+Z", "Redo"],
+                ["Ctrl+E", "Export JSON"],
+                ["Ctrl+\\", "Toggle left panel"],
+                ["Ctrl+/", "Toggle right panel"],
+                ["Ctrl+0", "Reset zoom"],
+                ["Ctrl+1", "Fit to screen"],
+                ["Ctrl+=", "Zoom in"],
+                ["Ctrl+-", "Zoom out"],
+                ["V", "Select tool"],
+                ["R", "Rectangle tool"],
+                ["O", "Circle tool"],
+                ["L", "Line tool"],
+                ["T", "Add text"],
+                ["Escape", "Cancel / Deselect"],
+                ["?", "Show shortcuts"],
+              ].map(([key, desc]) => (
+                <div key={key} className="flex items-center justify-between py-1.5">
+                  <span className="text-[12px]" style={{ color: dropdownColors.textMuted }}>{desc}</span>
+                  <kbd className="rounded-md px-2 py-0.5 text-[10px] font-mono font-semibold" style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.text, border: `1px solid ${dropdownColors.separator}` }}>{key}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

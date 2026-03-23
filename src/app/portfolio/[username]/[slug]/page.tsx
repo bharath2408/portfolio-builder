@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { PasswordGate } from "@/components/portfolio/password-gate";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import { APP_NAME, APP_URL } from "@/config/constants";
 import { db } from "@/lib/db";
@@ -111,6 +112,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: APP_NAME,
       ...(portfolio.ogImageUrl ? { images: [{ url: portfolio.ogImageUrl }] } : {}),
     },
+    twitter: {
+      card: portfolio.ogImageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(portfolio.ogImageUrl ? { images: [portfolio.ogImageUrl] } : {}),
+    },
   };
 }
 
@@ -119,6 +126,15 @@ export default async function PortfolioBySlugPage({ params }: Props) {
   const portfolio = await getPortfolioData(username, slug);
 
   if (!portfolio) notFound();
+
+  // Password protection check
+  if (portfolio.accessPassword) {
+    const cookieStore = await cookies();
+    const accessCookie = cookieStore.get(`portfolio-access-${portfolio.id}`);
+    if (accessCookie?.value !== "granted") {
+      return <PasswordGate portfolioId={portfolio.id} title={portfolio.title} />;
+    }
+  }
 
   const headersList = await headers();
   trackView(portfolio.id, headersList);

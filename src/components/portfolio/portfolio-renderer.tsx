@@ -29,6 +29,7 @@ const DEFAULT_THEME: ThemeTokens = {
 };
 
 export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
+  const portfolioId = portfolio.id;
   const t = portfolio.theme;
   const theme: ThemeTokens = t
     ? {
@@ -79,6 +80,7 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
             key={section.id}
             section={section}
             theme={theme}
+            portfolioId={portfolioId}
           />
         ))
       )}
@@ -107,9 +109,11 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
 function PortfolioSection({
   section,
   theme,
+  portfolioId,
 }: {
   section: PortfolioWithRelations["sections"][number];
   theme: ThemeTokens;
+  portfolioId: string;
 }) {
   const ss = section.styles as SectionStyles;
   // Detect absolute layout: if any block has explicit x/y coordinates, or if frameWidth is set, use absolute positioning
@@ -164,18 +168,24 @@ function PortfolioSection({
 
   if (visibleBlocks.length === 0) return null;
 
-  // Calculate actual content height from block positions
-  // Use the lowest block's y + estimated height, capped at frame height
+  // Calculate content height: use the lowest block's y + estimated height
+  // Keep at least 70% of frame height to avoid sections being too short
   const contentHeight = isAbsolute ? (() => {
     let maxBottom = 0;
     for (const block of visibleBlocks) {
       const bs = block.styles as BlockStyles;
       const blockY = (bs.y ?? 0);
-      const blockH = (bs.h && bs.h > 0) ? bs.h : 80; // estimate auto-height blocks at 80px
+      // Auto-height blocks (h=0): estimate based on type
+      let blockH = (bs.h && bs.h > 0) ? bs.h : 150;
+      if (block.type === "contact_form") blockH = 350;
+      else if (block.type === "project_card") blockH = 250;
+      else if (block.type === "text") blockH = 120;
+      else if (block.type === "heading") blockH = 80;
       maxBottom = Math.max(maxBottom, blockY + blockH);
     }
-    // Add some padding at the bottom, but don't exceed frame height
-    return Math.min(maxBottom + 60, frameHeight);
+    // Add padding, keep at least 70% of frame, cap at frame height
+    const minHeight = frameHeight * 0.7;
+    return Math.min(Math.max(maxBottom + 100, minHeight), frameHeight);
   })() : frameHeight;
 
   return (
@@ -207,6 +217,7 @@ function PortfolioSection({
                 <div
                   key={block.id}
                   className="absolute"
+                  data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
                   style={{
                     left: bs.x ?? 0,
                     top: bs.y ?? 0,
@@ -215,9 +226,10 @@ function PortfolioSection({
                     transform: bs.rotation
                       ? `rotate(${bs.rotation}deg)`
                       : undefined,
+                    animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
                   }}
                 >
-                  <BlockRenderer block={block} theme={theme} />
+                  <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
                 </div>
               );
             })}
@@ -243,9 +255,20 @@ function PortfolioSection({
                 : undefined,
           }}
         >
-          {visibleBlocks.map((block) => (
-            <BlockRenderer key={block.id} block={block} theme={theme} />
-          ))}
+          {visibleBlocks.map((block) => {
+            const bs = block.styles as BlockStyles;
+            return (
+              <div
+                key={block.id}
+                data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
+                style={{
+                  animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
+                }}
+              >
+                <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
+              </div>
+            );
+          })}
         </div>
       )}
     </section>

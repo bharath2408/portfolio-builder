@@ -10,6 +10,7 @@ interface BlockRendererProps {
   block: BlockWithStyles;
   theme: ThemeTokens;
   isEditing?: boolean;
+  portfolioId?: string;
 }
 
 // Resolve "primary", "secondary", "accent", "text", "muted", "surface" → real colors
@@ -87,7 +88,7 @@ const socialIconMap: Record<string, React.ComponentType<{className?: string}>> =
   Github, Linkedin, Twitter, Globe, Mail,
 };
 
-export function BlockRenderer({ block, theme, isEditing: _isEditing }: BlockRendererProps) {
+export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId }: BlockRendererProps) {
   const c = block.content as Record<string, unknown>;
   const inlineStyles = buildInlineStyles(block.styles, theme);
 
@@ -416,14 +417,35 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing }: BlockRend
     case "contact_form": {
       const fields = (c.fields as Array<{name: string; label: string; type: string; placeholder?: string}>) ?? [];
       return (
-        <form onSubmit={(e) => e.preventDefault()} style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (_isEditing) return;
+            const formData = new FormData(e.currentTarget);
+            const data = Object.fromEntries(formData.entries());
+            try {
+              await fetch("/api/public/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...data, portfolioId: portfolioId ?? "" }),
+              });
+              e.currentTarget.reset();
+              const btn = e.currentTarget.querySelector("button[type=submit]");
+              if (btn) {
+                btn.textContent = "Sent!";
+                setTimeout(() => { btn.textContent = (c.submitText as string) ?? "Send Message"; }, 2000);
+              }
+            } catch { /* ignore */ }
+          }}
+          style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}
+        >
           {fields.map((field) => (
             <div key={field.name}>
               <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.6, marginBottom: 6 }}>{field.label}</label>
               {field.type === "textarea" ? (
-                <textarea rows={4} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14, resize: "vertical" }} />
+                <textarea name={field.name} rows={4} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14, resize: "vertical" }} />
               ) : (
-                <input type={field.type} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14 }} />
+                <input name={field.name} type={field.type} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14 }} />
               )}
             </div>
           ))}

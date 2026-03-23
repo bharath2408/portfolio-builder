@@ -100,6 +100,7 @@ model Portfolio {
   seoTitle       String?
   seoDescription String?
   ogImageUrl     String?
+  accessPassword String?
   createdAt      DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -107,7 +108,8 @@ model Portfolio {
   template Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   sections Section[]
   theme    Theme?
-  views    PortfolioView[]
+  views       PortfolioView[]
+  submissions ContactSubmission[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -229,6 +231,22 @@ model Template {
   portfolios Portfolio[]
 
   @@map("templates")
+}
+
+// ─── Contact Submissions ──────────────────────────────────────────
+
+model ContactSubmission {
+  id          String   @id @default(cuid())
+  portfolioId String
+  name        String
+  email       String
+  message     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioId])
+  @@map("contact_submissions")
 }
 
 // ─── Analytics ─────────────────────────────────────────────────────
