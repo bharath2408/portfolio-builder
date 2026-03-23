@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 const publicRoutes = ["/", "/login", "/register", "/portfolio"];
 const authRoutes = ["/login", "/register"];
 const apiAuthRoutes = ["/api/auth"];
-const publicApiRoutes = ["/api/public"];
+const publicApiRoutes = ["/api/public", "/api/templates"];
 
 // Simple in-memory rate limit (per-IP, resets on deploy)
 const rateLimit = new Map<string, { count: number; resetTime: number }>();
@@ -30,10 +29,12 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-export default auth((req: NextRequest) => {
+export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const session = (req as unknown as { auth: { user?: { id: string } } | null }).auth;
-  const isAuthenticated = !!session?.user;
+
+  // Get session from JWT (lightweight, no Prisma/bcrypt imports)
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const isAuthenticated = !!token;
 
   // Rate limiting for API routes
   if (pathname.startsWith("/api")) {
@@ -90,17 +91,10 @@ export default auth((req: NextRequest) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public assets
-     */
     "/((?!_next/static|_next/image|favicon.ico|images|fonts).*)",
   ],
 };
