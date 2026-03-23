@@ -201,52 +201,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Bottom section */}
-        <div className="border-t border-border/50 p-3">
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            disabled={switching}
-            className="mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/60 hover:text-foreground disabled:opacity-50"
-          >
-            <div className={cn(
-              "flex h-[18px] w-[18px] items-center justify-center transition-transform duration-300",
-              switching && "animate-spin"
-            )}>
-              {isDark ? (
-                <Sun className="h-[18px] w-[18px] text-amber-400" strokeWidth={1.75} />
-              ) : (
-                <Moon className="h-[18px] w-[18px] text-slate-400" strokeWidth={1.75} />
-              )}
-            </div>
-            {isDark ? "Light Mode" : "Dark Mode"}
-          </button>
-
-          {/* User card */}
-          <div className="rounded-lg bg-accent/30 p-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[11px] font-bold text-teal-600 ring-1 ring-teal-500/15 dark:text-teal-400">
-                {getInitials(session?.user?.name)}
-                <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-sidebar bg-emerald-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12.5px] font-semibold text-foreground">
-                  {session?.user?.name ?? "User"}
-                </p>
-                <p className="truncate text-[11px] text-muted-foreground/70">
-                  {session?.user?.email}
-                </p>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                title="Sign out"
-                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-background hover:text-foreground"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* ── MAIN ────────────────────────────────────────────────────── */}
@@ -310,7 +264,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-teal-500" />
             </button>
 
-            {/* User avatar (desktop) */}
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              disabled={switching}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title={isDark ? "Light Mode" : "Dark Mode"}
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4 text-amber-400" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+
+            {/* User avatar */}
             <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[10px] font-bold text-teal-600 ring-1 ring-teal-500/15 dark:text-teal-400 lg:flex">
               {getInitials(session?.user?.name)}
             </div>
