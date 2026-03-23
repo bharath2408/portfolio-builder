@@ -68,7 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     async signIn({ user, account }) {
-      if (account?.provider !== "credentials" && user.email) {
+      if (account && account.provider !== "credentials" && user.email) {
         const existing = await db.user.findUnique({
           where: { email: user.email },
           select: { id: true, username: true },
