@@ -49,6 +49,7 @@ import {
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
+import { ImageUpload } from "@/components/common/image-upload";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import {
   CanvasEngine,
@@ -284,21 +285,19 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
 
         {/* OG Image */}
         <div>
-          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>OG Image URL</span>
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-3)" }}>OG Image</span>
+          <ImageUpload
+            value={ogImage}
+            onChange={(v) => setOgImage(v)}
+          />
           <input
             type="text"
             value={ogImage}
             onChange={(e) => setOgImage(e.target.value)}
-            placeholder="https://example.com/og-image.png"
-            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+            placeholder="Or paste URL..."
+            className="mt-2 h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
             style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
           />
-          {ogImage && (
-            <div className="mt-2 overflow-hidden rounded-md border" style={{ borderColor: "var(--b-border)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ogImage} alt="OG Preview" className="w-full h-auto" style={{ maxHeight: 120, objectFit: "cover" }} />
-            </div>
-          )}
         </div>
 
         {/* Google Preview */}
@@ -2238,14 +2237,45 @@ ${sectionsHtml}
 
               {/* Quick insert (no draw, just add) */}
               <button
-                onClick={() => addBlock(selectedSectionId, "image")}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (!file || !selectedSectionId) return;
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("upload_preset", "foliocraft");
+                    try {
+                      const res = await fetch("https://api.cloudinary.com/v1_1/db2y398gb/image/upload", { method: "POST", body: formData });
+                      const data = await res.json();
+                      if (data.secure_url) {
+                        const def = BLOCK_REGISTRY["image"];
+                        const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+                        const existingBlocks = section?.blocks ?? [];
+                        const maxY = existingBlocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20);
+                        const newBlock = await apiPost<BlockWithStyles>(`/portfolios/${portfolio.id}/sections/${selectedSectionId}/blocks`, {
+                          type: "image",
+                          sortOrder: existingBlocks.length,
+                          content: { ...def.defaultContent, src: data.secure_url, alt: file.name },
+                          styles: { ...def.defaultStyles, x: 40, y: maxY + 16, w: DEFAULT_BLOCK_W, h: DEFAULT_BLOCK_H },
+                        });
+                        portfolioStore.addBlockToSection(selectedSectionId, newBlock);
+                        setSelectedBlockId(newBlock.id);
+                        setRightPanel("properties");
+                      }
+                    } catch { /* ignore */ }
+                  };
+                  input.click();
+                }}
                 className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold transition-all hover:brightness-110 active:scale-95"
                 style={{
                   background: `linear-gradient(135deg, ${studioTheme === "dark" ? "#06b6d4" : "#0d9488"}, ${studioTheme === "dark" ? "#0891b2" : "#0f766e"})`,
                   color: "#fff",
                   boxShadow: "0 2px 8px rgba(6,182,212,0.2)",
                 }}
-                title="Quick add image"
+                title="Upload image"
               >
                 <Plus className="h-3 w-3" />
                 Image

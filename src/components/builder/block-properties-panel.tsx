@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 
+import { ImageUpload } from "@/components/common/image-upload";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type { BlockWithStyles, BlockStyles } from "@/types";
@@ -905,10 +906,31 @@ function ContentEditor({
     case "image":
       return (
         <div className="space-y-2.5">
-          {field("Source URL", "src", { placeholder: "https://..." })}
+          <div>
+            <SubLabel>Image</SubLabel>
+            <ImageUpload
+              value={(content.src as string) ?? ""}
+              onChange={(v) => updateContent("src", v)}
+            />
+          </div>
           {field("Alt Text", "alt")}
           {field("Caption", "caption")}
           {field("Aspect Ratio", "aspectRatio", { placeholder: "16/9" })}
+        </div>
+      );
+    case "avatar":
+      return (
+        <div className="space-y-2.5">
+          <div>
+            <SubLabel>Avatar Image</SubLabel>
+            <ImageUpload
+              value={(content.src as string) ?? ""}
+              onChange={(v) => updateContent("src", v)}
+              compact
+            />
+          </div>
+          {field("Alt Text", "alt")}
+          {field("Size", "size", { type: "select", options: [{ label: "Small", value: "sm" }, { label: "Medium", value: "md" }, { label: "Large", value: "lg" }, { label: "XL", value: "xl" }] })}
         </div>
       );
     case "skill_bar":
