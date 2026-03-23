@@ -1198,13 +1198,27 @@ ${sectionsHtml}
         }
         return;
       }
-      // Ctrl+V → Paste block
+      // Ctrl+V → Paste block with copied content & styles
       if (mod && e.key === "v" && builderStore.clipboard && selectedSectionId) {
         e.preventDefault();
         const clip = builderStore.clipboard;
         const section = portfolio.sections.find(s => s.id === selectedSectionId);
-        const maxY = section?.blocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20) ?? 20;
-        addBlock(selectedSectionId, clip.type as any);
+        const existingBlocks = section?.blocks ?? [];
+        const maxY = existingBlocks.reduce((max, b) => Math.max(max, (b.styles.y ?? 0) + (b.styles.h ?? 50)), 20);
+        apiPost<BlockWithStyles>(
+          `/portfolios/${portfolio.id}/sections/${selectedSectionId}/blocks`,
+          {
+            type: clip.type,
+            sortOrder: existingBlocks.length,
+            content: clip.content,
+            styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 },
+          },
+        ).then((res) => {
+          builderStore.pushSnapshot("paste-block");
+          portfolioStore.addBlockToSection(selectedSectionId, res);
+          setSelectedBlockId(res.id);
+          setRightPanel("properties");
+        }).catch(() => {});
         return;
       }
 
