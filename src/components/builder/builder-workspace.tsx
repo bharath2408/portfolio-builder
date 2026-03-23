@@ -213,6 +213,7 @@ export function BuilderWorkspace({
   // ── Panel visibility ────────────────────────────────────────────
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showMinimap, setShowMinimap] = useState(true);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -1002,6 +1003,19 @@ export function BuilderWorkspace({
                 <PanelRight className="mr-2 h-3.5 w-3.5" />
                 Right Panel
                 <DropdownMenuShortcut>Ctrl+/</DropdownMenuShortcut>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={showMinimap}
+                onCheckedChange={(v) => setShowMinimap(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onFocus={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Maximize className="mr-2 h-3.5 w-3.5" />
+                Minimap
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
@@ -1876,9 +1890,96 @@ export function BuilderWorkspace({
             </>
           )}
 
+          {/* ── Minimap ───────────────────────────────────────────── */}
+          {showMinimap && portfolio.sections.length > 0 && (() => {
+            // Calculate bounds of all frames
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            const frames = portfolio.sections.map((s, i) => {
+              const ss = s.styles as SectionStyles;
+              const fx = ss.frameX ?? 0;
+              const fy = ss.frameY ?? i * (DEFAULT_FRAME_HEIGHT + 80);
+              const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+              const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+              minX = Math.min(minX, fx); minY = Math.min(minY, fy);
+              maxX = Math.max(maxX, fx + fw); maxY = Math.max(maxY, fy + fh);
+              return { id: s.id, x: fx, y: fy, w: fw, h: fh, name: s.name };
+            });
+
+            if (!isFinite(minX)) return null;
+
+            const pad = 100;
+            const worldW = maxX - minX + pad * 2;
+            const worldH = maxY - minY + pad * 2;
+            const mapW = 160;
+            const mapH = Math.min(100, (worldH / worldW) * mapW);
+            const scaleM = mapW / worldW;
+
+            // Viewport in canvas coords
+            const vpLeft = -transform.x / transform.scale;
+            const vpTop = -transform.y / transform.scale;
+            const vpW = 900 / transform.scale; // approximate canvas container width
+            const vpH = 600 / transform.scale;
+
+            return (
+              <div
+                className="absolute bottom-3 right-3 z-30 overflow-hidden rounded-lg"
+                style={{
+                  width: mapW,
+                  height: mapH,
+                  backgroundColor: "var(--b-panel)",
+                  border: "1px solid var(--b-border-active)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
+                  opacity: 0.85,
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const mx = (e.clientX - rect.left) / scaleM + minX - pad;
+                  const my = (e.clientY - rect.top) / scaleM + minY - pad;
+                  setTransform({
+                    ...transform,
+                    x: -mx * transform.scale + 450,
+                    y: -my * transform.scale + 300,
+                  });
+                }}
+              >
+                {/* Frame rectangles */}
+                {frames.map((f) => (
+                  <div
+                    key={f.id}
+                    className="absolute"
+                    style={{
+                      left: (f.x - minX + pad) * scaleM,
+                      top: (f.y - minY + pad) * scaleM,
+                      width: f.w * scaleM,
+                      height: f.h * scaleM,
+                      backgroundColor: selectedSectionId === f.id ? "var(--b-accent)" : "var(--b-surface)",
+                      borderRadius: 2,
+                      opacity: selectedSectionId === f.id ? 0.6 : 0.4,
+                    }}
+                  />
+                ))}
+
+                {/* Viewport indicator */}
+                <div
+                  className="absolute"
+                  style={{
+                    left: (vpLeft - minX + pad) * scaleM,
+                    top: (vpTop - minY + pad) * scaleM,
+                    width: vpW * scaleM,
+                    height: vpH * scaleM,
+                    border: "1.5px solid var(--b-accent)",
+                    borderRadius: 2,
+                    backgroundColor: "var(--b-accent-soft)",
+                  }}
+                />
+              </div>
+            );
+          })()}
+
           {/* Bottom-left keyboard hint */}
           <div
-            className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-3 rounded-lg px-3 py-1.5 text-[10px]"
+            className="pointer-events-none absolute left-3 top-3 flex items-center gap-3 rounded-lg px-3 py-1.5 text-[10px]"
             style={{
               color: "var(--b-text-4)",
               backgroundColor: "var(--b-hint-bg)",

@@ -27,6 +27,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.1",
     "@neondatabase/serverless": "^0.10.4",
+    "@playwright/mcp": "^0.0.68",
     "@prisma/adapter-neon": "^6.1.0",
     "@prisma/client": "^6.1.0",
     "@radix-ui/react-alert-dialog": "^1.1.4",
