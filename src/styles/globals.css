@@ -265,14 +265,36 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auth page stagger animations */
+.auth-stagger > * {
+  opacity: 0;
+  animation: authSlideUp 0.5s ease-out forwards;
+}
+.auth-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.auth-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.auth-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.auth-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.auth-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.auth-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.auth-stagger > *:nth-child(7) { animation-delay: 360ms; }
+.auth-stagger > *:nth-child(8) { animation-delay: 420ms; }
+
+@keyframes authSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auth branding panel slide-in */
+.auth-brand-slide {
+  animation: authBrandSlide 0.7s ease-out both;
+}
+@keyframes authBrandSlide {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* ══════════════════════════════════════════════════════════════════
