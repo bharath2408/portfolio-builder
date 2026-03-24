@@ -51,28 +51,27 @@ import {
   useState,
 } from "react";
 
-import { BlockRenderer } from "@/components/builder/block-renderer";
-import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
-import { CommandPalette } from "@/components/builder/command-palette";
-import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
-import { OnboardingTour } from "@/components/builder/onboarding-tour";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { ImageUpload } from "@/components/common/image-upload";
-import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
-import {
-  CanvasEngine,
-  ZoomControls,
-  type CanvasTransform,
-} from "@/components/builder/canvas-engine";
+import { BlockRenderer } from "@/components/builder/block-renderer";
 import {
   CanvasElement,
   CanvasFrame,
   SmartGuides,
   type GuideInfo,
 } from "@/components/builder/canvas-element";
+import {
+  CanvasEngine,
+  ZoomControls,
+  type CanvasTransform,
+} from "@/components/builder/canvas-engine";
+import { AdvancedColorInput } from "@/components/builder/color-picker";
+import { CommandPalette } from "@/components/builder/command-palette";
+import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
+import { OnboardingTour } from "@/components/builder/onboarding-tour";
 import { ThemeEditor } from "@/components/builder/theme-editor";
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { ImageUpload } from "@/components/common/image-upload";
+import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,6 +92,7 @@ import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
+
 import type {
   PortfolioWithRelations,
   SectionWithBlocks,
