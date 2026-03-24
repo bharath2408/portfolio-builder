@@ -2897,88 +2897,128 @@ ${sectionsHtml}
           )}
 
           {/* ── Minimap ───────────────────────────────────────────── */}
-          {showMinimap && portfolio.sections.length > 0 && (() => {
-            // Calculate bounds of all frames
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            const frames = portfolio.sections.map((s, i) => {
-              const ss = s.styles as SectionStyles;
-              const fx = ss.frameX ?? 0;
-              const fy = ss.frameY ?? i * (DEFAULT_FRAME_HEIGHT + 80);
-              const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
-              const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
-              minX = Math.min(minX, fx); minY = Math.min(minY, fy);
-              maxX = Math.max(maxX, fx + fw); maxY = Math.max(maxY, fy + fh);
-              return { id: s.id, x: fx, y: fy, w: fw, h: fh, name: s.name };
-            });
+          {showMinimap && portfolio.sections.length > 0 && selectedSectionId && (() => {
+            const selIdx = portfolio.sections.findIndex((s) => s.id === selectedSectionId);
+            const sel = portfolio.sections[selIdx];
+            if (!sel) return null;
 
-            if (!isFinite(minX)) return null;
-
-            const pad = 100;
-            const worldW = maxX - minX + pad * 2;
-            const worldH = maxY - minY + pad * 2;
-            const mapW = 160;
-            const mapH = Math.min(100, (worldH / worldW) * mapW);
+            const ss = sel.styles as SectionStyles;
+            const fx = ss.frameX ?? 0;
+            const fy = ss.frameY ?? selIdx * (DEFAULT_FRAME_HEIGHT + 80);
+            const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+            const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+            const minX = fx;
+            const minY = fy;
+            const pad = 30;
+            const worldW = fw + pad * 2;
+            const worldH = fh + pad * 2;
+            const mapW = 200;
+            const mapH = Math.min(130, (worldH / worldW) * mapW);
             const scaleM = mapW / worldW;
 
-            // Viewport in canvas coords
             const vpLeft = -transform.x / transform.scale;
             const vpTop = -transform.y / transform.scale;
-            const vpW = 900 / transform.scale; // approximate canvas container width
+            const vpW = 900 / transform.scale;
             const vpH = 600 / transform.scale;
+
+            const visibleBlocks = [...sel.blocks].filter((b) => b.isVisible).sort((a, b) => a.sortOrder - b.sortOrder);
 
             return (
               <div
-                className="absolute bottom-3 right-3 z-30 overflow-hidden rounded-lg"
+                className="absolute bottom-3 right-3 z-30 flex flex-col overflow-hidden rounded-xl"
                 style={{
                   width: mapW,
-                  height: mapH,
                   backgroundColor: "var(--b-panel)",
-                  border: "1px solid var(--b-border-active)",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
-                  opacity: 0.85,
-                }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const mx = (e.clientX - rect.left) / scaleM + minX - pad;
-                  const my = (e.clientY - rect.top) / scaleM + minY - pad;
-                  setTransform({
-                    ...transform,
-                    x: -mx * transform.scale + 450,
-                    y: -my * transform.scale + 300,
-                  });
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                  borderColor: "var(--b-border-active)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.03) inset",
                 }}
               >
-                {/* Frame rectangles */}
-                {frames.map((f) => (
+                {/* Content area */}
+                <div
+                  className="relative cursor-crosshair"
+                  style={{ height: mapH }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const mx = (e.clientX - rect.left) / scaleM + minX - pad;
+                    const my = (e.clientY - rect.top) / scaleM + minY - pad;
+                    setTransform({
+                      ...transform,
+                      x: -mx * transform.scale + 450,
+                      y: -my * transform.scale + 300,
+                    });
+                  }}
+                >
+                  {/* Rendered frame content */}
                   <div
-                    key={f.id}
-                    className="absolute"
+                    className="absolute overflow-hidden"
                     style={{
-                      left: (f.x - minX + pad) * scaleM,
-                      top: (f.y - minY + pad) * scaleM,
-                      width: f.w * scaleM,
-                      height: f.h * scaleM,
-                      backgroundColor: selectedSectionId === f.id ? "var(--b-accent)" : "var(--b-surface)",
-                      borderRadius: 2,
-                      opacity: selectedSectionId === f.id ? 0.6 : 0.4,
+                      left: pad * scaleM,
+                      top: pad * scaleM,
+                      width: fw * scaleM,
+                      height: fh * scaleM,
+                      backgroundColor: "var(--b-surface)",
+                      borderRadius: 3,
+                    }}
+                  >
+                    <div
+                      className="pointer-events-none absolute left-0 top-0 origin-top-left"
+                      style={{ width: fw, height: fh, transform: `scale(${scaleM})` }}
+                    >
+                      {visibleBlocks.map((block) => {
+                        const bs = block.styles as BlockStyles;
+                        const isSelectedBlock = block.id === selectedBlockId;
+                        return (
+                          <div
+                            key={block.id}
+                            className="absolute"
+                            style={{
+                              left: bs.x ?? 0,
+                              top: bs.y ?? 0,
+                              width: bs.w ?? 200,
+                              height: bs.h === 0 ? "auto" : (bs.h ?? "auto"),
+                            }}
+                          >
+                            <BlockRenderer block={block} theme={theme} isEditing />
+                            {/* Selected block highlight */}
+                            {isSelectedBlock && (
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  outline: `${2 / scaleM}px solid var(--b-accent)`,
+                                  outlineOffset: `${1 / scaleM}px`,
+                                  borderRadius: 2,
+                                  boxShadow: `0 0 ${8 / scaleM}px var(--b-accent)`,
+                                }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Viewport indicator */}
+                  <div
+                    className="absolute transition-all duration-100"
+                    style={{
+                      left: (vpLeft - minX + pad) * scaleM,
+                      top: (vpTop - minY + pad) * scaleM,
+                      width: vpW * scaleM,
+                      height: vpH * scaleM,
+                      borderWidth: 1.5,
+                      borderStyle: "solid",
+                      borderColor: "var(--b-accent)",
+                      borderRadius: 3,
+                      backgroundColor: "rgba(20,184,166,0.06)",
+                      boxShadow: "0 0 0 1px rgba(20,184,166,0.15)",
                     }}
                   />
-                ))}
-
-                {/* Viewport indicator */}
-                <div
-                  className="absolute"
-                  style={{
-                    left: (vpLeft - minX + pad) * scaleM,
-                    top: (vpTop - minY + pad) * scaleM,
-                    width: vpW * scaleM,
-                    height: vpH * scaleM,
-                    border: "1.5px solid var(--b-accent)",
-                    borderRadius: 2,
-                    backgroundColor: "var(--b-accent-soft)",
-                  }}
-                />
+                </div>
               </div>
             );
           })()}
