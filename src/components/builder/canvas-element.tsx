@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
   useEffect,
-  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 
 // ─── Constants ───────────────────────────────────────────────────
@@ -76,7 +76,7 @@ function ResizeHandle({
   onResizeStart,
 }: {
   position: HandlePosition;
-  onResizeStart: (pos: HandlePosition, e: ReactMouseEvent) => void;
+  onResizeStart: (pos: HandlePosition, e: ReactPointerEvent) => void;
 }) {
   const posStyle: React.CSSProperties = {};
   const half = -HANDLE_SIZE / 2;
@@ -107,8 +107,9 @@ function ResizeHandle({
         borderRadius: 3,
         cursor: HANDLE_CURSORS[position],
         boxShadow: "0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px var(--b-accent-glow)",
+        touchAction: "none",
       }}
-      onMouseDown={(e) => {
+      onPointerDown={(e) => {
         e.stopPropagation();
         e.preventDefault();
         onResizeStart(position, e);
@@ -157,13 +158,14 @@ export const CanvasElement = memo(function CanvasElement({
 
   // ── Drag to move ──────────────────────────────────────────────
 
-  const handleMouseDown = useCallback(
-    (e: ReactMouseEvent) => {
+  const handlePointerDown = useCallback(
+    (e: ReactPointerEvent) => {
       if (isLocked || isResizing) return;
       if (e.button !== 0) return;
 
       e.stopPropagation();
       e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       onSelect(id, e.shiftKey);
 
       setIsDragging(true);
@@ -181,7 +183,7 @@ export const CanvasElement = memo(function CanvasElement({
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMove = (e: globalThis.MouseEvent) => {
+    const handleMove = (e: globalThis.PointerEvent) => {
       const dx = (e.clientX - dragStart.current.mouseX) / canvasScale;
       const dy = (e.clientY - dragStart.current.mouseY) / canvasScale;
       onMove(
@@ -196,20 +198,21 @@ export const CanvasElement = memo(function CanvasElement({
       onDragEnd?.();
     };
 
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
     return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
     };
   }, [isDragging, id, canvasScale, onMove, onDragEnd]);
 
   // ── Resize ────────────────────────────────────────────────────
 
   const handleResizeStart = useCallback(
-    (handle: HandlePosition, e: ReactMouseEvent) => {
+    (handle: HandlePosition, e: ReactPointerEvent) => {
       if (isLocked) return;
 
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       setIsResizing(true);
       resizeStart.current = {
         mouseX: e.clientX,
@@ -227,7 +230,7 @@ export const CanvasElement = memo(function CanvasElement({
   useEffect(() => {
     if (!isResizing) return;
 
-    const handleMove = (e: globalThis.MouseEvent) => {
+    const handleMove = (e: globalThis.PointerEvent) => {
       const {
         mouseX,
         mouseY,
@@ -267,11 +270,11 @@ export const CanvasElement = memo(function CanvasElement({
 
     const handleUp = () => setIsResizing(false);
 
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
     return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
     };
   }, [isResizing, id, canvasScale, onResize]);
 
@@ -289,6 +292,7 @@ export const CanvasElement = memo(function CanvasElement({
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
         zIndex: isSelected ? 100 : isDragging ? 99 : sortOrder + 1,
         opacity: isHidden ? 0.3 : 1,
+        touchAction: "none",
       }}
     >
       {/* Content — pointer-events DISABLED so interactive elements
@@ -298,11 +302,9 @@ export const CanvasElement = memo(function CanvasElement({
         {children}
       </div>
 
-      {/* Transparent click/drag overlay — captures ALL mouse events.
+      {/* Transparent click/drag overlay — captures ALL pointer events.
           This sits on top and ensures single-click always selects,
-          drag always moves, regardless of what content is rendered.
-          onClick stopPropagation prevents the frame body from
-          receiving the click and deselecting the block. */}
+          drag always moves, regardless of what content is rendered. */}
       <div
         className="absolute inset-0 z-10"
         style={{
@@ -311,8 +313,9 @@ export const CanvasElement = memo(function CanvasElement({
             : isDragging
               ? "grabbing"
               : "default",
+          touchAction: "none",
         }}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -320,8 +323,8 @@ export const CanvasElement = memo(function CanvasElement({
           onSelect(id, false);
           onCtxMenu?.(id, e.clientX, e.clientY);
         }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onPointerEnter={() => setIsHovered(true)}
+        onPointerLeave={() => setIsHovered(false)}
         onDoubleClick={(e) => {
           e.stopPropagation();
           onDoubleClick?.(id);
@@ -527,9 +530,6 @@ export const CanvasFrame = memo(function CanvasFrame({
           transition: "border-color 0.2s, box-shadow 0.2s",
         }}
         onClick={(e) => {
-          // Only select the frame when clicking the frame body itself
-          // (empty space), not when a child element was clicked.
-          // Child elements stop propagation via their own overlay.
           if (e.target === e.currentTarget) {
             e.stopPropagation();
             onSelect(id);

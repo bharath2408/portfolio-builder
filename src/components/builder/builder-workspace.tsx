@@ -814,7 +814,7 @@ export function BuilderWorkspace({
   };
 
   // ── Draw mode handlers ────────────────────────────────────────
-  const handleDrawMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleDrawMouseDown = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     if (!drawMode || !selectedSectionId || !drawContainerRef.current) return;
     e.stopPropagation();
     e.preventDefault();
@@ -834,7 +834,7 @@ export function BuilderWorkspace({
     setDrawRect({ x: relX, y: relY, w: 0, h: 0 });
   }, [drawMode, selectedSectionId, transform, portfolio.sections]);
 
-  const handleDrawMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleDrawMouseMove = useCallback((e: React.PointerEvent | React.MouseEvent) => {
     if (!drawStart || !drawContainerRef.current) return;
     const rect = drawContainerRef.current.getBoundingClientRect();
     const section = portfolio.sections.find((s) => s.id === selectedSectionId);
@@ -2547,9 +2547,9 @@ ${sectionsHtml}
           ref={drawContainerRef}
           className="relative flex-1 overflow-hidden"
           style={{ cursor: drawMode ? "crosshair" : undefined }}
-          onMouseDown={drawMode ? handleDrawMouseDown : undefined}
-          onMouseMove={drawMode && drawStart ? handleDrawMouseMove : undefined}
-          onMouseUp={drawMode && drawStart ? handleDrawMouseUp : undefined}
+          onPointerDown={drawMode ? handleDrawMouseDown : undefined}
+          onPointerMove={drawMode && drawStart ? handleDrawMouseMove : undefined}
+          onPointerUp={drawMode && drawStart ? handleDrawMouseUp : undefined}
         >
           <SmartGuides guides={guides} transform={transform} />
 

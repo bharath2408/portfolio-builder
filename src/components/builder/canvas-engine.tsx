@@ -2,6 +2,7 @@
 
 import {
   memo, useCallback, useEffect, useRef, useState,
+  type PointerEvent as ReactPointerEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 
@@ -150,12 +151,19 @@ export function CanvasEngine({
     };
   }, [handleWheel]);
 
-  // ── Pan (middle mouse or space+drag) ────────────────────────────
+  // ── Pan (middle mouse, space+drag, or two-finger drag on touch) ──
 
-  const handleMouseDown = useCallback(
-    (e: ReactMouseEvent) => {
-      if (e.button === 1 || (e.button === 0 && isSpaceHeld)) {
+  const handlePointerDown = useCallback(
+    (e: ReactPointerEvent) => {
+      // Pan: middle mouse, space+click, or single-finger touch on canvas
+      const shouldPan =
+        e.button === 1 ||
+        (e.button === 0 && isSpaceHeld) ||
+        (e.button === 0 && e.pointerType === "touch");
+
+      if (shouldPan) {
         e.preventDefault();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsPanning(true);
         panStart.current = { x: e.clientX, y: e.clientY };
         const t = transformRef.current;
@@ -165,8 +173,8 @@ export function CanvasEngine({
     [isSpaceHeld],
   );
 
-  const handleMouseMove = useCallback(
-    (e: ReactMouseEvent) => {
+  const handlePointerMove = useCallback(
+    (e: ReactPointerEvent) => {
       if (!isPanning) return;
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
@@ -179,7 +187,7 @@ export function CanvasEngine({
     [isPanning, onTransformChange],
   );
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
     setIsPanning(false);
   }, []);
 
@@ -220,11 +228,12 @@ export function CanvasEngine({
       className={`builder-canvas relative h-full w-full overflow-hidden ${className ?? ""}`}
       style={{
         cursor: isPanning ? "grabbing" : isSpaceHeld ? "grab" : cursorOverride ?? "default",
+        touchAction: "none",
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
       onClick={handleCanvasClick}
     >
       {/* CSS grid background */}
