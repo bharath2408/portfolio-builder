@@ -12,6 +12,7 @@ import {
   FileJson,
   Globe,
   GripVertical,
+  ImageDown,
   Layers,
   Layout,
   LayoutGrid,
@@ -1167,6 +1168,47 @@ export function BuilderWorkspace({
       setShowFrameTemplateDialog(false);
     } catch {
       /* handle */
+    }
+  };
+
+  const exportFrameAsPng = async (sectionId: string, frameName: string) => {
+    const frameEl = document.querySelector(`[data-frame-id="${sectionId}"]`) as HTMLElement | null;
+    if (!frameEl) return;
+
+    try {
+      const { toPng } = await import("html-to-image");
+
+      // Temporarily remove selection styles for clean export
+      const prevBorder = frameEl.style.border;
+      const prevBoxShadow = frameEl.style.boxShadow;
+      frameEl.style.border = "none";
+      frameEl.style.boxShadow = "none";
+
+      // Hide selection overlays and resize handles inside the frame
+      const overlays = frameEl.querySelectorAll<HTMLElement>("[class*='z-10'], [class*='z-20'], [class*='z-30'], [class*='z-50']");
+      const prevDisplay: string[] = [];
+      overlays.forEach((el, i) => {
+        prevDisplay[i] = el.style.display;
+        if (el.style.pointerEvents === "none" || el.style.cursor) el.style.display = "none";
+      });
+
+      const dataUrl = await toPng(frameEl, {
+        pixelRatio: 2,
+        backgroundColor: frameEl.style.backgroundColor || "#0f172a",
+      });
+
+      // Restore styles
+      frameEl.style.border = prevBorder;
+      frameEl.style.boxShadow = prevBoxShadow;
+      overlays.forEach((el, i) => { el.style.display = prevDisplay[i] ?? ""; });
+
+      // Download
+      const link = document.createElement("a");
+      link.download = `${frameName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to export frame:", err);
     }
   };
 
@@ -3174,14 +3216,24 @@ ${sectionsHtml}
                         {sec.name}
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteSection(selectedSectionId)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md"
-                      style={{ color: "var(--b-danger)" }}
-                      title="Delete frame"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => exportFrameAsPng(selectedSectionId, sec.name)}
+                        className="flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                        style={{ color: "var(--b-text-3)" }}
+                        title="Export frame as PNG"
+                      >
+                        <ImageDown className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => deleteSection(selectedSectionId)}
+                        className="flex h-6 w-6 items-center justify-center rounded-md"
+                        style={{ color: "var(--b-danger)" }}
+                        title="Delete frame"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto">

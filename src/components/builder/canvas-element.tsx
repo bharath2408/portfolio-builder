@@ -515,6 +515,7 @@ export const CanvasFrame = memo(function CanvasFrame({
 
       {/* Frame body */}
       <div
+        data-frame-id={id}
         className="relative overflow-hidden"
         style={{
           width,
