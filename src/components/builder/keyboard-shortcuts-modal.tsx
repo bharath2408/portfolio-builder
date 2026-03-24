@@ -37,8 +37,11 @@ export function KeyboardShortcutsModal({ open, onClose, dropdownColors }: Keyboa
 
   return (
     <>
-      <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
         className="fixed left-1/2 top-1/2 z-[301] w-[540px] max-w-[95vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
         style={{
           backgroundColor: dropdownColors.bg,
@@ -50,10 +53,10 @@ export function KeyboardShortcutsModal({ open, onClose, dropdownColors }: Keyboa
           className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}
         >
-          <h2 className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>
+          <h2 id="shortcuts-title" className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>
             Keyboard Shortcuts
           </h2>
-          <button onClick={onClose} style={{ color: dropdownColors.textMuted }}>
+          <button onClick={onClose} aria-label="Close shortcuts" style={{ color: dropdownColors.textMuted }}>
             <X className="h-4 w-4" />
           </button>
         </div>

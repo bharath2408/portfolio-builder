@@ -109,10 +109,14 @@ export function HelpDrawer() {
               animating ? "opacity-100" : "opacity-0",
             )}
             onClick={closeDrawer}
+            aria-hidden="true"
           />
 
           {/* Panel */}
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="help-drawer-title"
             className={cn(
               "fixed bottom-4 right-4 z-[201] flex h-[80vh] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/15 transition-all duration-250 ease-out dark:border-white/[0.08] dark:shadow-black/40",
               animating
@@ -131,7 +135,7 @@ export function HelpDrawer() {
                     <div className="absolute inset-0 rounded-xl bg-white/10" />
                   </div>
                   <div>
-                    <h2 className="font-display text-[15px] font-bold tracking-tight text-foreground">
+                    <h2 id="help-drawer-title" className="font-display text-[15px] font-bold tracking-tight text-foreground">
                       Help Center
                     </h2>
                     <p className="text-[10px] text-muted-foreground/50">
@@ -141,6 +145,7 @@ export function HelpDrawer() {
                 </div>
                 <button
                   onClick={closeDrawer}
+                  aria-label="Close help center"
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 transition-all hover:bg-accent hover:text-foreground"
                 >
                   <X className="h-4 w-4" />

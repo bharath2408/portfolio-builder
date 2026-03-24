@@ -120,8 +120,11 @@ export function CommandPalette({ open, onClose, onExecute, dropdownColors }: Com
 
   return (
     <>
-      <div className="fixed inset-0 z-[350] bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[350] bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         className="fixed left-1/2 top-[20%] z-[351] w-[480px] max-w-[95vw] -translate-x-1/2 overflow-hidden rounded-2xl"
         style={{
           backgroundColor: dropdownColors.bg,
@@ -141,6 +144,12 @@ export function CommandPalette({ open, onClose, onExecute, dropdownColors }: Com
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commands..."
+            aria-label="Search commands"
+            aria-autocomplete="list"
+            aria-controls="command-list"
+            aria-activedescendant={flatList[activeIdx] ? `cmd-${flatList[activeIdx].id}` : undefined}
+            role="combobox"
+            aria-expanded="true"
             className="flex-1 bg-transparent text-[13px] outline-none placeholder:opacity-50"
             style={{ color: dropdownColors.text }}
           />
@@ -162,7 +171,7 @@ export function CommandPalette({ open, onClose, onExecute, dropdownColors }: Com
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[50vh] overflow-y-auto p-2">
+        <div ref={listRef} id="command-list" role="listbox" aria-label="Commands" className="max-h-[50vh] overflow-y-auto p-2">
           {flatList.length === 0 && (
             <p className="py-8 text-center text-[12px]" style={{ color: dropdownColors.textMuted }}>
               No commands found
@@ -182,6 +191,9 @@ export function CommandPalette({ open, onClose, onExecute, dropdownColors }: Com
                 return (
                   <button
                     key={cmd.id}
+                    id={`cmd-${cmd.id}`}
+                    role="option"
+                    aria-selected={isActive}
                     data-active={isActive}
                     onClick={() => execute(cmd)}
                     onMouseEnter={() => setActiveIdx(idx)}

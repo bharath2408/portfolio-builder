@@ -296,14 +296,28 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
             value={ogImage}
             onChange={(v) => setOgImage(v)}
           />
-          <input
-            type="text"
-            value={ogImage}
-            onChange={(e) => setOgImage(e.target.value)}
-            placeholder="Or paste URL..."
-            className="mt-2 h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
-            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
-          />
+          <div className="mt-2 flex gap-1.5">
+            <input
+              type="text"
+              value={ogImage}
+              onChange={(e) => setOgImage(e.target.value)}
+              placeholder="Or paste URL..."
+              className="h-7 flex-1 rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+              style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+            />
+            <button
+              type="button"
+              onClick={() => setOgImage(`/api/portfolios/${portfolioId}/og`)}
+              className="flex-shrink-0 rounded-md px-2 py-1 text-[9px] font-semibold transition-colors"
+              style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+              title="Auto-generate OG image from portfolio"
+            >
+              Auto
+            </button>
+          </div>
+          <p className="mt-1 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+            Click &quot;Auto&quot; to generate from your portfolio title & theme
+          </p>
         </div>
 
         {/* Google Preview */}
@@ -1472,6 +1486,50 @@ ${sectionsHtml}
         return;
       }
 
+      // Arrow keys → Move selected block
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && selectedBlockId && selectedSectionId) {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const block = portfolio.sections
+          .find((s) => s.id === selectedSectionId)
+          ?.blocks.find((b) => b.id === selectedBlockId);
+        if (!block) return;
+        const device = builderStore.devicePreview;
+        const ms = mergeDeviceStyles(block.styles, block.tabletStyles as Partial<BlockStyles>, block.mobileStyles as Partial<BlockStyles>, device);
+        let nx = ms.x ?? 0;
+        let ny = ms.y ?? 0;
+        if (e.key === "ArrowUp") ny -= step;
+        if (e.key === "ArrowDown") ny += step;
+        if (e.key === "ArrowLeft") nx -= step;
+        if (e.key === "ArrowRight") nx += step;
+        if (device === "desktop") {
+          portfolioStore.updateBlockInSection(selectedSectionId, selectedBlockId, {
+            styles: { ...(block.styles as BlockStyles), x: nx, y: ny },
+          });
+        } else {
+          const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
+          const existing = (block[field] ?? {}) as Partial<BlockStyles>;
+          portfolioStore.updateBlockInSection(selectedSectionId, selectedBlockId, {
+            [field]: { ...existing, x: nx, y: ny },
+          });
+        }
+        builderStore.setDirty(true);
+        scheduleAutoSave();
+        return;
+      }
+
+      // Delete / Backspace → Delete selected block
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId && selectedSectionId) {
+        // Don't delete if user is typing in an input/textarea
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        e.preventDefault();
+        deleteBlock(selectedBlockId, selectedSectionId);
+        return;
+      }
+
       // V → Select tool
       if (!mod && e.key === "v") { setDrawMode(null); return; }
       // R → Rectangle draw
@@ -1494,6 +1552,8 @@ ${sectionsHtml}
             type: block.type,
             content: structuredClone(block.content as Record<string, unknown>),
             styles: structuredClone(block.styles as Record<string, unknown>),
+            tabletStyles: structuredClone((block.tabletStyles ?? {}) as Record<string, unknown>),
+            mobileStyles: structuredClone((block.mobileStyles ?? {}) as Record<string, unknown>),
           });
         }
         return;
@@ -1514,6 +1574,8 @@ ${sectionsHtml}
           isLocked: false,
           content: structuredClone(clip.content),
           styles: { ...clip.styles, x: ((clip.styles.x as number) ?? 40) + 20, y: maxY + 16 },
+          tabletStyles: structuredClone(clip.tabletStyles),
+          mobileStyles: structuredClone(clip.mobileStyles),
           createdAt: new Date(),
           updatedAt: new Date(),
         } as unknown as BlockWithStyles;

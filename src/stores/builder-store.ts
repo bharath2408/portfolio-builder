@@ -60,6 +60,8 @@ interface BlockClipboard {
   type: string;
   content: Record<string, unknown>;
   styles: Record<string, unknown>;
+  tabletStyles: Record<string, unknown>;
+  mobileStyles: Record<string, unknown>;
 }
 
 interface BuilderSnapshot {
