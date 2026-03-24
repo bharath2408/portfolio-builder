@@ -300,6 +300,62 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultStyles: { width: "100%", borderRadius: 8, marginBottom: 16 },
   },
 
+  // ── Integrations ───────────────────────────────────────────────────
+  youtube: {
+    type: "youtube",
+    label: "YouTube",
+    icon: "Play",
+    category: "integrations",
+    description: "Embed a YouTube video",
+    defaultContent: { url: "", autoplay: false },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16 },
+  },
+  spotify: {
+    type: "spotify",
+    label: "Spotify",
+    icon: "Music",
+    category: "integrations",
+    description: "Embed a Spotify track, album, or playlist",
+    defaultContent: { url: "", compact: false },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16 },
+  },
+  google_map: {
+    type: "google_map",
+    label: "Google Map",
+    icon: "MapPin",
+    category: "integrations",
+    description: "Embed a Google Maps location",
+    defaultContent: { query: "", zoom: 14 },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16 },
+  },
+  calendly: {
+    type: "calendly",
+    label: "Calendly",
+    icon: "Calendar",
+    category: "integrations",
+    description: "Embed a Calendly scheduling widget",
+    defaultContent: { url: "" },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16 },
+  },
+  github_contrib: {
+    type: "github_contrib",
+    label: "GitHub Graph",
+    icon: "Github",
+    category: "integrations",
+    description: "Show GitHub contribution graph",
+    defaultContent: { username: "" },
+    defaultStyles: { width: "100%", borderRadius: 12, marginBottom: 16 },
+  },
+  custom_html: {
+    type: "custom_html",
+    label: "Custom HTML",
+    icon: "Code",
+    category: "integrations",
+    description: "Embed custom HTML, CSS, and JavaScript",
+    defaultContent: { html: "", height: 300 },
+    defaultStyles: { width: "100%", borderRadius: 8, marginBottom: 16 },
+  },
+
   // ── Shapes (Figma-style primitives) ────────────────────────────────
   rectangle: {
     type: "rectangle",
@@ -339,6 +395,7 @@ export const BLOCK_CATEGORIES = [
   { id: "data" as const, label: "Data Display", icon: "BarChart3" },
   { id: "composite" as const, label: "Composite", icon: "Component" },
   { id: "layout" as const, label: "Layout", icon: "LayoutGrid" },
+  { id: "integrations" as const, label: "Integrations", icon: "Plug" },
   { id: "shapes" as const, label: "Shapes", icon: "Pentagon" },
 ] as const;
 

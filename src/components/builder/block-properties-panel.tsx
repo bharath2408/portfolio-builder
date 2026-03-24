@@ -1087,6 +1087,59 @@ function ContentEditor({
           {field("Direction", "direction", { type: "select", options: [{ label: "Horizontal", value: "horizontal" }, { label: "Vertical", value: "vertical" }] })}
         </div>
       );
+    case "embed":
+      return (
+        <div className="space-y-2.5">
+          {field("Embed URL", "url", { placeholder: "https://..." })}
+          {field("Height", "height", { type: "number", placeholder: "400" })}
+        </div>
+      );
+    case "youtube":
+      return (
+        <div className="space-y-2.5">
+          {field("YouTube URL", "url", { placeholder: "https://youtube.com/watch?v=..." })}
+          <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px]" style={{ color: "var(--b-text-2)" }}>
+            <input type="checkbox" checked={(content.autoplay as boolean) ?? false} onChange={(e) => updateContent("autoplay", e.target.checked)} className="rounded" />
+            Autoplay (muted)
+          </label>
+        </div>
+      );
+    case "spotify":
+      return (
+        <div className="space-y-2.5">
+          {field("Spotify URL", "url", { placeholder: "https://open.spotify.com/track/..." })}
+          <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px]" style={{ color: "var(--b-text-2)" }}>
+            <input type="checkbox" checked={(content.compact as boolean) ?? false} onChange={(e) => updateContent("compact", e.target.checked)} className="rounded" />
+            Compact mode
+          </label>
+        </div>
+      );
+    case "google_map":
+      return (
+        <div className="space-y-2.5">
+          {field("Location", "query", { placeholder: "New York, NY" })}
+          {field("Zoom Level", "zoom", { type: "number", placeholder: "14" })}
+        </div>
+      );
+    case "calendly":
+      return (
+        <div className="space-y-2.5">
+          {field("Calendly URL", "url", { placeholder: "https://calendly.com/your-name" })}
+        </div>
+      );
+    case "github_contrib":
+      return (
+        <div className="space-y-2.5">
+          {field("GitHub Username", "username", { placeholder: "octocat" })}
+        </div>
+      );
+    case "custom_html":
+      return (
+        <div className="space-y-2.5">
+          {field("HTML Code", "html", { type: "textarea" })}
+          {field("Height", "height", { type: "number", placeholder: "300" })}
+        </div>
+      );
     default:
       return (
         <div>

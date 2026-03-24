@@ -69,6 +69,12 @@ export const BLOCK_TYPES = {
   COLUMNS: "columns",
   CARD: "card",
   EMBED: "embed",
+  YOUTUBE: "youtube",
+  SPOTIFY: "spotify",
+  GOOGLE_MAP: "google_map",
+  CALENDLY: "calendly",
+  GITHUB_CONTRIB: "github_contrib",
+  CUSTOM_HTML: "custom_html",
   RECTANGLE: "rectangle",
   CIRCLE: "circle",
   LINE: "line",
@@ -295,7 +301,7 @@ export interface BlockDefinition {
   type: BlockType;
   label: string;
   icon: string;
-  category: "typography"|"media"|"interactive"|"data"|"composite"|"layout"|"shapes";
+  category: "typography"|"media"|"interactive"|"data"|"composite"|"layout"|"integrations"|"shapes";
   description: string;
   defaultContent: Record<string, unknown>;
   defaultStyles: BlockStyles;

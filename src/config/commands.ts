@@ -50,6 +50,12 @@ export const COMMANDS: CommandDefinition[] = [
   { id: "add-stat", label: "Add Stat", category: "add", keywords: ["stat", "number", "count"] },
   { id: "add-testimonial", label: "Add Testimonial", category: "add", keywords: ["testimonial", "quote", "review"] },
   { id: "add-avatar", label: "Add Avatar", category: "add", keywords: ["avatar", "profile", "photo"] },
+  { id: "add-youtube", label: "Add YouTube Video", category: "add", keywords: ["youtube", "video", "embed"] },
+  { id: "add-spotify", label: "Add Spotify Embed", category: "add", keywords: ["spotify", "music", "embed"] },
+  { id: "add-google_map", label: "Add Google Map", category: "add", keywords: ["map", "google", "location"] },
+  { id: "add-calendly", label: "Add Calendly", category: "add", keywords: ["calendly", "schedule", "booking"] },
+  { id: "add-github_contrib", label: "Add GitHub Graph", category: "add", keywords: ["github", "contributions", "graph"] },
+  { id: "add-custom_html", label: "Add Custom HTML", category: "add", keywords: ["html", "code", "custom", "script"] },
 
   // Help
   { id: "open-docs", label: "Open Documentation", category: "help", keywords: ["docs", "documentation", "help", "manual", "guide"] },
