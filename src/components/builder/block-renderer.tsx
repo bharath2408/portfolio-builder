@@ -147,7 +147,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       };
       const fontSize = inlineStyles.fontSize ?? fluidSizes[level];
       return (
-        <Tag style={{ ...inlineStyles, fontSize, fontFamily: resolveFontFamily("heading", theme), lineHeight: 1.2, wordBreak: "break-word" }}>
+        <Tag style={{ ...inlineStyles, width: "100%", height: "100%", fontSize, fontFamily: resolveFontFamily("heading", theme), lineHeight: 1.2, wordBreak: "break-word" }}>
           {(c.highlight as string) ? (
             <>{(c.text as string).replace(c.highlight as string, "")}<span style={{ color: theme.primaryColor }}>{c.highlight as string}</span></>
           ) : (c.text as string)}
@@ -158,15 +158,15 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── TEXT ──
     case "text":
       return c.html ? (
-        <div style={{ ...inlineStyles, wordBreak: "break-word", overflowWrap: "anywhere" }} dangerouslySetInnerHTML={{ __html: c.html as string }} />
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", wordBreak: "break-word", overflowWrap: "anywhere" }} dangerouslySetInnerHTML={{ __html: c.html as string }} />
       ) : (
-        <p style={{ ...inlineStyles, fontFamily: resolveFontFamily("body", theme), wordBreak: "break-word", overflowWrap: "anywhere" }}>{c.text as string}</p>
+        <p style={{ ...inlineStyles, width: "100%", height: "100%", fontFamily: resolveFontFamily("body", theme), wordBreak: "break-word", overflowWrap: "anywhere" }}>{c.text as string}</p>
       );
 
     // ── QUOTE ──
     case "quote":
       return (
-        <blockquote style={{ ...inlineStyles, borderLeftColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.primaryColor }}>
+        <blockquote style={{ ...inlineStyles, width: "100%", height: "100%", borderLeftColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.primaryColor }}>
           <p style={{ fontStyle: "italic", fontSize: inlineStyles.fontSize ?? 18, fontFamily: resolveFontFamily("body", theme) }}>
             &ldquo;{c.text as string}&rdquo;
           </p>
@@ -179,7 +179,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const items = (c.items as string[]) ?? [];
       const Tag = (c.ordered as boolean) ? "ol" : "ul";
       return (
-        <Tag style={{ ...inlineStyles, paddingLeft: 20 }}>
+        <Tag style={{ ...inlineStyles, width: "100%", height: "100%", paddingLeft: 20 }}>
           {items.map((item, i) => <li key={i} style={{ marginBottom: 4, fontSize: 14, opacity: 0.8 }}>{item}</li>)}
         </Tag>
       );
@@ -188,7 +188,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── CODE ──
     case "code":
       return (
-        <div style={{ ...inlineStyles, padding: 16, backgroundColor: resolveColor("surface", theme), overflow: "auto" }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", padding: 16, backgroundColor: resolveColor("surface", theme), overflow: "auto" }}>
           {(c.filename as string) && <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 8 }}>{c.filename as string}</div>}
           <pre style={{ margin: 0, fontFamily: resolveFontFamily("mono", theme), fontSize: 13, lineHeight: 1.6 }}>
             <code>{c.code as string}</code>
@@ -238,7 +238,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
 
     // ── SPACER ──
     case "spacer":
-      return <div style={{ height: (c.height as number) ?? 40, ...inlineStyles }} />;
+      return <div style={{ ...inlineStyles, width: "100%", height: (c.height as number) ?? 40 }} />;
 
     // ── BUTTON ──
     case "button": {
@@ -247,7 +247,8 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const paddings: Record<string, string> = { sm: "8px 16px", md: "10px 24px", lg: "14px 32px" };
       const btnStyle: React.CSSProperties = {
         ...inlineStyles,
-        display: "inline-flex", alignItems: "center", gap: 8,
+        width: "100%", height: "100%",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
         padding: paddings[size], borderRadius: theme.borderRadius,
         fontWeight: 600, fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14,
         textDecoration: "none", transition: "all 0.2s",
@@ -285,7 +286,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           href={linkUrl}
           target={!isSection && (c.newTab as boolean) ? "_blank" : undefined}
           rel="noopener noreferrer"
-          style={{ ...inlineStyles, color: inlineStyles.color ?? theme.primaryColor, textDecoration: "underline", cursor: "pointer" }}
+          style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", color: inlineStyles.color ?? theme.primaryColor, textDecoration: "underline", cursor: "pointer" }}
           onClick={isSection ? (e) => {
             e.preventDefault();
             const el = document.getElementById(linkUrl.slice(1));
@@ -302,7 +303,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const links = (c.links as Array<{platform: string; url: string; icon: string}>) ?? [];
       const variant = (c.variant as string) ?? "ghost";
       return (
-        <div style={{ ...inlineStyles, display: "flex", gap: inlineStyles.gap ?? 12 }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", gap: inlineStyles.gap ?? 12 }}>
           {links.map((link, i) => {
             const Icon = socialIconMap[link.icon] ?? Globe;
             const linkStyle: React.CSSProperties = {
@@ -336,7 +337,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "badge_group": {
       const badges = (c.badges as Array<{text: string; color?: string}>) ?? [];
       return (
-        <div style={{ ...inlineStyles, display: "flex", flexWrap: "wrap", gap: inlineStyles.gap ?? 8 }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: inlineStyles.gap ?? 8 }}>
           {badges.map((b, i) => {
             const col = resolveColor(b.color ?? "primary", theme) ?? theme.primaryColor;
             return <span key={i} style={{ display: "inline-flex", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, backgroundColor: `${col}15`, color: col }}>{b.text}</span>;
@@ -348,7 +349,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── SKILL BAR ──
     case "skill_bar":
       return (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
             <span style={{ fontSize: 14, fontWeight: 500 }}>{c.name as string}</span>
             {(c.showPercentage as boolean) && <span style={{ fontSize: 12, opacity: 0.5 }}>{c.level as number}%</span>}
@@ -387,7 +388,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const circ = 2 * Math.PI * r;
       const offset = circ - (value / 100) * circ;
       return (
-        <div style={{ ...inlineStyles, textAlign: "center", display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${theme.textColor}15`} strokeWidth={4} />
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={theme.primaryColor} strokeWidth={4} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.5s" }} />
@@ -401,7 +402,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── STAT ──
     case "stat":
       return (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
           <div style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor }}>
             {(c.prefix as string) ?? ""}{c.value as string}{(c.suffix as string) ?? ""}
           </div>
@@ -413,7 +414,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "project_card": {
       const techStack = (c.techStack as string[]) ?? [];
       return (
-        <div style={{ ...inlineStyles, borderColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.surfaceColor }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden", borderColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.surfaceColor }}>
           {(c.imageUrl as string) && (
             <div style={{ aspectRatio: "16/9", overflow: "hidden" }}>
               <img src={c.imageUrl as string} alt={c.title as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -440,7 +441,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "experience_item": {
       const highlights = (c.highlights as string[]) ?? [];
       return (
-        <div style={{ ...inlineStyles, borderLeft: `3px solid ${theme.primaryColor}`, position: "relative" }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", borderLeft: `3px solid ${theme.primaryColor}`, position: "relative" }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: theme.primaryColor, position: "absolute", left: -7.5, top: 4 }} />
           <h4 style={{ fontSize: 16, fontWeight: 700, fontFamily: resolveFontFamily("heading", theme) }}>{c.role as string}</h4>
           <div style={{ fontSize: 14, color: theme.primaryColor, fontWeight: 600, marginTop: 2 }}>{c.company as string}</div>
@@ -461,7 +462,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── TESTIMONIAL ──
     case "testimonial":
       return (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
           <QuoteIcon size={24} style={{ opacity: 0.2, marginBottom: 12 }} />
           <p style={{ fontSize: 16, lineHeight: 1.7, fontStyle: "italic" }}>{c.quote as string}</p>
           <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
@@ -479,7 +480,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const items = (c.items as Array<{type: string; label: string; value: string; icon?: string}>) ?? [];
       const iconMap: Record<string, React.ComponentType<{size?: number}>> = { Mail, MapPin, Phone, Globe };
       return (
-        <div style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
           {items.map((item, i) => {
             const Icon = iconMap[item.icon ?? ""] ?? Mail;
             return (
