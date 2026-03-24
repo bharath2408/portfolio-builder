@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BlockRenderer } from "@/components/builder/block-renderer";
+import { MotionBlockWrapper } from "@/components/portfolio/motion-block-wrapper";
 import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
 import type {
   PortfolioWithRelations,
@@ -314,19 +315,14 @@ function PortfolioSection({
               (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
             ].filter(Boolean).join(" ") || undefined;
             return (
-              <div
+              <MotionBlockWrapper
                 key={block.id}
+                styles={bs}
                 className={responsiveClass}
-                data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
-                style={{
-                  animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
-                  transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
-                  maxWidth: "100%",
-                  overflow: "hidden",
-                }}
+                style={{ maxWidth: "100%", overflow: "hidden" }}
               >
                 <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
-              </div>
+              </MotionBlockWrapper>
             );
           })}
         </div>

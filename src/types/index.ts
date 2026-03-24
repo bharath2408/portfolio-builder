@@ -186,8 +186,13 @@ export interface BlockStyles {
   boxShadow?: "none"|"sm"|"md"|"lg"|"xl"|string;
   opacity?: number;
   overflow?: "visible"|"hidden"|"auto";
-  animation?: "none"|"fade-up"|"fade-in"|"slide-left"|"slide-right"|"scale"|"blur-in";
+  animation?: "none"|"fade-up"|"fade-in"|"slide-left"|"slide-right"|"scale"|"blur-in"|"bounce-in"|"flip-x"|"flip-y"|"rotate-in"|"zoom-in"|"typewriter";
   animationDelay?: number;
+  animationDuration?: number;
+  animationEasing?: "ease"|"ease-in"|"ease-out"|"ease-in-out"|"spring"|"bounce";
+  scrollTrigger?: "none"|"reveal"|"parallax";
+  parallaxSpeed?: number;
+  hoverEffect?: "none"|"lift"|"tilt-3d"|"glow"|"grow"|"shake";
   hideOnMobile?: boolean;
   hideOnDesktop?: boolean;
   hoverScale?: number;

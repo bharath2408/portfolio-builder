@@ -677,7 +677,9 @@ export function BlockPropertiesPanel({
         {/* ── Effects ──────────────────────────────────────────── */}
         <Section title="Effects" icon={<Sparkles className="h-3 w-3" />} defaultOpen={false}>
           <PropGrid>
-            <PropRow label="Animation">
+            {/* Entrance Animation */}
+            <div>
+              <SubLabel hint="How the block appears when scrolled into view">Entrance Animation</SubLabel>
               <SelectInput
                 value={styles.animation}
                 onChange={(v) => updateStyle("animation", v)}
@@ -689,9 +691,80 @@ export function BlockPropertiesPanel({
                   { label: "Slide Right", value: "slide-right" },
                   { label: "Scale", value: "scale" },
                   { label: "Blur In", value: "blur-in" },
+                  { label: "Bounce In", value: "bounce-in" },
+                  { label: "Flip X", value: "flip-x" },
+                  { label: "Flip Y", value: "flip-y" },
+                  { label: "Rotate In", value: "rotate-in" },
+                  { label: "Zoom In", value: "zoom-in" },
                 ]}
               />
-            </PropRow>
+            </div>
+
+            {/* Duration & Delay */}
+            {styles.animation && styles.animation !== "none" && (
+              <>
+                <div>
+                  <SubLabel hint="Animation duration in seconds">Duration & Delay</SubLabel>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <NumInput label="Dur" value={styles.animationDuration} onChange={(v) => updateStyle("animationDuration", v)} placeholder="0.6" />
+                    <NumInput label="Del" value={styles.animationDelay} onChange={(v) => updateStyle("animationDelay", v)} placeholder="0" />
+                  </div>
+                </div>
+
+                <div>
+                  <SubLabel hint="Spring and bounce use physics-based motion">Easing</SubLabel>
+                  <SelectInput
+                    value={styles.animationEasing}
+                    onChange={(v) => updateStyle("animationEasing", v)}
+                    options={[
+                      { label: "Ease Out", value: "ease-out" },
+                      { label: "Ease In", value: "ease-in" },
+                      { label: "Ease In-Out", value: "ease-in-out" },
+                      { label: "Spring", value: "spring" },
+                      { label: "Bounce", value: "bounce" },
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Scroll Trigger */}
+            <div>
+              <SubLabel hint="Control how the block interacts with scrolling">Scroll Effect</SubLabel>
+              <SelectInput
+                value={styles.scrollTrigger}
+                onChange={(v) => updateStyle("scrollTrigger", v)}
+                options={[
+                  { label: "None", value: "none" },
+                  { label: "Reveal on Scroll", value: "reveal" },
+                  { label: "Parallax", value: "parallax" },
+                ]}
+              />
+            </div>
+
+            {styles.scrollTrigger === "parallax" && (
+              <div>
+                <SubLabel hint="Higher = more parallax movement">Parallax Speed</SubLabel>
+                <NumInput value={styles.parallaxSpeed} onChange={(v) => updateStyle("parallaxSpeed", v)} placeholder="0.5" />
+              </div>
+            )}
+
+            {/* Hover Effect */}
+            <div>
+              <SubLabel hint="Interactive effect when visitors hover over this block">Hover Effect</SubLabel>
+              <SelectInput
+                value={styles.hoverEffect}
+                onChange={(v) => updateStyle("hoverEffect", v)}
+                options={[
+                  { label: "None", value: "none" },
+                  { label: "Lift", value: "lift" },
+                  { label: "3D Tilt", value: "tilt-3d" },
+                  { label: "Glow", value: "glow" },
+                  { label: "Grow", value: "grow" },
+                  { label: "Shake", value: "shake" },
+                ]}
+              />
+            </div>
           </PropGrid>
         </Section>
 
