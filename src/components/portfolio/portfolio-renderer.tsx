@@ -205,6 +205,7 @@ function PortfolioSection({
 
   // Stagger: compute per-block stagger index based on section settings
   const staggerEnabled = ss.staggerChildren ?? false;
+  const staggerAnimation = staggerEnabled ? (ss.staggerAnimation ?? "fade-up") : undefined;
   const staggerDelay = staggerEnabled ? (ss.staggerDelay ?? 100) : 0;
   const staggerFrom = ss.staggerFrom ?? "start";
 
@@ -216,6 +217,13 @@ function PortfolioSection({
       case "random": return Math.floor(Math.random() * total);
       default: return i; // "start"
     }
+  }
+
+  /** Apply section stagger animation to blocks that have no animation of their own */
+  function applyStagger(bs: BlockStyles): BlockStyles {
+    if (!staggerEnabled || !staggerAnimation) return bs;
+    if (bs.animation && bs.animation !== "none") return bs; // block has its own
+    return { ...bs, animation: staggerAnimation, scrollTrigger: bs.scrollTrigger ?? "reveal" };
   }
 
   // Calculate content height for absolute layout
@@ -266,7 +274,7 @@ function PortfolioSection({
             }}
           >
             {visibleBlocks.map((block, i) => {
-              const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
+              const bs = applyStagger(mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType));
               const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
               const responsiveClass = [
                 bs.hideOnMobile ? "hidden md:block" : "",
@@ -322,7 +330,7 @@ function PortfolioSection({
           }}
         >
           {visibleBlocks.map((block, i) => {
-            const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
+            const bs = applyStagger(mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType));
             const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
             const responsiveClass = [
               bs.hideOnMobile ? "hidden md:block" : "",

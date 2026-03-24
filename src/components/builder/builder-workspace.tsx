@@ -3227,6 +3227,32 @@ ${sectionsHtml}
                       {ss.staggerChildren && (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
+                            <span className="w-14 text-[10px]" style={{ color: "var(--b-text-3)" }}>Animation</span>
+                            <select
+                              value={ss.staggerAnimation ?? "fade-up"}
+                              onChange={(e) => {
+                                if (!selectedSectionId) return;
+                                portfolioStore.updateSection(selectedSectionId, { styles: { ...ss, staggerAnimation: e.target.value as SectionStyles["staggerAnimation"] } });
+                                builderStore.setDirty(true);
+                                scheduleAutoSave();
+                              }}
+                              className="h-6 flex-1 rounded border px-1 text-[10px] outline-none"
+                              style={{ backgroundColor: "var(--b-input)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                            >
+                              <option value="fade-up">Fade Up</option>
+                              <option value="fade-in">Fade In</option>
+                              <option value="slide-left">Slide Left</option>
+                              <option value="slide-right">Slide Right</option>
+                              <option value="scale">Scale</option>
+                              <option value="blur-in">Blur In</option>
+                              <option value="bounce-in">Bounce In</option>
+                              <option value="flip-x">Flip X</option>
+                              <option value="flip-y">Flip Y</option>
+                              <option value="rotate-in">Rotate In</option>
+                              <option value="zoom-in">Zoom In</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <span className="w-14 text-[10px]" style={{ color: "var(--b-text-3)" }}>Delay</span>
                             <input
                               type="number"
