@@ -25,6 +25,7 @@ import {
   PanelRight,
   Plus,
   Redo2,
+  Rocket,
   Save,
   Settings,
   Smartphone,
@@ -738,6 +739,8 @@ export function BuilderWorkspace({
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [publishPassword, setPublishPassword] = useState(portfolio.accessPassword ?? "");
   const [guides, _setGuides] = useState<GuideInfo[]>([]);
 
   // ── Draw mode (Figma-style click-drag to create) ──────────────
@@ -1213,9 +1216,13 @@ export function BuilderWorkspace({
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(false);
+    setShowPublishDialog(false);
     try {
       await batchSave();
-      await apiPatch<{ status: string }>(`/portfolios/${portfolio.id}`, { status: "PUBLISHED" });
+      await apiPatch<{ status: string }>(`/portfolios/${portfolio.id}`, {
+        status: "PUBLISHED",
+        accessPassword: publishPassword || undefined,
+      });
       // Update local portfolio status so UI reflects the change immediately
       portfolioStore.setCurrentPortfolio({ ...portfolio, status: "PUBLISHED" as PortfolioStatus });
       builderStore.markSaved();
@@ -1235,7 +1242,7 @@ export function BuilderWorkspace({
   const handleCommand = useCallback((commandId: string) => {
     switch (commandId) {
       case "save": handleSave(); break;
-      case "publish": handlePublish(); break;
+      case "publish": setShowPublishDialog(true); break;
       case "preview": setShowPreview(true); break;
       case "export-json": exportAsJson(); break;
       case "export-html": exportAsHtml(); break;
@@ -1790,7 +1797,7 @@ ${sectionsHtml}
               )}
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
-                onClick={handlePublish}
+                onClick={() => setShowPublishDialog(true)}
                 disabled={publishing || saving}
                 className="text-[12px]"
                 style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
@@ -2140,7 +2147,7 @@ ${sectionsHtml}
                 ? "0 2px 12px rgba(16,185,129,0.3)"
                 : "var(--b-publish-shadow), inset 0 1px 0 rgba(255,255,255,0.1)",
             }}
-            onClick={handlePublish}
+            onClick={() => setShowPublishDialog(true)}
             disabled={publishing || saving}
           >
             {publishing ? (
@@ -3250,6 +3257,79 @@ ${sectionsHtml}
 
       {/* ── Onboarding Tour ────────────────────────────────────── */}
       <OnboardingTour dropdownColors={dropdownColors} />
+
+      {/* ── Publish Dialog ────────────────────────────────────────── */}
+      {showPublishDialog && (
+        <>
+          <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={() => setShowPublishDialog(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="publish-dialog-title"
+            className="fixed left-1/2 top-1/2 z-[301] w-[420px] max-w-[95vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
+            style={{ backgroundColor: dropdownColors.bg, border: `1px solid ${dropdownColors.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
+          >
+            <div className="px-5 pt-5">
+              <h2 id="publish-dialog-title" className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>
+                {portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish Portfolio"}
+              </h2>
+              <p className="mt-1 text-[11px] leading-relaxed" style={{ color: dropdownColors.textMuted }}>
+                Your portfolio will be live and accessible via URL.
+              </p>
+            </div>
+
+            <div className="space-y-4 px-5 pt-4">
+              {/* Password protection (optional) */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                  <Lock className="h-3 w-3" />
+                  Password Protection
+                  <span className="rounded px-1 py-0.5 text-[8px] font-semibold normal-case tracking-normal" style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.textMuted }}>Optional</span>
+                </label>
+                <input
+                  type="text"
+                  value={publishPassword}
+                  onChange={(e) => setPublishPassword(e.target.value)}
+                  placeholder="Leave empty for public access"
+                  className="h-8 w-full rounded-lg border px-3 text-[12px] outline-none transition-colors"
+                  style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                />
+                <p className="mt-1 text-[9px]" style={{ color: dropdownColors.textMuted }}>
+                  {publishPassword ? "Visitors must enter this password to view." : "Anyone with the URL can view."}
+                </p>
+              </div>
+
+              {/* Portfolio URL preview */}
+              <div className="rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
+                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: dropdownColors.textMuted }}>Portfolio URL</p>
+                <p className="mt-1 truncate font-mono text-[11px]" style={{ color: dropdownColors.text }}>
+                  /portfolio/{portfolio.user?.username}/{portfolio.slug}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 px-5 pb-5 pt-4">
+              <button
+                onClick={() => setShowPublishDialog(false)}
+                className="rounded-lg px-3.5 py-2 text-[12px] font-medium transition-colors"
+                style={{ color: dropdownColors.textMuted }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={publishing}
+                className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, var(--b-accent, #14b8a6), #0891b2)" }}
+              >
+                {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                {publishing ? "Publishing..." : portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Version History Panel ────────────────────────────────── */}
       {showVersions && (
