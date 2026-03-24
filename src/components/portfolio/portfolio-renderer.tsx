@@ -187,7 +187,7 @@ function PortfolioSection({
     position: "relative",
     width: "100%",
     backgroundColor: bgColor ?? theme.backgroundColor,
-    overflow: "hidden",
+    overflow: "clip",
   };
 
   if (!isAbsolute) {
@@ -319,7 +319,7 @@ function PortfolioSection({
                 key={block.id}
                 styles={bs}
                 className={responsiveClass}
-                style={{ maxWidth: "100%", overflow: "hidden" }}
+                style={{ maxWidth: "100%" }}
               >
                 <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
               </MotionBlockWrapper>
