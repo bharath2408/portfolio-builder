@@ -1,0 +1,216 @@
+# The Studio Editor
+
+The Studio Editor is the heart of Foliocraft — a Figma-inspired visual canvas where you design your portfolio with full creative control. Every element is editable directly on the canvas.
+
+## Editor Layout
+
+The editor is divided into four key areas that work together.
+
+### Top Bar — Command Center
+
+The top bar gives you access to all global actions:
+
+- **Back arrow** — return to the portfolios list
+- **File menu** — opens a dropdown with:
+  - **Save** (`Ctrl/Cmd + S`) — manually save all changes
+  - **Export as JSON** — download your portfolio data
+  - **Export as HTML** — download a standalone HTML file
+  - **Version History** — open the version panel to preview or restore snapshots
+- **Portfolio title** — shows the current portfolio name and status badge (Draft / Published)
+- **Undo** (`Ctrl/Cmd + Z`) — revert the last change
+- **Redo** (`Ctrl/Cmd + Shift + Z`) — replay a reverted change
+- **Device preview toggles** — switch the canvas between Desktop, Tablet, and Mobile widths to test responsive layout
+- **SEO button** — open the SEO settings panel (title, description, OG image)
+- **Settings gear** — portfolio settings like title, slug, description
+- **Preview button** — full-screen live preview of your portfolio
+- **Save button** — save all pending changes
+- **Publish / Update & Publish** — make your portfolio live or update the live version
+
+### Left Panel — Layers & Elements
+
+The left panel has two tabs toggled at the top:
+
+#### Layers Tab
+Shows a hierarchical tree of your portfolio structure:
+
+- **Sections** appear as top-level items with expand/collapse arrows
+- **Blocks** are nested inside their parent sections
+- Each item shows its name, type icon, and quick-action buttons:
+  - **Eye icon** — toggle visibility (hidden blocks are skipped in rendering)
+  - **Lock icon** — lock/unlock to prevent accidental edits
+- **Drag to reorder** — grab the grip handle to rearrange sections or blocks within a section
+- Click any item to select it and scroll the canvas to it
+- The currently selected item is highlighted with a teal accent
+
+#### Elements Tab
+Browse the full library of 25+ block types organized into categories:
+
+- **Typography** — Heading, Text, Quote, List, Code Block
+- **Media** — Image, Avatar, Icon
+- **Interactive** — Button, Link, Social Links
+- **Data Display** — Badge, Badge Group, Skill Bar, Skill Grid, Progress Ring, Stat
+- **Composite** — Project Card, Experience, Testimonial, Contact Info, Contact Form, Columns, Card, Embed
+- **Layout** — Divider, Spacer
+- **Shapes** — Rectangle, Circle, Line
+
+Click any element to add it to the currently selected section, or drag it directly onto the canvas.
+
+### Center — The Canvas
+
+The main editing surface where your portfolio takes shape:
+
+- **Click** a block to select it — a blue selection border appears with resize handles
+- **Drag** a selected block to reposition it (in absolute-layout sections)
+- **Resize** by dragging the corner or edge handles
+- **Double-click** text blocks to edit text inline
+- **Right-click** a block to open a context menu with options: duplicate, delete, visibility, lock
+- **Zoom** — scroll to zoom in/out, or use the zoom controls at the bottom of the canvas
+- **Pan** — hold `Space` and drag, or use the scroll wheel
+- **Fit to screen** — click the fit button in the zoom controls to auto-zoom to show all content
+
+Each section appears as a frame on the canvas. Sections can use different layouts:
+- **Absolute** — blocks are freely positioned with X/Y coordinates (Figma-like)
+- **Stack / Flex Column** — blocks stack vertically
+- **Flex Row** — blocks flow horizontally
+- **Grid** — blocks arrange in a CSS grid with configurable columns
+
+### Right Panel — Properties
+
+When a block is selected, this panel shows everything you can edit about it.
+
+#### Header
+- Block type name and category badge
+- Quick actions: **Show/Hide**, **Lock/Unlock**, **Duplicate**
+
+#### Content Section
+Each block type has its own content fields:
+
+- **Heading** — text, heading level (H1–H6), optional highlight word (colored in primary)
+- **Text** — plain text or rich HTML content
+- **Quote** — quote text, author name, role
+- **List** — items array, ordered/unordered toggle
+- **Code** — code text, language label
+- **Image** — Cloudinary upload with drag-and-drop, alt text, caption, object-fit, aspect ratio
+- **Avatar** — image upload, size (sm/md/lg/xl/2xl), ring toggle
+- **Button** — label text, link-to mode (URL or Section), variant (solid/outline/ghost/link), size (sm/md/lg), new tab toggle
+- **Link** — label text, link-to mode (URL or Section), new tab toggle
+- **Social Links** — add multiple platforms (GitHub, LinkedIn, Twitter, etc.) with URLs, layout (row/column), show labels, variant style
+- **Project Card** — title, description, image upload, tech stack tags, live URL, repo URL
+- **Skill Bar** — skill name, level (0–100), icon, show percentage toggle
+- **Skill Grid** — array of skills with name, level, and icon
+- **Progress Ring** — value (0–100), label, ring size
+- **Stat** — big value text, label description
+- **Experience Item** — company, role, date range, description, current toggle
+- **Testimonial** — quote text, author, role, avatar image
+- **Contact Info** — array of info items (email, phone, location) with icons
+- **Contact Form** — configurable fields with name, type, placeholder, required
+- **Badge** — text, color, variant (solid/outline/subtle)
+- **Badge Group** — array of badges with text and colors
+- **Rectangle/Circle** — fill color, border, size
+- **Line** — length, thickness, color, orientation
+
+#### Transform Section
+- **Position X / Y** — pixel coordinates within the section (absolute layout)
+- **Width / Height** — explicit dimensions
+- **Rotation** — degree rotation
+
+#### Appearance Section
+- **Border Width** — in pixels (0 = no border)
+- **Border Color** — color picker with hex input, supports theme color names
+- **Border Style** — solid, dashed, dotted, or none
+- **Border Radius** — preset buttons (0, 4, 8, 12, 16, 999) or custom value
+- **Shadow** — preset dropdown: None, Small, Medium, Large, XL
+- **Opacity** — 0 (invisible) to 1 (fully visible)
+- **Overflow** — visible, hidden, or auto (clips content that exceeds bounds)
+
+#### Typography Section (text-based blocks only)
+- **Font Family** — choose from theme fonts: Heading, Body, or Mono
+- **Font Size** — in pixels
+- **Font Weight** — Light (300) through Black (900)
+- **Line Height** — multiplier for spacing between lines
+- **Letter Spacing** — in pixels
+- **Text Transform** — none, UPPERCASE, lowercase, Capitalize
+- **Text Align** — left, center, right (with visual toggle buttons)
+
+#### Colors Section
+- **Text Color** — override the theme's text color. Use hex values or theme names (`primary`, `secondary`, `accent`, `text`, `muted`, `surface`, `background`)
+- **Background Color** — block background color with same options
+- **Background Gradient** — raw CSS gradient string (e.g., `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`)
+
+#### Spacing Section
+- **Padding** — inner spacing with individual controls for top, right, bottom, left
+- **Margin** — outer spacing with individual controls for top, right, bottom, left
+- All values are in pixels
+
+#### Effects Section
+- **Entrance Animation** — how the block appears when scrolled into view:
+  - **None** — no animation
+  - **Fade Up** — fades in while sliding upward
+  - **Fade In** — simple opacity fade
+  - **Slide Left** — slides in from the left
+  - **Slide Right** — slides in from the right
+  - **Scale** — scales up from 90% to 100%
+  - **Blur In** — fades in with a blur-to-clear effect
+
+#### Responsive Section
+- **Hide on Mobile** — checkbox, hides this block on screens smaller than `md` breakpoint
+- **Hide on Desktop** — checkbox, hides this block on screens `md` and larger
+
+#### Custom CSS Section
+A text area where you can write raw CSS properties. Each property goes on a line as `property: value;`. Examples:
+
+```
+box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+transform: skewX(-5deg);
+backdrop-filter: blur(10px);
+mix-blend-mode: multiply;
+```
+
+Custom CSS overrides all other style settings.
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + S` | Save all changes |
+| `Ctrl/Cmd + Z` | Undo last action |
+| `Ctrl/Cmd + Shift + Z` | Redo last undone action |
+| `Ctrl/Cmd + V` | Paste copied block (with content and styles) |
+| `Delete` or `Backspace` | Delete selected block |
+| `Escape` | Deselect current block |
+| `?` | Show keyboard shortcuts reference |
+
+## Working with the Canvas
+
+### Zooming
+- **Scroll wheel** — zoom in/out centered on cursor
+- **Zoom controls** (bottom bar) — `+` and `-` buttons, percentage display
+- **Fit to screen** — auto-zoom to show all sections
+- **Reset zoom** — return to 100%
+
+### Section Management on Canvas
+- Sections are rendered as horizontal frames stacked vertically
+- Each section shows its name at the top-left
+- Hover a section to see its action buttons (settings, delete)
+- Click the section background (not a block) to select the section itself
+
+### Smart Guides
+When dragging blocks in absolute-layout sections, smart alignment guides appear to help you align elements with each other.
+
+## Auto-Save
+
+The editor automatically batches and saves your changes as you work. The save indicator in the top bar shows the current state:
+
+- **All saved** — no pending changes
+- **Saving...** — changes are being saved
+- **Unsaved changes** — changes are queued for auto-save
+
+You can always manually save with `Ctrl/Cmd + S` or the Save button.
+
+## Theme Panel
+
+Click the **palette icon** in the top bar to open the theme editor. See the [Styling & Themes](/docs/styling-themes) page for full details on all theme settings.
+
+---
+
+> **Next:** Learn about sections and blocks — the building units of your portfolio.

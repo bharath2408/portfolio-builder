@@ -15,11 +15,13 @@ const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
 export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    if (file.size > 10 * 1024 * 1024) { alert("Max 10MB"); return; }
+    setError(null);
+    if (!file.type.startsWith("image/")) { setError("Please select an image file"); return; }
+    if (file.size > 10 * 1024 * 1024) { setError("File size must be under 10MB"); return; }
 
     setUploading(true);
     try {
@@ -57,32 +59,35 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2">
-        {value ? (
-          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-md">
-            <img src={value} alt="" className="h-full w-full object-cover" />
-            <button
-              onClick={() => onChange("")}
-              className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100"
-            >
-              <X className="h-3 w-3 text-white" />
-            </button>
-          </div>
-        ) : null}
-        <button
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md border text-[10px] font-medium transition-colors"
-          style={{
-            backgroundColor: "var(--b-surface)",
-            borderColor: "var(--b-border)",
-            color: "var(--b-text-3)",
-          }}
-        >
-          {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-          {uploading ? "Uploading..." : value ? "Replace" : "Upload"}
-        </button>
-        <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      <div>
+        <div className="flex items-center gap-2">
+          {value ? (
+            <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-md">
+              <img src={value} alt="" className="h-full w-full object-cover" />
+              <button
+                onClick={() => onChange("")}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100"
+              >
+                <X className="h-3 w-3 text-white" />
+              </button>
+            </div>
+          ) : null}
+          <button
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md border text-[10px] font-medium transition-colors"
+            style={{
+              backgroundColor: "var(--b-surface)",
+              borderColor: "var(--b-border)",
+              color: "var(--b-text-3)",
+            }}
+          >
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+            {uploading ? "Uploading..." : value ? "Replace" : "Upload"}
+          </button>
+          <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+        </div>
+        {error && <p className="mt-1 text-[10px] font-medium text-red-500">{error}</p>}
       </div>
     );
   }
@@ -132,6 +137,11 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      {error && (
+        <div className="absolute bottom-2 left-2 right-2 rounded-md bg-red-500/90 px-2.5 py-1.5 text-center text-[10px] font-medium text-white backdrop-blur">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

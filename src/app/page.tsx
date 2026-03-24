@@ -38,6 +38,12 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link
+              href="/docs"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            >
+              Docs
+            </Link>
+            <Link
               href="/login"
               className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >

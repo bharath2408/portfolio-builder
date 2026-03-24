@@ -26,7 +26,7 @@ export const authConfig: NextAuthConfig = {
       const isAuthenticated = !!auth?.user;
       const pathname = nextUrl.pathname;
 
-      const publicRoutes = ["/", "/login", "/register", "/portfolio"];
+      const publicRoutes = ["/", "/login", "/register", "/portfolio", "/docs"];
       const authRoutes = ["/login", "/register"];
 
       // Redirect authenticated users away from auth pages

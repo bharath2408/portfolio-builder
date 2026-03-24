@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePortfolios, usePortfolioMutations } from "@/hooks";
 import { formatRelativeTime } from "@/lib/utils";
@@ -24,15 +25,16 @@ export default function PortfoliosPage() {
   const { portfolios, isLoading } = usePortfolios();
   const { deletePortfolio, duplicatePortfolio } = usePortfolioMutations();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const username = session?.user?.username;
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure? This action cannot be undone.")) return;
     setDeletingId(id);
     try {
       await deletePortfolio(id);
     } finally {
       setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -189,7 +191,7 @@ export default function PortfoliosPage() {
                   )}
 
                   <button
-                    onClick={() => handleDelete(portfolio.id)}
+                    onClick={() => setConfirmDeleteId(portfolio.id)}
                     disabled={deletingId === portfolio.id}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
                     title="Delete"
@@ -210,6 +212,16 @@ export default function PortfoliosPage() {
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+        title="Delete portfolio?"
+        description="This will permanently delete the portfolio and all its sections, blocks, and themes. This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        loading={!!deletingId}
+      />
     </div>
   );
 }

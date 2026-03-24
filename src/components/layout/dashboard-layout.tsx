@@ -20,10 +20,11 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 
+import { HelpDrawer } from "@/components/common/help-drawer";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/config/constants";
-import { cn, getInitials } from "@/lib/utils";
 import { apiPatch } from "@/lib/api";
+import { cn, getInitials } from "@/lib/utils";
 
 const navigation = [
   {
@@ -316,6 +317,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </main>
+
+      <HelpDrawer />
     </div>
   );
 }

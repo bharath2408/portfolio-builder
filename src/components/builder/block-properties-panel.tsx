@@ -9,6 +9,7 @@ import {
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 import { ImageUpload } from "@/components/common/image-upload";
+import { Tooltip } from "@/components/builder/tooltip";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type { BlockWithStyles, BlockStyles } from "@/types";
@@ -76,12 +77,14 @@ function PropGrid({ children }: { children: ReactNode }) {
   return <div className="space-y-2.5">{children}</div>;
 }
 
-function SubLabel({ children }: { children: ReactNode }) {
-  return (
+function SubLabel({ children, hint }: { children: ReactNode; hint?: string }) {
+  const label = (
     <span className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-4)" }}>
       {children}
     </span>
   );
+  if (hint) return <Tooltip content={hint} side="top">{label}</Tooltip>;
+  return label;
 }
 
 // ─── Input Primitives ────────────────────────────────────────────
@@ -398,7 +401,7 @@ export function BlockPropertiesPanel({
         <Section title="Transform" icon={<Move className="h-3 w-3" />}>
           <PropGrid>
             <div>
-              <SubLabel>Position</SubLabel>
+              <SubLabel hint="X/Y coordinates relative to the section's top-left corner">Position</SubLabel>
               <div className="grid grid-cols-2 gap-1.5">
                 <NumInput label="X" value={styles.x} onChange={(v) => updateStyle("x", v)} />
                 <NumInput label="Y" value={styles.y} onChange={(v) => updateStyle("y", v)} />
@@ -417,7 +420,7 @@ export function BlockPropertiesPanel({
                 <NumInput label="R" value={styles.rotation} onChange={(v) => updateStyle("rotation", v)} placeholder="0" />
               </div>
               <div>
-                <SubLabel>Opacity</SubLabel>
+                <SubLabel hint="0 = invisible, 1 = fully visible">Opacity</SubLabel>
                 <NumInput value={styles.opacity} onChange={(v) => updateStyle("opacity", v)} placeholder="1" />
               </div>
             </div>
@@ -550,7 +553,7 @@ export function BlockPropertiesPanel({
               </div>
 
               <div>
-                <SubLabel>Line Height & Spacing</SubLabel>
+                <SubLabel hint="Line height: 1.0 = tight, 1.5 = normal. Letter spacing in pixels.">Line Height & Spacing</SubLabel>
                 <div className="grid grid-cols-2 gap-1.5">
                   <NumInput value={styles.lineHeight} onChange={(v) => updateStyle("lineHeight", v)} placeholder="1.5" />
                   <NumInput value={styles.letterSpacing} onChange={(v) => updateStyle("letterSpacing", v)} placeholder="0" />
@@ -813,7 +816,7 @@ function ButtonContentEditor({
       {field("Label", "text")}
 
       <div>
-        <SubLabel>Link To</SubLabel>
+        <SubLabel hint="Link to an external URL or scroll to a section in your portfolio">Link To</SubLabel>
         <ToggleGroup
           value={linkMode}
           onChange={(v) => {

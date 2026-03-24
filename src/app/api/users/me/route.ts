@@ -28,6 +28,7 @@ export async function GET() {
         role: true,
         theme: true,
         emailNotifications: true,
+        onboardingDone: true,
         createdAt: true,
         password: true,
         _count: { select: { portfolios: true } },
@@ -107,6 +108,7 @@ export async function PATCH(request: Request) {
         bio: true,
         theme: true,
         emailNotifications: true,
+        onboardingDone: true,
       },
     });
 

@@ -1,0 +1,180 @@
+# Account Settings
+
+The Settings page is your control center for managing your profile, security, preferences, and data. Access it from the sidebar: **Account > Settings**.
+
+## Profile
+
+### Profile Picture
+
+Upload a profile picture that appears in the navigation bar and across the platform.
+
+1. In the Profile section, click the **Upload** button next to your avatar
+2. Select an image from your computer (or drag and drop)
+3. The image uploads to Cloudinary automatically
+4. Click **Save Changes** to persist the new profile picture
+
+**Supported formats:** PNG, JPG, GIF, WebP
+**Maximum file size:** 10MB
+**Display:** Circular crop, shown at various sizes across the app
+
+To remove your profile picture, hover over the thumbnail and click the **X** button, then save.
+
+> **Note:** After saving, the navbar avatar updates to show your new profile picture instead of your initials.
+
+### Full Name
+
+Your display name shown across your portfolios and the navigation bar.
+
+- **Minimum:** 2 characters
+- **Maximum:** 50 characters
+- Click **Save Changes** after editing
+
+### Username
+
+Your unique identifier that determines your portfolio URL. For example, username `alexchen` makes your portfolio available at `/portfolio/alexchen`.
+
+- **Minimum:** 3 characters
+- **Maximum:** 30 characters
+- **Allowed characters:** lowercase letters (a–z), numbers (0–9), hyphens (`-`), underscores (`_`)
+- Must be unique — if taken, you'll see an error when saving
+- The URL preview updates as you type
+
+### Bio
+
+A short description about yourself displayed on your profile.
+
+- **Maximum:** 500 characters
+- Supports plain text only
+- Good for a one-liner about your role, expertise, or interests
+
+## Appearance
+
+### Dashboard Theme
+
+Switch the dashboard interface between **Light** and **Dark** mode. This only affects the dashboard and editor — not your published portfolios.
+
+1. Click the **Light** or **Dark** theme card
+2. The theme applies immediately — no need to save
+3. Your preference persists across sessions
+
+The theme cards show a miniature preview of what each mode looks like.
+
+> **Note:** Your portfolio themes are set independently per-portfolio in the Studio Editor's theme panel.
+
+## Account
+
+### Email
+Your account email address. This is read-only and shows a **Verified** badge. The email is used for login (if using email/password authentication) and notifications.
+
+### Role
+Your account role (**User** or **Admin**). This determines your access level within the platform.
+
+### Your Site URL
+If you have a username and a custom domain is configured, your personal site URL is displayed here with a copy button.
+
+### Change Password
+
+For accounts created with email and password:
+
+1. Click the **Change Password** button in the Account section
+2. The password form expands with three fields:
+   - **Current Password** — enter your existing password (eye icon to show/hide)
+   - **New Password** — enter your new password (eye icon to show/hide)
+   - **Confirm Password** — re-enter the new password
+3. Password requirements: 8+ characters, at least one uppercase, one lowercase, one number
+4. Click **Update Password**
+5. A success message confirms the change
+
+If your password is incorrect, an error message appears. You can click **Cancel** to close the form.
+
+> **Note:** Accounts created via GitHub or Google login don't have a password set. The Change Password button is disabled with a message explaining that you use social login.
+
+## Preferences
+
+### Email Notifications
+
+Toggle email notifications on or off with the switch:
+
+- **Enabled** (default) — receive emails about portfolio views, contact form submissions, and tips
+- **Disabled** — no notification emails
+
+The change saves immediately when you toggle — no need to click Save Changes.
+
+### Default Portfolio
+
+Choose which portfolio is displayed when someone visits your username URL (`/portfolio/your-username`):
+
+1. Select a portfolio from the dropdown
+2. The change saves immediately
+3. The selected portfolio gets an `isDefault` flag
+
+This dropdown only appears if you have at least one portfolio. If you have no portfolios, create one first.
+
+> **Tip:** Set your best or most complete portfolio as the default — it's the first thing people see when they visit your profile URL.
+
+## Data
+
+### Export All Data
+
+Download a complete JSON export of all your data:
+
+1. Click the **Export JSON** button
+2. A file downloads named `foliocraft-export-YYYY-MM-DD.json`
+3. The file contains:
+   - Your profile information (name, email, username, bio, settings)
+   - All portfolios with complete data:
+     - Sections (names, layout, styles)
+     - Blocks (type, content, styles)
+     - Theme settings
+   - Timestamps for all records
+
+The export is useful for:
+- **Backups** — save your data locally before major changes
+- **Migration** — move your data to another platform
+- **Analysis** — examine your portfolio structure programmatically
+
+## Danger Zone
+
+### Delete Account
+
+Permanently and irreversibly delete your entire Foliocraft account:
+
+1. Scroll to the **Danger Zone** section (red border)
+2. Click **Delete My Account**
+3. A confirmation panel expands
+4. Type exactly `delete my account` in the text field
+5. The **Permanently Delete** button activates
+6. Click it to proceed
+7. Your account is deleted and you're signed out
+
+### What Gets Deleted
+
+Everything associated with your account is permanently removed:
+
+- Your profile (name, email, username, bio, avatar)
+- All portfolios and their content
+- All sections and blocks
+- All themes and custom styles
+- All analytics data and view counts
+- All contact form submissions
+- All version history snapshots
+- All linked OAuth accounts (GitHub, Google)
+
+> **Warning:** This action is completely irreversible. There is no recovery process. Export your data first if you want to keep any information.
+
+## Saving Changes
+
+The Settings page has a **Save bar** at the bottom of the form sections:
+
+- Shows "You have unsaved changes" when fields have been modified
+- Shows "All changes saved" when everything is persisted
+- Click the **Save Changes** button to persist profile changes (name, username, bio, profile picture)
+
+Some settings save immediately without the Save button:
+- Theme toggle (light/dark)
+- Email notifications toggle
+- Default portfolio selection
+
+---
+
+You've reached the end of the Foliocraft documentation. Happy building!

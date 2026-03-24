@@ -50,6 +50,10 @@ import {
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
+import { CommandPalette } from "@/components/builder/command-palette";
+import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
+import { OnboardingTour } from "@/components/builder/onboarding-tour";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { ImageUpload } from "@/components/common/image-upload";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import {
@@ -363,10 +367,179 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
 
 /* ── Version History Panel ──────────────────────────────────────── */
 
+interface VersionData {
+  id: string;
+  label: string | null;
+  createdAt: string;
+  data: {
+    title?: string;
+    description?: string;
+    sections: Array<{
+      id: string;
+      name: string;
+      sortOrder: number;
+      styles: Record<string, unknown>;
+      isVisible: boolean;
+      isLocked: boolean;
+      blocks: Array<{
+        id: string;
+        type: string;
+        sortOrder: number;
+        content: Record<string, unknown>;
+        styles: Record<string, unknown>;
+        isVisible: boolean;
+        isLocked: boolean;
+      }>;
+    }>;
+    theme: Record<string, unknown> | null;
+  };
+  portfolioTitle: string;
+}
+
+function VersionPreviewModal({ portfolioId, version, onClose, onRestore, dropdownColors }: {
+  portfolioId: string;
+  version: VersionData;
+  onClose: () => void;
+  onRestore: () => void;
+  dropdownColors: { bg: string; border: string; text: string; textMuted: string; hover: string; separator: string };
+}) {
+  const [restoring, setRestoring] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+  const restore = async () => {
+    setRestoring(true);
+    try {
+      await apiPost(`/portfolios/${portfolioId}/versions/${version.id}/restore`, {});
+      onRestore();
+    } catch {} finally { setRestoring(false); setShowRestoreConfirm(false); }
+  };
+
+  // Build a PortfolioWithRelations-compatible object for the renderer
+  const previewPortfolio = useMemo(() => {
+    const d = version.data;
+    const t = d.theme as Record<string, unknown> | null;
+    return {
+      id: portfolioId,
+      title: d.title ?? version.portfolioTitle,
+      slug: "",
+      description: d.description ?? null,
+      status: "DRAFT" as const,
+      userId: "",
+      templateId: null,
+      isDefault: false,
+      viewCount: 0,
+      seoTitle: null,
+      seoDescription: null,
+      ogImageUrl: null,
+      accessPassword: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sections: d.sections.map((s) => ({
+        id: s.id,
+        portfolioId,
+        name: s.name,
+        sortOrder: s.sortOrder,
+        styles: s.styles,
+        isVisible: s.isVisible,
+        isLocked: s.isLocked,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        blocks: s.blocks.map((b) => ({
+          id: b.id,
+          sectionId: s.id,
+          type: b.type,
+          sortOrder: b.sortOrder,
+          content: b.content,
+          styles: b.styles,
+          isVisible: b.isVisible,
+          isLocked: b.isLocked,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })),
+      })),
+      theme: t ? {
+        id: "",
+        portfolioId,
+        mode: (t.mode as string) ?? "DARK",
+        primaryColor: (t.primaryColor as string) ?? "#6366f1",
+        secondaryColor: (t.secondaryColor as string) ?? "#8b5cf6",
+        accentColor: (t.accentColor as string) ?? "#06b6d4",
+        backgroundColor: (t.backgroundColor as string) ?? "#0f172a",
+        surfaceColor: (t.surfaceColor as string) ?? "#1e293b",
+        textColor: (t.textColor as string) ?? "#f8fafc",
+        mutedColor: (t.mutedColor as string) ?? "#94a3b8",
+        fontHeading: (t.fontHeading as string) ?? "Space Grotesk",
+        fontBody: (t.fontBody as string) ?? "Inter",
+        fontMono: (t.fontMono as string) ?? "JetBrains Mono",
+        borderRadius: (t.borderRadius as string) ?? "0.5rem",
+        customCss: (t.customCss as string) ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } : null,
+      template: null,
+      user: { id: "", name: null, username: null, image: null },
+    };
+  }, [version, portfolioId]);
+
+  return (
+    <div className="fixed inset-0 z-[400] flex flex-col" style={{ backgroundColor: dropdownColors.bg }}>
+      {/* Header */}
+      <div className="flex flex-shrink-0 items-center justify-between px-5 py-3" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
+        <div className="flex items-center gap-3">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors" style={{ color: dropdownColors.textMuted }}>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <p className="text-[13px] font-semibold" style={{ color: dropdownColors.text }}>
+              {version.label ?? "Auto-save"}
+            </p>
+            <p className="text-[10px]" style={{ color: dropdownColors.textMuted }}>
+              {new Date(version.createdAt).toLocaleString()} — {version.data.sections.length} section{version.data.sections.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRestoreConfirm(true)}
+            disabled={restoring}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+            style={{ backgroundColor: "var(--b-accent)" }}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Restore This Version
+          </button>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors" style={{ color: dropdownColors.textMuted }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="flex-1 overflow-y-auto" style={{ backgroundColor: previewPortfolio.theme?.backgroundColor ?? "#0f172a" }}>
+        <PortfolioRenderer portfolio={previewPortfolio as never} />
+      </div>
+
+      <ConfirmDialog
+        open={showRestoreConfirm}
+        onClose={() => setShowRestoreConfirm(false)}
+        onConfirm={restore}
+        title="Restore this version?"
+        description="Current changes will be overwritten with this version's content. This action cannot be undone."
+        confirmText="Restore"
+        variant="danger"
+        loading={restoring}
+      />
+    </div>
+  );
+}
+
 function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }: { portfolioId: string; onClose: () => void; onRestore: () => void; dropdownColors: { bg: string; border: string; text: string; textMuted: string; hover: string; separator: string } }) {
   const [versions, setVersions] = useState<Array<{ id: string; label: string | null; createdAt: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [confirmRestoreId, setConfirmRestoreId] = useState<string | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<VersionData | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState<string | null>(null);
 
   useEffect(() => {
     apiGet<Array<{ id: string; label: string | null; createdAt: string }>>(`/portfolios/${portfolioId}/versions`)
@@ -376,12 +549,19 @@ function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }
   }, [portfolioId]);
 
   const restore = async (versionId: string) => {
-    if (!confirm("Restore this version? Current changes will be overwritten.")) return;
     setRestoring(versionId);
     try {
       await apiPost(`/portfolios/${portfolioId}/versions/${versionId}/restore`, {});
       onRestore();
-    } catch {} finally { setRestoring(null); }
+    } catch {} finally { setRestoring(null); setConfirmRestoreId(null); }
+  };
+
+  const preview = async (versionId: string) => {
+    setLoadingPreview(versionId);
+    try {
+      const data = await apiGet<VersionData>(`/portfolios/${portfolioId}/versions/${versionId}`);
+      setPreviewVersion(data);
+    } catch {} finally { setLoadingPreview(null); }
   };
 
   const saveVersion = async () => {
@@ -389,6 +569,18 @@ function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }
     const data = await apiGet<Array<{ id: string; label: string | null; createdAt: string }>>(`/portfolios/${portfolioId}/versions`);
     setVersions(data);
   };
+
+  if (previewVersion) {
+    return (
+      <VersionPreviewModal
+        portfolioId={portfolioId}
+        version={previewVersion}
+        onClose={() => setPreviewVersion(null)}
+        onRestore={onRestore}
+        dropdownColors={dropdownColors}
+      />
+    );
+  }
 
   return (
     <>
@@ -401,22 +593,52 @@ function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }
             <button onClick={onClose} style={{ color: dropdownColors.textMuted }}><X className="h-4 w-4" /></button>
           </div>
         </div>
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1.5">
           {loading && <p className="text-[12px] py-8 text-center" style={{ color: dropdownColors.textMuted }}>Loading...</p>}
           {!loading && versions.length === 0 && <p className="text-[12px] py-8 text-center" style={{ color: dropdownColors.textMuted }}>No versions saved yet</p>}
           {versions.map((v) => (
-            <div key={v.id} className="flex items-center justify-between rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
-              <div>
-                <p className="text-[12px] font-medium" style={{ color: dropdownColors.text }}>{v.label ?? "Auto-save"}</p>
-                <p className="text-[10px]" style={{ color: dropdownColors.textMuted }}>{new Date(v.createdAt).toLocaleString()}</p>
+            <div key={v.id} className="rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[12px] font-medium" style={{ color: dropdownColors.text }}>{v.label ?? "Auto-save"}</p>
+                  <p className="text-[10px]" style={{ color: dropdownColors.textMuted }}>{new Date(v.createdAt).toLocaleString()}</p>
+                </div>
               </div>
-              <button onClick={() => restore(v.id)} disabled={restoring === v.id} className="rounded-md px-2 py-1 text-[10px] font-semibold" style={{ color: "var(--b-accent)" }}>
-                {restoring === v.id ? "..." : "Restore"}
-              </button>
+              <div className="mt-2 flex items-center gap-1.5">
+                <button
+                  onClick={() => preview(v.id)}
+                  disabled={loadingPreview === v.id}
+                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-colors"
+                  style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+                >
+                  {loadingPreview === v.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                  Preview
+                </button>
+                <button
+                  onClick={() => setConfirmRestoreId(v.id)}
+                  disabled={restoring === v.id}
+                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-colors"
+                  style={{ color: dropdownColors.textMuted }}
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Restore
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmRestoreId}
+        onClose={() => setConfirmRestoreId(null)}
+        onConfirm={() => { if (confirmRestoreId) restore(confirmRestoreId); }}
+        title="Restore this version?"
+        description="Current changes will be overwritten with this version's content. This action cannot be undone."
+        confirmText="Restore"
+        variant="danger"
+        loading={!!restoring}
+      />
     </>
   );
 }
@@ -477,6 +699,7 @@ export function BuilderWorkspace({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -957,6 +1180,39 @@ export function BuilderWorkspace({
     }
   };
 
+  const handleCommand = useCallback((commandId: string) => {
+    switch (commandId) {
+      case "save": handleSave(); break;
+      case "publish": handlePublish(); break;
+      case "preview": setShowPreview(true); break;
+      case "export-json": exportAsJson(); break;
+      case "export-html": exportAsHtml(); break;
+      case "version-history": setShowVersions(true); break;
+      case "back-to-dashboard": router.push("/dashboard/portfolios"); break;
+      case "undo": builderStore.undo(); break;
+      case "redo": builderStore.redo(); break;
+      case "toggle-left-panel": setShowLeftPanel((v) => !v); break;
+      case "toggle-right-panel": setShowRightPanel((v) => !v); break;
+      case "zoom-in": zoomIn(); break;
+      case "zoom-out": zoomOut(); break;
+      case "reset-zoom": resetZoom(); break;
+      case "fit-to-screen": fitToScreen(); break;
+      case "device-desktop": builderStore.setDevicePreview("desktop"); break;
+      case "device-tablet": builderStore.setDevicePreview("tablet"); break;
+      case "device-mobile": builderStore.setDevicePreview("mobile"); break;
+      case "show-shortcuts": setShowShortcuts(true); break;
+      case "open-docs": window.open("/docs", "_blank"); break;
+      default:
+        if (commandId.startsWith("add-")) {
+          const blockType = commandId.replace("add-", "") as BlockType;
+          if (selectedSectionId) {
+            addBlock(selectedSectionId, blockType);
+          }
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSectionId]);
+
   const fitToScreen = useCallback(() => {
     let minX = Infinity,
       minY = Infinity,
@@ -1144,6 +1400,12 @@ ${sectionsHtml}
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
 
+      // Ctrl+K → Command palette
+      if (mod && e.key === "k") {
+        e.preventDefault();
+        setShowCommandPalette((v) => !v);
+        return;
+      }
       // ? → Toggle shortcuts overlay
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         setShowShortcuts((v) => !v);
@@ -1308,6 +1570,7 @@ ${sectionsHtml}
     >
       {/* ── TOP TOOLBAR ──────────────────────────────────────────── */}
       <div
+        data-tour="top-bar"
         className="builder-toolbar relative z-20 flex h-12 items-center justify-between px-3"
         style={{ borderBottom: "1px solid var(--b-border)" }}
       >
@@ -1843,6 +2106,7 @@ ${sectionsHtml}
         {/* ── LEFT: Layers / Elements Panel ────────────────────────── */}
         {showLeftPanel && (
         <div
+          data-tour="left-panel"
           className="builder-panel flex w-60 flex-shrink-0 flex-col"
           style={{
             backgroundColor: "var(--b-panel)",
@@ -2138,6 +2402,7 @@ ${sectionsHtml}
 
         {/* ── CENTER: Canvas ─────────────────────────────────────── */}
         <div
+          data-tour="canvas"
           ref={drawContainerRef}
           className="relative flex-1 overflow-hidden"
           style={{ cursor: drawMode ? "crosshair" : undefined }}
@@ -2587,6 +2852,7 @@ ${sectionsHtml}
         {/* ── RIGHT: Properties Panel ────────────────────────────── */}
         {showRightPanel && (
         <div
+          data-tour="right-panel"
           className="builder-panel w-72 flex-shrink-0"
           style={{
             backgroundColor: "var(--b-panel)",
@@ -2858,48 +3124,23 @@ ${sectionsHtml}
         </div>
       )}
 
-      {/* ── Keyboard Shortcuts Overlay ─────────────────────────── */}
-      {showShortcuts && (
-        <>
-          <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed left-1/2 top-1/2 z-[301] w-[520px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl" style={{ backgroundColor: dropdownColors.bg, border: `1px solid ${dropdownColors.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
-              <h2 className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>Keyboard Shortcuts</h2>
-              <button onClick={() => setShowShortcuts(false)} style={{ color: dropdownColors.textMuted }}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-1 p-5">
-              {[
-                ["Ctrl+C", "Copy block"],
-                ["Ctrl+V", "Paste block"],
-                ["Ctrl+S", "Save"],
-                ["Ctrl+Z", "Undo"],
-                ["Ctrl+Shift+Z", "Redo"],
-                ["Ctrl+E", "Export JSON"],
-                ["Ctrl+P", "Preview"],
-                ["Ctrl+H", "Export HTML"],
-                ["Ctrl+\\", "Toggle left panel"],
-                ["Ctrl+/", "Toggle right panel"],
-                ["Ctrl+0", "Reset zoom"],
-                ["Ctrl+1", "Fit to screen"],
-                ["Ctrl+=", "Zoom in"],
-                ["Ctrl+-", "Zoom out"],
-                ["V", "Select tool"],
-                ["R", "Rectangle tool"],
-                ["O", "Circle tool"],
-                ["L", "Line tool"],
-                ["T", "Add text"],
-                ["Escape", "Cancel / Deselect"],
-                ["?", "Show shortcuts"],
-              ].map(([key, desc]) => (
-                <div key={key} className="flex items-center justify-between py-1.5">
-                  <span className="text-[12px]" style={{ color: dropdownColors.textMuted }}>{desc}</span>
-                  <kbd className="rounded-md px-2 py-0.5 text-[10px] font-mono font-semibold" style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.text, border: `1px solid ${dropdownColors.separator}` }}>{key}</kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+      {/* ── Keyboard Shortcuts Modal ─────────────────────────── */}
+      <KeyboardShortcutsModal
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+        dropdownColors={dropdownColors}
+      />
+
+      {/* ── Command Palette ────────────────────────────────────── */}
+      <CommandPalette
+        open={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onExecute={handleCommand}
+        dropdownColors={dropdownColors}
+      />
+
+      {/* ── Onboarding Tour ────────────────────────────────────── */}
+      <OnboardingTour dropdownColors={dropdownColors} />
 
       {/* ── Version History Panel ────────────────────────────────── */}
       {showVersions && (

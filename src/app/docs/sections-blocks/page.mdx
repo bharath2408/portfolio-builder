@@ -1,0 +1,315 @@
+# Sections & Blocks
+
+Your portfolio is built from **sections** (containers) and **blocks** (content elements). Think of sections as Figma frames and blocks as the layers inside them.
+
+## Understanding the Structure
+
+```
+Portfolio
+├── Section: "Hero"
+│   ├── Heading block: "Hi, I'm Alex Chen"
+│   ├── Text block: "Full-stack developer..."
+│   ├── Button block: "View My Work"
+│   └── Avatar block: profile photo
+├── Section: "About"
+│   ├── Heading block: "About Me"
+│   ├── Text block: bio paragraph
+│   └── Stat blocks: experience, projects
+├── Section: "Skills"
+│   └── Skill Grid block
+└── Section: "Projects"
+    └── Project Card blocks
+```
+
+Each section is an independent container with its own layout and background. Blocks live inside sections and can be arranged freely or in structured layouts.
+
+## Sections
+
+### Creating a Section
+
+1. Click the **+ Add Section** button at the bottom of the layers panel
+2. A new section appears with a default name like "New Section"
+3. Click the section name in the layers panel to rename it
+4. Choose a layout mode for how blocks will be arranged inside
+
+### Section Layout Modes
+
+Each section has a layout that determines how its child blocks are positioned:
+
+- **Stack / Flex Column** — blocks stack vertically, one below another. Best for standard content flow (hero, about, etc.)
+- **Flex Row** — blocks flow horizontally in a row. Great for side-by-side layouts like stats or icon groups
+- **Grid** — blocks arrange in a CSS grid. You set the number of columns (e.g., 2, 3, 4). Perfect for project cards, skill grids, or galleries
+- **Absolute** — blocks are freely positioned with X/Y coordinates, like layers in Figma. Full creative control for hero sections or complex compositions
+- **Center** — content is centered both horizontally and vertically
+
+### Section Properties
+
+Select a section (click its background or click it in the layers panel) to see its properties:
+
+- **Layout** — the arrangement mode (see above)
+- **Gap** — pixel spacing between blocks (for stack/flex/grid layouts)
+- **Columns** — number of columns (grid layout only)
+- **Align Items** — vertical alignment: start, center, end, stretch
+- **Justify Content** — horizontal alignment: start, center, end, space-between
+- **Min Height** — minimum section height in pixels or CSS value
+- **Max Width** — maximum content width (default: 1100px)
+- **Padding** — inner spacing on all four sides
+- **Background Color** — section background color, defaults to theme background
+
+### Section Actions
+
+In the layers panel, each section has action buttons:
+
+- **Drag handle** — grab and drag to reorder sections
+- **Expand/Collapse** — show or hide the section's blocks in the tree
+- **Visibility toggle** — hide the section without deleting it (eye icon)
+- **Lock toggle** — prevent all edits to the section and its blocks
+- **Delete** — remove the section and all blocks inside it
+
+## Blocks
+
+Blocks are the individual content elements that make up your portfolio. There are 28 block types organized into 7 categories.
+
+### Typography Blocks
+
+#### Heading
+Titles and section headers. Properties:
+- **Text** — the heading text
+- **Level** — H1 through H6 (controls size and semantic importance)
+- **Highlight** — an optional word or phrase colored in your theme's primary color
+
+> **Tip:** Use H1 for your main hero title, H2 for section headers, and H3+ for sub-sections.
+
+#### Text
+Paragraphs and body content. Properties:
+- **Text** — plain text content
+- **HTML** — rich text with formatting (bold, italic, links)
+
+#### Quote
+Blockquotes with attribution. Properties:
+- **Text** — the quote content
+- **Author** — who said it
+- **Role** — author's title or position
+
+#### List
+Ordered or unordered lists. Properties:
+- **Items** — array of list item strings
+- **Ordered** — toggle between numbered (ordered) and bulleted (unordered)
+
+#### Code Block
+Syntax-highlighted code snippets. Properties:
+- **Code** — the code content
+- **Language** — language label shown at the top
+
+### Media Blocks
+
+#### Image
+Photos and graphics with Cloudinary upload. Properties:
+- **Image** — drag-and-drop or click to upload via Cloudinary (PNG, JPG, GIF, WebP, max 10MB)
+- **Alt text** — accessible description of the image
+- **Caption** — optional text below the image
+- **Object Fit** — how the image fills its container: cover, contain, fill
+- **Aspect Ratio** — constrain proportions (e.g., 16/9, 1/1, 4/3)
+
+#### Avatar
+Circular profile images. Properties:
+- **Image** — upload via Cloudinary
+- **Alt text** — description
+- **Size** — sm (32px), md (48px), lg (64px), xl (96px), 2xl (128px)
+- **Ring** — toggle a colored ring border around the avatar
+
+#### Icon
+Decorative icons. Properties:
+- **Name** — icon identifier
+- **Size** — pixel size
+- **Color** — icon color
+
+### Interactive Blocks
+
+#### Button
+Clickable call-to-action buttons. Properties:
+- **Label** — button text
+- **Link To** — toggle between:
+  - **URL** — any external or internal URL
+  - **Section** — scroll smoothly to a section in your portfolio (dropdown to pick target section)
+- **Variant** — visual style:
+  - **Solid** — filled with primary color, white text
+  - **Outline** — bordered with primary color, transparent background
+  - **Ghost** — text only with primary color, no border or background
+  - **Link** — underlined text style
+- **Size** — Small, Medium, or Large (controls padding and font size)
+- **New Tab** — open the link in a new browser tab (URL mode only)
+- **Icon** — optional arrow icon after the text
+
+#### Link
+Inline text links. Properties:
+- **Label** — link text
+- **Link To** — URL or Section (same as Button)
+- **New Tab** — open in new tab (URL mode only)
+
+#### Social Links
+A row or column of social media icons. Properties:
+- **Links** — array of social platforms, each with:
+  - **Platform** — GitHub, LinkedIn, Twitter/X, Website, Email
+  - **URL** — the link destination
+  - **Icon** — auto-selected based on platform
+- **Layout** — row (horizontal) or column (vertical)
+- **Show Labels** — display platform names next to icons
+- **Variant** — ghost, outline, or filled style
+
+### Data Display Blocks
+
+#### Badge
+Single tag or label. Properties:
+- **Text** — badge content
+- **Color** — badge color
+- **Variant** — solid (filled), outline (bordered), subtle (light background)
+
+#### Badge Group
+Collection of badges. Properties:
+- **Badges** — array of items, each with text and color
+
+#### Skill Bar
+Animated horizontal progress bar. Properties:
+- **Name** — skill name
+- **Level** — 0 to 100 (percentage)
+- **Icon** — optional icon
+- **Show Percentage** — display the number next to the bar
+
+#### Skill Grid
+Grid of skills with icons and levels. Properties:
+- **Skills** — array of items, each with name, level, and icon
+
+#### Progress Ring
+Circular progress indicator. Properties:
+- **Value** — 0 to 100 (percentage)
+- **Label** — description text
+- **Size** — ring diameter in pixels
+
+#### Stat
+Big number with label. Properties:
+- **Value** — the number or text (e.g., "50+", "10k", "99%")
+- **Label** — description (e.g., "Projects Completed")
+
+### Composite Blocks
+
+#### Project Card
+Showcase a project with image and details. Properties:
+- **Title** — project name
+- **Description** — what the project does
+- **Image** — screenshot or logo (Cloudinary upload)
+- **Tech Stack** — comma-separated technologies (rendered as badges)
+- **Live URL** — link to the live project
+- **Repo URL** — link to the source code
+
+#### Experience Item
+Timeline entry for work history. Properties:
+- **Company** — employer name
+- **Role** — your job title
+- **Start Date** — when you started
+- **End Date** — when you left (or "Present")
+- **Description** — what you did
+- **Current** — toggle to mark as current position
+
+#### Testimonial
+Client or colleague quote. Properties:
+- **Quote** — the testimonial text
+- **Author** — who gave the testimonial
+- **Role** — their title/company
+- **Avatar** — their photo (Cloudinary upload)
+
+#### Contact Info
+Display your contact details. Properties:
+- **Items** — array of info entries, each with:
+  - **Type** — email, phone, location, or custom
+  - **Label** — display name
+  - **Value** — the actual data
+  - **Icon** — associated icon (Mail, Phone, MapPin)
+
+#### Contact Form
+A working form that collects submissions. Properties:
+- **Fields** — configurable form fields, each with:
+  - **Name** — field identifier
+  - **Label** — display label
+  - **Type** — text, email, or textarea
+  - **Required** — whether the field must be filled
+  - **Placeholder** — hint text
+- **Submit Button Text** — text on the submit button
+- **Portfolio ID** — automatically linked to receive submissions
+
+When visitors submit the form on your published portfolio, entries appear in the **Submissions** page of your dashboard.
+
+#### Columns
+Multi-column layout container. Properties:
+- **Columns** — number of columns
+- Nest other blocks inside
+
+#### Card
+Container with card styling. Properties:
+- Background, border, padding inherited from styles
+
+#### Embed
+Embed external content. Properties:
+- **URL** — the embed source
+
+### Layout Blocks
+
+#### Divider
+Horizontal separator line. Properties:
+- **Style** — solid, dashed, dotted, or gradient
+- **Thickness** — line width in pixels
+
+#### Spacer
+Vertical empty space. Properties:
+- **Height** — spacing height in pixels (default 40)
+
+### Shape Blocks
+
+#### Rectangle
+Decorative rectangle. Properties:
+- **Fill Color** — background color
+- **Border Color** — outline color
+- **Border Width** — outline thickness
+- **Border Radius** — corner roundness
+- **Width / Height** — dimensions
+
+#### Circle
+Decorative circle. Properties:
+- Same as Rectangle, but always rendered as a perfect circle
+
+#### Line
+Decorative line element. Properties:
+- **Color** — line color
+- **Thickness** — line width
+- **Length** — line length
+- **Orientation** — horizontal or vertical
+
+## Adding Blocks
+
+There are three ways to add blocks to your portfolio:
+
+1. **Elements panel** — switch to the Elements tab in the left panel, click any block type. It gets added to the currently selected section (or the first section if none is selected)
+2. **Drag and drop** — drag a block from the Elements panel directly onto a section in the canvas
+3. **Copy and paste** — select a block, then press `Ctrl/Cmd + V` to duplicate it with all its content and styles preserved
+
+## Editing Blocks
+
+1. **Click** a block on the canvas to select it
+2. The **properties panel** on the right updates to show that block's content and style options
+3. Edit any field — changes apply immediately on the canvas
+4. Changes are auto-saved periodically
+
+## Block Actions
+
+When a block is selected, you can:
+
+- **Move** — drag it to reposition (absolute layout) or reorder in layers panel (stack/flex/grid)
+- **Resize** — drag the handles on the selection border
+- **Duplicate** — click the copy button in the properties panel header
+- **Hide** — toggle visibility without deleting
+- **Lock** — prevent edits
+- **Delete** — press `Delete` key or click the trash button
+
+---
+
+> **Next:** Deep dive into styling and themes.

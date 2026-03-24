@@ -47,6 +47,7 @@ export const updateProfileSchema = z.object({
   theme: z.enum(["light", "dark"]).optional(),
   image: z.string().url().optional().or(z.literal("")),
   emailNotifications: z.boolean().optional(),
+  onboardingDone: z.boolean().optional(),
   defaultPortfolioId: z.string().optional().nullable(),
 });
 

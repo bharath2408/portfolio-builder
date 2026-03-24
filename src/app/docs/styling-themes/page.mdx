@@ -1,0 +1,191 @@
+# Styling & Themes
+
+Foliocraft gives you pixel-perfect control over every visual aspect of your portfolio through two layers: a **portfolio-wide theme** for global design tokens, and **block-level styles** for individual customization.
+
+## Portfolio Theme
+
+Every portfolio has a theme that sets the foundational design — colors, fonts, and shapes. All blocks inherit from the theme unless overridden.
+
+### Accessing the Theme Panel
+
+1. Open your portfolio in the Studio Editor
+2. Click the **palette icon** in the top bar
+3. The theme panel slides open on the right side
+
+### Color Tokens
+
+Your theme defines 7 color tokens that cascade throughout your portfolio:
+
+| Token | Purpose | Example Usage |
+|-------|---------|---------------|
+| **Primary** | Main brand color | Buttons, links, highlights |
+| **Secondary** | Supporting color | Hover states, accents |
+| **Accent** | Pop of color | Badges, icons, rings |
+| **Background** | Page background | Behind all sections |
+| **Surface** | Elevated surfaces | Cards, section backgrounds |
+| **Text** | Default text | Headings, paragraphs |
+| **Muted** | Secondary text | Labels, captions, hints |
+
+When setting colors on individual blocks, you can use these token names directly instead of hex codes. For example, setting a block's text color to `primary` will use whatever your theme's primary color is. This means changing a theme color updates every block that references it.
+
+### Theme Mode
+
+- **Light** — bright backgrounds, dark text
+- **Dark** — dark backgrounds, light text
+- **Custom** — full manual control over all colors
+
+### Typography
+
+Three font slots that blocks reference:
+
+- **Heading Font** — used by Heading blocks and section titles. Good choices: Space Grotesk, Outfit, Sora, Poppins
+- **Body Font** — used by Text, Quote, List blocks. Good choices: Inter, DM Sans, Lato, Source Sans Pro
+- **Mono Font** — used by Code blocks. Good choices: JetBrains Mono, Fira Code, IBM Plex Mono
+
+When a block's font family is set to "Heading", "Body", or "Mono", it uses the corresponding theme font. Changing the theme font updates all blocks using that slot.
+
+### Border Radius
+
+A global value that controls corner roundness across buttons, cards, images, and other elements. Common values:
+
+- `0` — sharp corners
+- `0.25rem` — slightly rounded
+- `0.5rem` — moderately rounded (default)
+- `1rem` — very rounded
+- `9999px` — pill/circle shapes
+
+## Block-Level Styling
+
+Every block has its own style properties that override the theme when set. Select a block and use the right panel to customize.
+
+### Appearance
+
+#### Border
+- **Width** — border thickness in pixels. `0` means no border
+- **Color** — any hex color or theme token name (`primary`, `accent`, etc.)
+- **Style** — solid (continuous line), dashed (spaced dashes), dotted (dots), none
+- **Radius** — corner roundness. Quick presets: 0, 4, 8, 12, 16, 999 (pill). Click a preset button or type a custom value
+
+#### Shadow
+Dropdown with presets that add depth:
+- **None** — flat, no shadow
+- **Small** — subtle lift: `0 1px 2px rgba(0,0,0,0.05)`
+- **Medium** — moderate depth: `0 4px 6px rgba(0,0,0,0.1)`
+- **Large** — prominent elevation: `0 10px 15px rgba(0,0,0,0.1)`
+- **XL** — dramatic float: `0 20px 25px rgba(0,0,0,0.1)`
+
+#### Opacity
+Slide from 0 (invisible) to 1 (fully opaque). Useful for watermark effects, background overlays, or subtle decorative elements.
+
+#### Overflow
+Controls what happens when content exceeds the block's bounds:
+- **Visible** — content overflows and is visible
+- **Hidden** — content is clipped at the border
+- **Auto** — scroll bars appear if content overflows
+
+### Typography (Text Blocks)
+
+Only shown for text-based blocks (heading, text, quote, list, button, badge, stat, link, code):
+
+- **Font Family** — Heading, Body, or Mono (references theme fonts)
+- **Font Size** — in pixels (e.g., 14, 16, 24, 48)
+- **Font Weight** — Light (300), Regular (400), Medium (500), Semi (600), Bold (700), Extra (800), Black (900)
+- **Line Height** — multiplier (e.g., 1.5 = 150% of font size)
+- **Letter Spacing** — pixel spacing between characters (negative values tighten)
+- **Text Transform** — none, UPPERCASE, lowercase, Capitalize
+- **Text Align** — left, center, right. Toggle buttons with visual icons
+
+### Colors
+
+- **Text Color** — overrides the theme text color for this specific block
+- **Background Color** — sets a background behind this block
+- **Background Gradient** — a CSS gradient that replaces the solid background. Examples:
+  - `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` — diagonal purple
+  - `linear-gradient(to right, #00b4db, #0083b0)` — horizontal blue
+  - `radial-gradient(circle, #ff9a9e 0%, #fad0c4 100%)` — radial pink
+
+> **Tip:** Background gradient overrides background color when both are set.
+
+### Spacing
+
+Fine-grained control over inner and outer spacing:
+
+- **Padding** — space between the block's content and its border. Four individual controls: Top, Right, Bottom, Left. Values in pixels
+- **Margin** — space outside the block's border, pushing other elements away. Four individual controls: Top, Right, Bottom, Left. Values in pixels
+
+### Effects
+
+#### Entrance Animations
+How the block appears when scrolled into view on the published portfolio:
+
+- **None** — appears instantly
+- **Fade Up** — fades in while sliding upward 20px. Duration: 0.6s
+- **Fade In** — simple opacity fade from 0 to 1. Duration: 0.6s
+- **Slide Left** — slides in from 30px left. Duration: 0.6s
+- **Slide Right** — slides in from 30px right. Duration: 0.6s
+- **Scale** — scales up from 90% to 100%. Duration: 0.6s
+- **Blur In** — fades in with an 8px blur clearing to sharp. Duration: 0.6s
+
+> **Note:** Animations only play on the published portfolio, not in the editor canvas.
+
+#### Hover Effects
+Interactive effects when visitors hover over a block:
+
+- **Hover Scale** — transform scale value on hover (e.g., 1.05 to grow 5%)
+- **Hover Opacity** — opacity value on hover (e.g., 0.8 to dim slightly)
+- **Hover Background** — background color change on hover
+
+#### Cursor
+- **Default** — standard arrow cursor
+- **Pointer** — hand cursor (indicates clickable)
+
+### Responsive
+
+Control visibility across screen sizes:
+
+- **Hide on Mobile** — block is hidden on screens below the `md` breakpoint (768px). Uses `hidden md:block` classes
+- **Hide on Desktop** — block is hidden on screens at or above `md`. Uses `md:hidden` class
+
+This lets you create different experiences for mobile and desktop. For example, show a compact stat on mobile and a full skill grid on desktop.
+
+### Custom CSS
+
+A text area for writing raw CSS properties when the built-in controls aren't enough. Each line should be a CSS declaration:
+
+```
+box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+transform: skewX(-5deg);
+backdrop-filter: blur(10px);
+mix-blend-mode: multiply;
+filter: saturate(1.2) contrast(1.1);
+text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+```
+
+Custom CSS properties override all other style settings. Properties use standard CSS names (kebab-case), and they're automatically converted to camelCase for React rendering.
+
+## Design Tips
+
+### Creating Visual Hierarchy
+1. Use large, bold headings (H1, 48-64px) for the hero
+2. Use medium headings (H2, 28-36px) for section titles
+3. Keep body text at 14-16px with 1.6-1.8 line height
+4. Use the **muted** color for secondary information
+
+### Consistent Spacing
+- Use 80px top/bottom padding on sections for breathing room
+- Use 16-24px gap between blocks within sections
+- Use consistent margins (e.g., always 8px or 16px between related elements)
+
+### Color Usage
+- Use your **primary** color sparingly — buttons, links, and key highlights
+- Don't use more than 3 colors prominently
+- Ensure sufficient contrast between text and background
+
+### Mobile Considerations
+- Test with the device preview toggles in the editor
+- Use **Hide on Mobile** for wide elements that break on small screens
+- Consider using larger touch targets (buttons 44px+ height) for mobile
+
+---
+
+> **Next:** Preview and publish your portfolio.

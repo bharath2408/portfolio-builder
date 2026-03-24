@@ -1,0 +1,120 @@
+# Version History
+
+Foliocraft automatically saves versions of your portfolio so you can always go back to a previous state. Think of it as a time machine for your portfolio.
+
+## How Versions Work
+
+A **version snapshot** captures the complete state of your portfolio at a specific moment:
+
+- All sections (names, order, layout settings, visibility, lock state)
+- All blocks (type, content, styles, position, visibility, lock state)
+- Theme settings (all colors, fonts, border radius)
+
+### When Versions Are Created
+
+- **Automatically on publish** — every time you click Publish or Update & Publish, a snapshot labeled "Published" is saved
+- **Manually** — you can create a snapshot at any time by clicking "Save Now" in the Version History panel
+
+### Version Limits
+
+- Up to **20 versions** are kept per portfolio
+- When the limit is reached, the oldest version is automatically removed
+- This ensures your storage stays manageable while keeping a useful history
+
+## Accessing Version History
+
+1. Open your portfolio in the **Studio Editor**
+2. Click **File** in the top menu bar
+3. Select **Version History** (clock icon)
+4. A side panel slides in from the right showing all saved versions
+
+### Version List
+
+Each version in the list shows:
+- **Label** — "Published", "Manual save", or "Auto-save"
+- **Timestamp** — exact date and time the snapshot was taken
+- **Preview button** — see what the portfolio looked like at that point
+- **Restore button** — revert your portfolio to that version
+
+## Creating a Manual Snapshot
+
+Before making major changes to your portfolio, it's a good idea to save a snapshot:
+
+1. Open **File > Version History**
+2. Click the **Save Now** button at the top of the panel
+3. A new version labeled "Manual save" appears in the list
+
+This gives you a safety net — if your changes don't work out, you can restore the snapshot.
+
+> **Tip:** Always save a manual snapshot before reorganizing sections, changing your theme, or deleting blocks.
+
+## Previewing a Version
+
+The preview feature lets you see exactly what your portfolio looked like at any point in time, **before** deciding whether to restore it.
+
+### How to Preview
+
+1. Open **File > Version History**
+2. Click the **Preview** button on any version
+3. A full-screen preview opens showing the portfolio as it was at that snapshot
+4. The preview header shows:
+   - Version label and timestamp
+   - Number of sections in the version
+   - **Restore This Version** button
+   - **Back arrow** to return to the version list
+
+### What You See in Preview
+
+The preview renders the complete portfolio using the same renderer as the live published site:
+- All sections with their layouts and backgrounds
+- All blocks with content, styles, and positions
+- The theme (colors, fonts, border radius) from that point in time
+- Animations and hover effects
+
+## Restoring a Version
+
+Restoring replaces your current portfolio content with the saved version's state.
+
+### How to Restore
+
+**From the Version List:**
+1. Click the **Restore** button next to any version
+2. A confirmation dialog appears warning that current changes will be overwritten
+3. Click **Restore** to confirm
+4. The page reloads with the restored content
+
+**From the Preview Screen:**
+1. While previewing a version, click **Restore This Version** in the header
+2. Confirm in the dialog
+3. The page reloads with the restored content
+
+### What Gets Restored
+
+When you restore a version, these elements are replaced with the version's saved state:
+
+- All sections — names, order, layout settings, padding, background, visibility
+- All blocks — type, content, styles, position, sort order, visibility
+- Theme settings — mode, all colors, fonts, border radius
+
+### What Stays the Same
+
+These portfolio settings are NOT affected by a restore:
+
+- Portfolio title, slug, and description
+- SEO settings (title, description, OG image)
+- Published/Draft status
+- Analytics data and view counts
+- Contact form submissions
+
+> **Warning:** Restoring a version is a destructive operation — your current sections and blocks are deleted and replaced. Consider saving a manual snapshot of your current state before restoring, so you can go back if needed.
+
+## Best Practices
+
+1. **Save before big changes** — click Save Now before reorganizing, re-theming, or deleting content
+2. **Use meaningful publish moments** — published versions are auto-saved, giving you reliable checkpoints
+3. **Preview before restoring** — always preview a version first to make sure it's the one you want
+4. **Keep important work** — remember that old versions are removed when you exceed 20, so export important states as JSON if needed
+
+---
+
+> **Next:** Manage your account settings.
