@@ -229,6 +229,8 @@ export interface SectionStyles {
 export type BlockWithStyles = Block & {
   content: Record<string, unknown>;
   styles: BlockStyles;
+  tabletStyles: Partial<BlockStyles>;
+  mobileStyles: Partial<BlockStyles>;
 };
 
 export type SectionWithBlocks = Section & {

@@ -43,6 +43,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
               sortOrder: (b.sortOrder as number) ?? 0,
               content: (b.content as object) ?? {},
               styles: (b.styles as object) ?? {},
+              tabletStyles: (b.tabletStyles as object) ?? {},
+              mobileStyles: (b.mobileStyles as object) ?? {},
               isVisible: (b.isVisible as boolean) ?? true,
               isLocked: (b.isLocked as boolean) ?? false,
             })),

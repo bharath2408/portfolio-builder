@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BlockRenderer } from "@/components/builder/block-renderer";
+import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
 import type {
   PortfolioWithRelations,
   SectionStyles,
   ThemeTokens,
   BlockStyles,
+  BlockWithStyles,
 } from "@/types";
 
 interface PortfolioRendererProps {
@@ -151,12 +153,14 @@ function PortfolioSection({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [deviceType, setDeviceType] = useState<DeviceType>("desktop");
 
-  // Responsive: scale canvas + detect mobile
+  // Responsive: scale canvas + detect device
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
       setIsMobile(w < 768);
+      setDeviceType(getDeviceType(w));
       if (isAbsolute && containerRef.current) {
         const viewportWidth = containerRef.current.clientWidth;
         setScale(Math.min(viewportWidth / frameWidth, 1));
@@ -246,7 +250,8 @@ function PortfolioSection({
             }}
           >
             {visibleBlocks.map((block) => {
-              const bs = block.styles as BlockStyles;
+              const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
+              const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
               const responsiveClass = [
                 "absolute",
                 bs.hideOnMobile ? "hidden md:block" : "",
@@ -270,7 +275,7 @@ function PortfolioSection({
                     transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
                   }}
                 >
-                  <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
+                  <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
                 </div>
               );
             })}
@@ -301,7 +306,8 @@ function PortfolioSection({
           }}
         >
           {visibleBlocks.map((block) => {
-            const bs = block.styles as BlockStyles;
+            const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
+            const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
             const responsiveClass = [
               bs.hideOnMobile ? "hidden md:block" : "",
               bs.hideOnDesktop ? "md:hidden" : "",
@@ -315,12 +321,11 @@ function PortfolioSection({
                 style={{
                   animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
                   transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
-                  // Prevent blocks from overflowing on mobile
                   maxWidth: "100%",
                   overflow: "hidden",
                 }}
               >
-                <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />
+                <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
               </div>
             );
           })}

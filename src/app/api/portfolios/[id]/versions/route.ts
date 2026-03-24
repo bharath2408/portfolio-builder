@@ -57,6 +57,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             blocks: s.blocks.map(b => ({
               id: b.id, type: b.type, sortOrder: b.sortOrder,
               content: b.content, styles: b.styles,
+              tabletStyles: b.tabletStyles, mobileStyles: b.mobileStyles,
               isVisible: b.isVisible, isLocked: b.isLocked,
             })),
           })),

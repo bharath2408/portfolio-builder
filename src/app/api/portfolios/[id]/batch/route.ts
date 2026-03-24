@@ -21,6 +21,8 @@ interface BatchBlock {
   sortOrder: number;
   content: Record<string, unknown>;
   styles: Record<string, unknown>;
+  tabletStyles?: Record<string, unknown>;
+  mobileStyles?: Record<string, unknown>;
   isVisible?: boolean;
   isLocked?: boolean;
 }
@@ -91,6 +93,8 @@ export const PUT = withErrorHandler(async (req, ctx) => {
             sortOrder: block.sortOrder,
             content: block.content as Prisma.InputJsonValue,
             styles: block.styles as Prisma.InputJsonValue,
+            tabletStyles: (block.tabletStyles ?? {}) as Prisma.InputJsonValue,
+            mobileStyles: (block.mobileStyles ?? {}) as Prisma.InputJsonValue,
             isVisible: block.isVisible ?? true,
             isLocked: block.isLocked ?? false,
           },
@@ -101,6 +105,8 @@ export const PUT = withErrorHandler(async (req, ctx) => {
             sortOrder: block.sortOrder,
             content: block.content as Prisma.InputJsonValue,
             styles: block.styles as Prisma.InputJsonValue,
+            tabletStyles: (block.tabletStyles ?? {}) as Prisma.InputJsonValue,
+            mobileStyles: (block.mobileStyles ?? {}) as Prisma.InputJsonValue,
             isVisible: block.isVisible ?? true,
             isLocked: block.isLocked ?? false,
           },

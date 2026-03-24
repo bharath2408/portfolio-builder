@@ -85,6 +85,7 @@ import {
   getBlocksByCategory,
 } from "@/config/block-registry";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type {
@@ -927,11 +928,20 @@ export function BuilderWorkspace({
       const snap = builderStore.snapToGrid;
       const sx = snap ? Math.round(newX / gs) * gs : newX;
       const sy = snap ? Math.round(newY / gs) * gs : newY;
-      portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-        styles: { ...(block.styles as BlockStyles), x: sx, y: sy },
-      });
+      const device = builderStore.devicePreview;
+      if (device === "desktop") {
+        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+          styles: { ...(block.styles as BlockStyles), x: sx, y: sy },
+        });
+      } else {
+        const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
+        const existing = (block[field] ?? {}) as Partial<BlockStyles>;
+        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+          [field]: { ...existing, x: sx, y: sy },
+        });
+      }
     },
-    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid],
+    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview],
   );
 
   const resizeBlock = useCallback(
@@ -953,11 +963,20 @@ export function BuilderWorkspace({
       const sy = snap ? Math.round(newY / gs) * gs : newY;
       const sw = snap ? Math.round(newW / gs) * gs : newW;
       const sh = snap ? Math.round(newH / gs) * gs : newH;
-      portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-        styles: { ...(block.styles as BlockStyles), x: sx, y: sy, w: sw, h: sh },
-      });
+      const device = builderStore.devicePreview;
+      if (device === "desktop") {
+        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+          styles: { ...(block.styles as BlockStyles), x: sx, y: sy, w: sw, h: sh },
+        });
+      } else {
+        const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
+        const existing = (block[field] ?? {}) as Partial<BlockStyles>;
+        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
+          [field]: { ...existing, x: sx, y: sy, w: sw, h: sh },
+        });
+      }
     },
-    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid],
+    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview],
   );
 
   const updateBlock = (
@@ -966,9 +985,24 @@ export function BuilderWorkspace({
     updates: { content?: Record<string, unknown>; styles?: BlockStyles },
   ) => {
     builderStore.pushSnapshot("update-block");
-    // Local-first: update store instantly, no API call.
-    // Changes are persisted via batch save (auto-save or manual).
-    portfolioStore.updateBlockInSection(sectionId, blockId, updates as Partial<BlockWithStyles>);
+    const device = builderStore.devicePreview;
+    if (device === "desktop" || !updates.styles) {
+      portfolioStore.updateBlockInSection(sectionId, blockId, updates as Partial<BlockWithStyles>);
+    } else {
+      // In tablet/mobile mode, extract only changed properties as sparse overrides
+      const block = portfolio.sections
+        .flatMap((s) => s.blocks)
+        .find((b) => b.id === blockId);
+      const baseStyles = block?.styles ?? ({} as BlockStyles);
+      const overrides = extractOverrides(baseStyles, updates.styles);
+      const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
+      const existing = (block?.[field] ?? {}) as Partial<BlockStyles>;
+      const merged = { ...existing, ...overrides };
+      portfolioStore.updateBlockInSection(sectionId, blockId, {
+        ...(updates.content ? { content: updates.content } : {}),
+        [field]: merged,
+      } as Partial<BlockWithStyles>);
+    }
     builderStore.setDirty(true);
     scheduleAutoSave();
   };
@@ -1088,6 +1122,8 @@ export function BuilderWorkspace({
             sortOrder: b.sortOrder,
             content: b.content,
             styles: b.styles,
+            tabletStyles: b.tabletStyles ?? {},
+            mobileStyles: b.mobileStyles ?? {},
             isVisible: b.isVisible,
             isLocked: b.isLocked,
           })),
@@ -2477,32 +2513,36 @@ ${sectionsHtml}
                     {[...section.blocks]
                       .filter((b) => b.isVisible)
                       .sort((a, b) => a.sortOrder - b.sortOrder)
-                      .map((block) => (
-                        <CanvasElement
-                          key={block.id}
-                          id={block.id}
-                          x={block.styles.x ?? 40}
-                          y={block.styles.y ?? 0}
-                          w={block.styles.w ?? DEFAULT_BLOCK_W}
-                          h={block.styles.h ?? 0}
-                          rotation={block.styles.rotation}
-                          isSelected={block.id === selectedBlockId}
-                          isLocked={block.isLocked}
-                          isHidden={!block.isVisible}
-                          canvasScale={transform.scale}
-                          onSelect={selectBlock}
-                          onMove={moveBlock}
-                          onResize={resizeBlock}
-                          sortOrder={block.sortOrder}
-                          onContextMenu={handleBlockContextMenu}
-                        >
-                          <BlockRenderer
-                            block={block}
-                            theme={theme}
-                            isEditing
-                          />
-                        </CanvasElement>
-                      ))}
+                      .map((block) => {
+                        const ms = mergeDeviceStyles(block.styles, block.tabletStyles as Partial<BlockStyles>, block.mobileStyles as Partial<BlockStyles>, builderStore.devicePreview);
+                        const mergedBlock = { ...block, styles: ms } as BlockWithStyles;
+                        return (
+                          <CanvasElement
+                            key={block.id}
+                            id={block.id}
+                            x={ms.x ?? 40}
+                            y={ms.y ?? 0}
+                            w={ms.w ?? DEFAULT_BLOCK_W}
+                            h={ms.h ?? 0}
+                            rotation={ms.rotation}
+                            isSelected={block.id === selectedBlockId}
+                            isLocked={block.isLocked}
+                            isHidden={!block.isVisible}
+                            canvasScale={transform.scale}
+                            onSelect={selectBlock}
+                            onMove={moveBlock}
+                            onResize={resizeBlock}
+                            sortOrder={block.sortOrder}
+                            onContextMenu={handleBlockContextMenu}
+                          >
+                            <BlockRenderer
+                              block={mergedBlock}
+                              theme={theme}
+                              isEditing
+                            />
+                          </CanvasElement>
+                        );
+                      })}
                   </CanvasFrame>
                 );
               })}
@@ -2865,7 +2905,10 @@ ${sectionsHtml}
             <SeoEditor portfolioId={portfolio.id} portfolio={portfolio} />
           ) : selectedBlock && selectedSectionId ? (
             <BlockPropertiesPanel
-              block={selectedBlock}
+              block={{
+                ...selectedBlock,
+                styles: mergeDeviceStyles(selectedBlock.styles, selectedBlock.tabletStyles as Partial<BlockStyles>, selectedBlock.mobileStyles as Partial<BlockStyles>, builderStore.devicePreview),
+              } as BlockWithStyles}
               onUpdateContent={(content) =>
                 updateBlock(selectedBlock.id, selectedSectionId, { content })
               }

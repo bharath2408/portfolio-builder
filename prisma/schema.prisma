@@ -173,7 +173,9 @@ model Block {
   //   borderWidth, borderColor, borderRadius, borderStyle,
   //   boxShadow, opacity, display, gap, alignItems, justifyContent,
   //   hideOnMobile, hideOnDesktop, animation }
-  styles    Json    @default("{}")
+  styles       Json    @default("{}")
+  tabletStyles Json    @default("{}")  // Sparse overrides for tablet (768–1024px)
+  mobileStyles Json    @default("{}")  // Sparse overrides for mobile (<768px)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
