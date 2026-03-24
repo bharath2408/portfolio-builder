@@ -39,7 +39,7 @@ export function Tooltip({ content, children, side = "top", delay = 400 }: Toolti
         ref={triggerRef}
         onMouseEnter={show}
         onMouseLeave={hide}
-        className="inline-flex"
+        className="block"
       >
         {children}
       </span>

@@ -420,8 +420,8 @@ export function BlockPropertiesPanel({
                 <NumInput label="R" value={styles.rotation} onChange={(v) => updateStyle("rotation", v)} placeholder="0" />
               </div>
               <div>
-                <SubLabel hint="0 = invisible, 1 = fully visible">Opacity</SubLabel>
-                <NumInput value={styles.opacity} onChange={(v) => updateStyle("opacity", v)} placeholder="1" />
+                <SubLabel>Opacity</SubLabel>
+                <NumInput label="O" value={styles.opacity} onChange={(v) => updateStyle("opacity", v)} placeholder="1" />
               </div>
             </div>
           </PropGrid>
