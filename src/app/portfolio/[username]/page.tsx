@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { PasswordGate } from "@/components/portfolio/password-gate";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import { APP_NAME, APP_URL } from "@/config/constants";
 import { db } from "@/lib/db";
@@ -128,6 +129,15 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
   const portfolio = await getPublicPortfolioData(username);
 
   if (!portfolio) notFound();
+
+  // Password protection check
+  if (portfolio.accessPassword) {
+    const cookieStore = await cookies();
+    const accessCookie = cookieStore.get(`portfolio-access-${portfolio.id}`);
+    if (accessCookie?.value !== "granted") {
+      return <PasswordGate portfolioId={portfolio.id} title={portfolio.title} />;
+    }
+  }
 
   const headersList = await headers();
   trackView(portfolio.id, headersList);

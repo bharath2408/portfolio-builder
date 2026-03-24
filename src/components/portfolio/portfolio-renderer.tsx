@@ -57,7 +57,6 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
     const fontParam = uniqueFonts.map(f => f.replace(/ /g, '+')).join('&family=');
     const linkId = 'portfolio-google-fonts';
 
-    // Remove existing if any
     const existing = document.getElementById(linkId);
     if (existing) existing.remove();
 
@@ -113,11 +112,11 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
       {/* Footer */}
       {visibleSections.length > 0 && (
         <footer
-          className="px-6 py-8 text-center"
+          className="px-4 py-8 text-center sm:px-6"
           style={{ borderTop: `1px solid ${theme.textColor}10` }}
         >
           <p
-            className="text-[13px] opacity-30"
+            className="text-[12px] opacity-30 sm:text-[13px]"
             style={{ fontFamily: theme.fontBody }}
           >
             &copy; {new Date().getFullYear()}{" "}
@@ -129,7 +128,7 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
   );
 }
 
-// ─── Section with responsive scaling ─────────────────────────────
+// ─── Section with responsive rendering ──────────────────────────
 
 function PortfolioSection({
   section,
@@ -141,7 +140,6 @@ function PortfolioSection({
   portfolioId: string;
 }) {
   const ss = section.styles as SectionStyles;
-  // Detect absolute layout: if any block has explicit x/y coordinates, or if frameWidth is set, use absolute positioning
   const hasAbsoluteBlocks = section.blocks.some((b) => {
     const bs = b.styles as BlockStyles;
     return (bs.x !== undefined && bs.x !== 0) || (bs.y !== undefined && bs.y !== 0);
@@ -152,26 +150,33 @@ function PortfolioSection({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Responsive: scale the absolute-positioned canvas to fit viewport width
+  // Responsive: scale canvas + detect mobile
   useEffect(() => {
-    if (!isAbsolute) return;
-
-    const updateScale = () => {
-      if (containerRef.current) {
+    const update = () => {
+      const w = window.innerWidth;
+      setIsMobile(w < 768);
+      if (isAbsolute && containerRef.current) {
         const viewportWidth = containerRef.current.clientWidth;
         setScale(Math.min(viewportWidth / frameWidth, 1));
       }
     };
 
-    updateScale();
-    window.addEventListener("resize", updateScale);
-    return () => window.removeEventListener("resize", updateScale);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, [isAbsolute, frameWidth]);
 
   const bgColor = (ss as Record<string, unknown>).backgroundCustom
     ? (ss.backgroundColor as string)
     : theme.backgroundColor;
+
+  // Responsive padding — reduce on mobile
+  const padTop = ss.paddingTop ?? 80;
+  const padBottom = ss.paddingBottom ?? 80;
+  const padLeft = ss.paddingLeft ?? 24;
+  const padRight = ss.paddingRight ?? 24;
 
   const sectionStyle: React.CSSProperties = {
     position: "relative",
@@ -181,10 +186,10 @@ function PortfolioSection({
   };
 
   if (!isAbsolute) {
-    sectionStyle.paddingTop = ss.paddingTop ?? 80;
-    sectionStyle.paddingBottom = ss.paddingBottom ?? 80;
-    sectionStyle.paddingLeft = ss.paddingLeft ?? 24;
-    sectionStyle.paddingRight = ss.paddingRight ?? 24;
+    sectionStyle.paddingTop = isMobile ? Math.min(padTop, 48) : padTop;
+    sectionStyle.paddingBottom = isMobile ? Math.min(padBottom, 48) : padBottom;
+    sectionStyle.paddingLeft = isMobile ? Math.min(padLeft, 16) : padLeft;
+    sectionStyle.paddingRight = isMobile ? Math.min(padRight, 16) : padRight;
   }
 
   const visibleBlocks = [...section.blocks]
@@ -193,14 +198,12 @@ function PortfolioSection({
 
   if (visibleBlocks.length === 0) return null;
 
-  // Calculate content height: use the lowest block's y + estimated height
-  // Keep at least 70% of frame height to avoid sections being too short
+  // Calculate content height for absolute layout
   const contentHeight = isAbsolute ? (() => {
     let maxBottom = 0;
     for (const block of visibleBlocks) {
       const bs = block.styles as BlockStyles;
       const blockY = (bs.y ?? 0);
-      // Auto-height blocks (h=0): estimate based on type
       let blockH = (bs.h && bs.h > 0) ? bs.h : 150;
       if (block.type === "contact_form") blockH = 350;
       else if (block.type === "project_card") blockH = 250;
@@ -208,15 +211,21 @@ function PortfolioSection({
       else if (block.type === "heading") blockH = 80;
       maxBottom = Math.max(maxBottom, blockY + blockH);
     }
-    // Add padding, keep at least 70% of frame, cap at frame height
     const minHeight = frameHeight * 0.7;
     return Math.min(Math.max(maxBottom + 100, minHeight), frameHeight);
   })() : frameHeight;
 
+  // Determine grid columns — reduce on mobile
+  const gridColumns = ss.columns ?? 2;
+  const responsiveGridColumns = isMobile ? 1 : gridColumns;
+
+  // Determine flex direction — stack rows vertically on mobile
+  const flexDir = ss.layout === "flex-row" ? (isMobile ? "column" : "row") : "column";
+
   return (
     <section ref={containerRef} id={`section-${section.id}`} style={sectionStyle}>
       {isAbsolute ? (
-        // Absolute layout — scale the 1440px canvas to fit viewport
+        // Absolute layout — scale the canvas to fit viewport
         <div
           className="relative mx-auto overflow-hidden"
           style={{
@@ -268,22 +277,26 @@ function PortfolioSection({
           </div>
         </div>
       ) : (
-        // Stacked/flex layout
+        // Stacked/flex/grid layout — responsive
         <div
           style={{
             maxWidth: ss.maxWidth ?? "1100px",
             margin: "0 auto",
             display: ss.layout === "grid" ? "grid" : "flex",
-            flexDirection:
-              ss.layout === "flex-row" ? "row" : "column",
-            gap: ss.gap ?? 16,
+            flexDirection: flexDir,
+            flexWrap: ss.layout === "flex-row" ? "wrap" : undefined,
+            gap: isMobile ? Math.min(ss.gap ?? 16, 12) : (ss.gap ?? 16),
             alignItems:
-              ss.alignItems === "center" ? "center" : undefined,
+              ss.alignItems === "center" ? "center" :
+              ss.alignItems === "end" ? "flex-end" :
+              ss.alignItems === "stretch" ? "stretch" : undefined,
             justifyContent:
-              ss.justifyContent === "center" ? "center" : undefined,
+              ss.justifyContent === "center" ? "center" :
+              ss.justifyContent === "end" ? "flex-end" :
+              ss.justifyContent === "between" ? "space-between" : undefined,
             gridTemplateColumns:
               ss.layout === "grid"
-                ? `repeat(${ss.columns ?? 2}, 1fr)`
+                ? `repeat(${responsiveGridColumns}, 1fr)`
                 : undefined,
           }}
         >
@@ -302,6 +315,9 @@ function PortfolioSection({
                 style={{
                   animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
                   transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
+                  // Prevent blocks from overflowing on mobile
+                  maxWidth: "100%",
+                  overflow: "hidden",
                 }}
               >
                 <BlockRenderer block={block} theme={theme} portfolioId={portfolioId} />

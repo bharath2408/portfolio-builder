@@ -49,6 +49,7 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
       ...(body.seoTitle !== undefined && { seoTitle: body.seoTitle || null }),
       ...(body.seoDescription !== undefined && { seoDescription: body.seoDescription || null }),
       ...(body.ogImageUrl !== undefined && { ogImageUrl: body.ogImageUrl || null }),
+      ...(body.accessPassword !== undefined && { accessPassword: body.accessPassword || null }),
     },
     include: {
       sections: {

@@ -135,10 +135,19 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── HEADING ──
     case "heading": {
       const Tag = `h${(c.level as number) ?? 2}` as keyof React.JSX.IntrinsicElements;
-      const sizes: Record<number, number> = { 1: 56, 2: 40, 3: 32, 4: 24, 5: 20, 6: 16 };
       const level = (c.level as number) ?? 2;
+      // Fluid font sizes: scale down on small screens using clamp()
+      const fluidSizes: Record<number, string> = {
+        1: "clamp(28px, 5vw, 56px)",
+        2: "clamp(24px, 4vw, 40px)",
+        3: "clamp(20px, 3.5vw, 32px)",
+        4: "clamp(18px, 2.5vw, 24px)",
+        5: "clamp(16px, 2vw, 20px)",
+        6: "clamp(14px, 1.5vw, 16px)",
+      };
+      const fontSize = inlineStyles.fontSize ?? fluidSizes[level];
       return (
-        <Tag style={{ ...inlineStyles, fontSize: inlineStyles.fontSize ?? sizes[level], fontFamily: resolveFontFamily("heading", theme) }}>
+        <Tag style={{ ...inlineStyles, fontSize, fontFamily: resolveFontFamily("heading", theme), lineHeight: 1.2, wordBreak: "break-word" }}>
           {(c.highlight as string) ? (
             <>{(c.text as string).replace(c.highlight as string, "")}<span style={{ color: theme.primaryColor }}>{c.highlight as string}</span></>
           ) : (c.text as string)}
@@ -149,9 +158,9 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── TEXT ──
     case "text":
       return c.html ? (
-        <div style={inlineStyles} dangerouslySetInnerHTML={{ __html: c.html as string }} />
+        <div style={{ ...inlineStyles, wordBreak: "break-word", overflowWrap: "anywhere" }} dangerouslySetInnerHTML={{ __html: c.html as string }} />
       ) : (
-        <p style={{ ...inlineStyles, fontFamily: resolveFontFamily("body", theme) }}>{c.text as string}</p>
+        <p style={{ ...inlineStyles, fontFamily: resolveFontFamily("body", theme), wordBreak: "break-word", overflowWrap: "anywhere" }}>{c.text as string}</p>
       );
 
     // ── QUOTE ──
@@ -190,9 +199,9 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── IMAGE ──
     case "image":
       return (
-        <figure style={{ ...inlineStyles, overflow: "hidden" }}>
+        <figure style={{ ...inlineStyles, overflow: "hidden", maxWidth: "100%" }}>
           {(c.src as string) ? (
-            <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"], display: "block" }} />
+            <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"], display: "block", maxWidth: "100%" }} />
           ) : (
             <div style={{ aspectRatio: (c.aspectRatio as string) ?? "16/9", backgroundColor: resolveColor("surface", theme), display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ opacity: 0.3, fontSize: 14 }}>Image placeholder</span>
@@ -393,10 +402,10 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "stat":
       return (
         <div style={inlineStyles}>
-          <div style={{ fontSize: 36, fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor }}>
+          <div style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor }}>
             {(c.prefix as string) ?? ""}{c.value as string}{(c.suffix as string) ?? ""}
           </div>
-          <div style={{ fontSize: 14, opacity: 0.6, marginTop: 4 }}>{c.label as string}</div>
+          <div style={{ fontSize: "clamp(12px, 1.5vw, 14px)", opacity: 0.6, marginTop: 4 }}>{c.label as string}</div>
         </div>
       );
 
