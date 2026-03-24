@@ -8,161 +8,306 @@ import {
   Sparkles,
   ExternalLink,
   ChevronRight,
+  ArrowUpRight,
+  Zap,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
+import { cn } from "@/lib/utils";
+
 const DOCS_LINKS = [
-  { title: "Introduction", href: "/docs", description: "What is Foliocraft" },
-  { title: "Create a Portfolio", href: "/docs/create-portfolio", description: "Start building" },
-  { title: "Studio Editor", href: "/docs/studio-editor", description: "Visual editing canvas" },
-  { title: "Sections & Blocks", href: "/docs/sections-blocks", description: "25+ block types" },
-  { title: "Styling & Themes", href: "/docs/styling-themes", description: "Customize everything" },
-  { title: "Preview & Publish", href: "/docs/preview-publish", description: "Go live" },
+  { title: "Introduction", href: "/docs", description: "What is Foliocraft", icon: BookOpen, color: "from-teal-400 to-emerald-500" },
+  { title: "Studio Editor", href: "/docs/studio-editor", description: "Visual editing canvas", icon: Zap, color: "from-violet-400 to-purple-500" },
+  { title: "Sections & Blocks", href: "/docs/sections-blocks", description: "25+ block types", icon: Sparkles, color: "from-amber-400 to-orange-500" },
+  { title: "Styling & Themes", href: "/docs/styling-themes", description: "Customize every detail", icon: MessageSquare, color: "from-pink-400 to-rose-500" },
+];
+
+const ALL_DOCS = [
+  { title: "Create an Account", href: "/docs/create-account" },
+  { title: "Your Dashboard", href: "/docs/dashboard" },
+  { title: "Create a Portfolio", href: "/docs/create-portfolio" },
+  { title: "Preview & Publish", href: "/docs/preview-publish" },
+  { title: "SEO & Analytics", href: "/docs/seo-analytics" },
+  { title: "Version History", href: "/docs/version-history" },
+  { title: "Account Settings", href: "/docs/account-settings" },
 ];
 
 const SHORTCUTS = [
-  { keys: "Ctrl+S", label: "Save" },
-  { keys: "Ctrl+Z", label: "Undo" },
-  { keys: "Ctrl+K", label: "Command palette" },
-  { keys: "?", label: "All shortcuts" },
+  { keys: ["Ctrl", "S"], label: "Save" },
+  { keys: ["Ctrl", "Z"], label: "Undo" },
+  { keys: ["Ctrl", "K"], label: "Command Palette" },
+  { keys: ["?"], label: "All Shortcuts" },
+  { keys: ["Ctrl", "P"], label: "Preview" },
+  { keys: ["Esc"], label: "Deselect" },
 ];
 
 const CHANGELOG = [
-  { version: "Latest", items: ["Version history with preview", "Command palette (Ctrl+K)", "Custom confirm dialogs", "Block property tooltips"] },
+  {
+    version: "v1.2",
+    date: "Latest",
+    items: [
+      { text: "Version history with live preview", tag: "new" },
+      { text: "Command palette (Ctrl+K)", tag: "new" },
+      { text: "Onboarding tour for new users", tag: "new" },
+      { text: "Block property tooltips", tag: "improvement" },
+      { text: "Custom confirm dialogs", tag: "improvement" },
+    ],
+  },
 ];
 
 export function HelpDrawer() {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"docs" | "shortcuts" | "changelog">("docs");
+  const [animating, setAnimating] = useState(false);
+
+  const openDrawer = () => {
+    setOpen(true);
+    requestAnimationFrame(() => setAnimating(true));
+  };
+
+  const closeDrawer = () => {
+    setAnimating(false);
+    setTimeout(() => setOpen(false), 250);
+  };
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeDrawer();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (
     <>
-      {/* Floating trigger */}
+      {/* ── Floating trigger ─────────────────────────────────── */}
       <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/25 transition-all hover:shadow-xl hover:shadow-teal-500/30 hover:brightness-110 active:scale-95"
-        title="Help & Documentation"
+        onClick={openDrawer}
+        className="group fixed bottom-6 right-6 z-40 flex items-center gap-0 overflow-hidden rounded-full shadow-lg shadow-black/10 transition-all duration-300 hover:shadow-xl dark:shadow-black/30"
       >
-        <HelpCircle className="h-5 w-5" />
+        {/* Gradient background */}
+        <div className="relative flex h-12 items-center gap-2 bg-gradient-to-r from-teal-500 via-cyan-500 to-teal-600 pl-3.5 pr-4 transition-all">
+          <div className="absolute inset-0 bg-white/0 transition-all duration-200 group-hover:bg-white/10" />
+          <HelpCircle className="h-[18px] w-[18px] text-white transition-transform duration-300 group-hover:rotate-12" />
+          <span className="text-[12px] font-semibold tracking-wide text-white/95">
+            Help
+          </span>
+        </div>
       </button>
 
-      {/* Drawer */}
+      {/* ── Drawer ───────────────────────────────────────────── */}
       {open && (
         <>
-          <div className="fixed inset-0 z-[200] bg-black/30" onClick={() => setOpen(false)} />
-          <div className="fixed bottom-0 right-0 z-[201] h-[85vh] w-[360px] max-w-[95vw] overflow-hidden rounded-tl-2xl border-l border-t border-border/50 bg-card shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600">
-                  <Sparkles className="h-3.5 w-3.5 text-white" />
+          {/* Backdrop */}
+          <div
+            className={cn(
+              "fixed inset-0 z-[200] bg-black/20 backdrop-blur-[2px] transition-opacity duration-250",
+              animating ? "opacity-100" : "opacity-0",
+            )}
+            onClick={closeDrawer}
+          />
+
+          {/* Panel */}
+          <div
+            className={cn(
+              "fixed bottom-4 right-4 z-[201] flex h-[80vh] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/15 transition-all duration-250 ease-out dark:border-white/[0.08] dark:shadow-black/40",
+              animating
+                ? "translate-y-0 scale-100 opacity-100"
+                : "translate-y-4 scale-[0.97] opacity-0",
+            )}
+          >
+            {/* ── Header ──────────────────────────────────── */}
+            <div className="relative flex-shrink-0">
+              {/* Header gradient bg */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-500/[0.06] via-cyan-500/[0.03] to-transparent" />
+              <div className="relative flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 via-cyan-500 to-teal-600 shadow-sm shadow-teal-500/25">
+                    <Sparkles className="h-4 w-4 text-white" />
+                    <div className="absolute inset-0 rounded-xl bg-white/10" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-[15px] font-bold tracking-tight text-foreground">
+                      Help Center
+                    </h2>
+                    <p className="text-[10px] text-muted-foreground/50">
+                      Guides, shortcuts & updates
+                    </p>
+                  </div>
                 </div>
-                <span className="text-[14px] font-bold text-foreground">Help Center</span>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-border/50">
-              {[
-                { id: "docs" as const, label: "Docs", icon: BookOpen },
-                { id: "shortcuts" as const, label: "Shortcuts", icon: Keyboard },
-                { id: "changelog" as const, label: "What's New", icon: Sparkles },
-              ].map((tab) => (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "border-b-2 border-teal-500 text-teal-600 dark:text-teal-400"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  onClick={closeDrawer}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 transition-all hover:bg-accent hover:text-foreground"
                 >
-                  <tab.icon className="h-3.5 w-3.5" />
-                  {tab.label}
+                  <X className="h-4 w-4" />
                 </button>
-              ))}
+              </div>
+
+              {/* ── Tabs ─────────────────────────────────── */}
+              <div className="flex gap-1 px-5 pb-3">
+                {[
+                  { id: "docs" as const, label: "Guides", icon: BookOpen },
+                  { id: "shortcuts" as const, label: "Keys", icon: Keyboard },
+                  { id: "changelog" as const, label: "New", icon: Sparkles },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold transition-all duration-200",
+                      activeTab === tab.id
+                        ? "bg-foreground/[0.07] text-foreground shadow-sm"
+                        : "text-muted-foreground/50 hover:text-muted-foreground",
+                    )}
+                  >
+                    <tab.icon className="h-3 w-3" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            {/* ── Content ─────────────────────────────────── */}
+            <div className="min-h-0 flex-1 overflow-y-auto border-t border-border/40">
+              {/* ─ Docs Tab ─ */}
               {activeTab === "docs" && (
-                <div className="space-y-1.5">
-                  {DOCS_LINKS.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="group flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-accent"
-                    >
-                      <div>
-                        <p className="text-[12px] font-semibold text-foreground">{link.title}</p>
-                        <p className="text-[10px] text-muted-foreground/60">{link.description}</p>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
-                    </Link>
-                  ))}
+                <div className="p-4">
+                  {/* Featured guides */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {DOCS_LINKS.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={closeDrawer}
+                        className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-b from-card to-muted/20 p-3.5 transition-all duration-200 hover:border-border/60 hover:shadow-sm"
+                      >
+                        <div className={cn("mb-2.5 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br shadow-sm", link.color)}>
+                          <link.icon className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <p className="text-[11.5px] font-semibold text-foreground">
+                          {link.title}
+                        </p>
+                        <p className="mt-0.5 text-[9.5px] leading-relaxed text-muted-foreground/50">
+                          {link.description}
+                        </p>
+                        <ArrowUpRight className="absolute right-2.5 top-2.5 h-3 w-3 text-muted-foreground/0 transition-all group-hover:text-muted-foreground/40" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* All guides list */}
+                  <div className="mt-4">
+                    <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">
+                      All Guides
+                    </p>
+                    <div className="space-y-px">
+                      {ALL_DOCS.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeDrawer}
+                          className="group flex items-center justify-between rounded-lg px-2.5 py-2 transition-colors hover:bg-accent/60"
+                        >
+                          <span className="text-[11.5px] font-medium text-foreground/70 group-hover:text-foreground">
+                            {link.title}
+                          </span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground/20 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Full docs CTA */}
                   <Link
                     href="/docs"
-                    onClick={() => setOpen(false)}
-                    className="mt-3 flex items-center gap-1.5 rounded-lg bg-teal-500/10 px-3 py-2.5 text-[11px] font-semibold text-teal-600 transition-colors hover:bg-teal-500/15 dark:text-teal-400"
+                    onClick={closeDrawer}
+                    className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500/10 to-cyan-500/10 px-4 py-3 text-[11px] font-semibold text-teal-600 transition-all hover:from-teal-500/15 hover:to-cyan-500/15 dark:text-teal-400"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    View all documentation
+                    Open full documentation
                   </Link>
                 </div>
               )}
 
+              {/* ─ Shortcuts Tab ─ */}
               {activeTab === "shortcuts" && (
-                <div>
-                  <p className="mb-3 text-[11px] text-muted-foreground/60">
-                    Quick reference for the Studio Editor. Press <kbd className="rounded border border-border px-1 py-0.5 font-mono text-[9px]">?</kbd> in the editor for the full list.
+                <div className="p-4">
+                  <p className="mb-4 rounded-lg bg-muted/30 px-3 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground/60">
+                    Studio Editor shortcuts. Press{" "}
+                    <kbd className="rounded border border-border/60 bg-card px-1 py-0.5 font-mono text-[9px] font-semibold text-foreground/70">?</kbd>{" "}
+                    inside the editor for the complete list.
                   </p>
                   <div className="space-y-1">
                     {SHORTCUTS.map((s) => (
-                      <div key={s.keys} className="flex items-center justify-between rounded-lg px-3 py-2">
-                        <span className="text-[12px] text-muted-foreground">{s.label}</span>
-                        <kbd className="rounded-md border border-border/60 bg-muted/50 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground">
-                          {s.keys}
-                        </kbd>
+                      <div
+                        key={s.label}
+                        className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/40"
+                      >
+                        <span className="text-[12px] font-medium text-foreground/70">{s.label}</span>
+                        <div className="flex items-center gap-1">
+                          {s.keys.map((key, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              {i > 0 && <span className="text-[8px] text-muted-foreground/30">+</span>}
+                              <kbd className="min-w-[24px] rounded-md border border-border/50 bg-gradient-to-b from-card to-muted/40 px-1.5 py-1 text-center font-mono text-[9px] font-semibold text-foreground/80 shadow-[0_1px_0_0] shadow-border/50">
+                                {key}
+                              </kbd>
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* ─ Changelog Tab ─ */}
               {activeTab === "changelog" && (
-                <div>
+                <div className="p-4">
                   {CHANGELOG.map((entry) => (
                     <div key={entry.version}>
-                      <p className="mb-2 text-[12px] font-bold text-foreground">{entry.version}</p>
-                      <ul className="space-y-1.5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="rounded-md bg-gradient-to-r from-teal-500 to-cyan-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                          {entry.version}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/40">{entry.date}</span>
+                      </div>
+                      <div className="space-y-2">
                         {entry.items.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                            <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-teal-500" />
-                            {item}
-                          </li>
+                          <div
+                            key={item.text}
+                            className="flex items-start gap-2.5 rounded-lg border border-border/30 bg-card/50 px-3 py-2.5"
+                          >
+                            <span
+                              className={cn(
+                                "mt-0.5 flex-shrink-0 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider",
+                                item.tag === "new"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                              )}
+                            >
+                              {item.tag}
+                            </span>
+                            <span className="text-[11.5px] leading-relaxed text-foreground/70">
+                              {item.text}
+                            </span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* ── Footer ─────────────────────────────────── */}
+            <div className="flex-shrink-0 border-t border-border/40 px-5 py-3">
+              <p className="text-center text-[9px] text-muted-foreground/30">
+                Foliocraft &middot; Press <kbd className="font-mono">Esc</kbd> to close
+              </p>
             </div>
           </div>
         </>
