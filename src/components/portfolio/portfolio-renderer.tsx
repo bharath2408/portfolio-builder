@@ -254,17 +254,17 @@ function PortfolioSection({
               const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
               const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
               const responsiveClass = [
-                "absolute",
                 bs.hideOnMobile ? "hidden md:block" : "",
                 bs.hideOnDesktop ? "md:hidden" : "",
                 (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
-              ].filter(Boolean).join(" ");
+              ].filter(Boolean).join(" ") || undefined;
               return (
-                <div
+                <MotionBlockWrapper
                   key={block.id}
+                  styles={bs}
                   className={responsiveClass}
-                  data-animation={bs.animation && bs.animation !== "none" ? bs.animation : undefined}
                   style={{
+                    position: "absolute",
                     left: bs.x ?? 0,
                     top: bs.y ?? 0,
                     width: bs.w ?? "auto",
@@ -272,12 +272,10 @@ function PortfolioSection({
                     transform: bs.rotation
                       ? `rotate(${bs.rotation}deg)`
                       : undefined,
-                    animationDelay: bs.animationDelay ? `${bs.animationDelay}ms` : undefined,
-                    transition: "transform 0.2s, opacity 0.2s, background-color 0.2s",
                   }}
                 >
                   <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
-                </div>
+                </MotionBlockWrapper>
               );
             })}
           </div>

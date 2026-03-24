@@ -1,61 +1,80 @@
 "use client";
 
-import { motion, useScroll, useTransform, type Variant } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 import type { BlockStyles } from "@/types";
 
-interface MotionBlockWrapperProps {
-  styles: BlockStyles;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
+// ─── Helpers ────────────────────────────────────────────────────
+
+/** Walk up the DOM to find the nearest scrollable ancestor */
+function getScrollParent(el: HTMLElement): HTMLElement | undefined {
+  let parent = el.parentElement;
+  while (parent) {
+    const { overflowY, overflow } = getComputedStyle(parent);
+    if (
+      overflowY === "auto" || overflowY === "scroll" ||
+      overflow === "auto" || overflow === "scroll"
+    ) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return undefined;
 }
 
-// ─── Easing presets ──────────────────────────────────────────────
-
-const easingMap: Record<string, number[] | string> = {
-  ease: [0.25, 0.1, 0.25, 1],
-  "ease-in": [0.42, 0, 1, 1],
-  "ease-out": [0, 0, 0.58, 1],
-  "ease-in-out": [0.42, 0, 0.58, 1],
-  // spring and bounce handled via transition type
-};
-
-// ─── Animation variants ──────────────────────────────────────────
-
-function getAnimationVariants(animation: string): { hidden: Variant; visible: Variant } {
-  switch (animation) {
-    case "fade-up":
-      return { hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0 } };
-    case "fade-in":
-      return { hidden: { opacity: 0 }, visible: { opacity: 1 } };
-    case "slide-left":
-      return { hidden: { opacity: 0, x: -60 }, visible: { opacity: 1, x: 0 } };
-    case "slide-right":
-      return { hidden: { opacity: 0, x: 60 }, visible: { opacity: 1, x: 0 } };
-    case "scale":
-      return { hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } };
-    case "blur-in":
-      return { hidden: { opacity: 0, filter: "blur(10px)" }, visible: { opacity: 1, filter: "blur(0px)" } };
-    case "bounce-in":
-      return { hidden: { opacity: 0, scale: 0.3, y: 50 }, visible: { opacity: 1, scale: 1, y: 0 } };
-    case "flip-x":
-      return { hidden: { opacity: 0, rotateX: 90 }, visible: { opacity: 1, rotateX: 0 } };
-    case "flip-y":
-      return { hidden: { opacity: 0, rotateY: 90 }, visible: { opacity: 1, rotateY: 0 } };
-    case "rotate-in":
-      return { hidden: { opacity: 0, rotate: -180, scale: 0.5 }, visible: { opacity: 1, rotate: 0, scale: 1 } };
-    case "zoom-in":
-      return { hidden: { opacity: 0, scale: 0 }, visible: { opacity: 1, scale: 1 } };
-    case "typewriter":
-      return { hidden: { opacity: 0, width: 0 }, visible: { opacity: 1, width: "auto" } };
-    default:
-      return { hidden: {}, visible: {} };
+/** GSAP ease strings for each easing preset */
+function getGsapEase(easing: string): string {
+  switch (easing) {
+    case "ease":        return "power1.inOut";
+    case "ease-in":     return "power2.in";
+    case "ease-out":    return "power2.out";
+    case "ease-in-out": return "power2.inOut";
+    case "spring":      return "elastic.out(1, 0.5)";
+    case "bounce":      return "bounce.out";
+    default:            return "power2.out";
   }
 }
 
-// ─── Hover effect presets ─────────────────────────────────────────
+/** GSAP from/to vars for each animation preset */
+function getGsapFromTo(animation: string): { from: Record<string, unknown>; to: Record<string, unknown> } {
+  switch (animation) {
+    case "fade-up":
+      return { from: { opacity: 0, y: 40 }, to: { opacity: 1, y: 0 } };
+    case "fade-in":
+      return { from: { opacity: 0 }, to: { opacity: 1 } };
+    case "slide-left":
+      return { from: { opacity: 0, x: -60 }, to: { opacity: 1, x: 0 } };
+    case "slide-right":
+      return { from: { opacity: 0, x: 60 }, to: { opacity: 1, x: 0 } };
+    case "scale":
+      return { from: { opacity: 0, scale: 0.85 }, to: { opacity: 1, scale: 1 } };
+    case "blur-in":
+      return { from: { opacity: 0, filter: "blur(10px)" }, to: { opacity: 1, filter: "blur(0px)" } };
+    case "bounce-in":
+      return { from: { opacity: 0, scale: 0.3, y: 50 }, to: { opacity: 1, scale: 1, y: 0 } };
+    case "flip-x":
+      return {
+        from: { opacity: 0, rotateX: 90, transformPerspective: 800 },
+        to: { opacity: 1, rotateX: 0, transformPerspective: 800 },
+      };
+    case "flip-y":
+      return {
+        from: { opacity: 0, rotateY: 90, transformPerspective: 800 },
+        to: { opacity: 1, rotateY: 0, transformPerspective: 800 },
+      };
+    case "rotate-in":
+      return { from: { opacity: 0, rotate: -180, scale: 0.5 }, to: { opacity: 1, rotate: 0, scale: 1 } };
+    case "zoom-in":
+      return { from: { opacity: 0, scale: 0 }, to: { opacity: 1, scale: 1 } };
+    case "typewriter":
+      return { from: { opacity: 0, width: 0, overflow: "hidden" }, to: { opacity: 1, width: "auto" } };
+    default:
+      return { from: {}, to: {} };
+  }
+}
+
+// ─── Hover effect presets (Framer Motion) ───────────────────────
 
 function getHoverProps(effect: string) {
   switch (effect) {
@@ -74,34 +93,14 @@ function getHoverProps(effect: string) {
   }
 }
 
-// ─── Parallax wrapper ─────────────────────────────────────────────
+// ─── Main Component ─────────────────────────────────────────────
 
-function ParallaxWrapper({
-  speed,
-  children,
-  className,
-  style,
-}: {
-  speed: number;
+interface MotionBlockWrapperProps {
+  styles: BlockStyles;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], [speed * 50, speed * -50]);
-
-  return (
-    <motion.div ref={ref} style={{ ...style, y }} className={className}>
-      {children}
-    </motion.div>
-  );
 }
-
-// ─── Main Component ────────────────────────────────────────────────
 
 export function MotionBlockWrapper({ styles, children, className, style }: MotionBlockWrapperProps) {
   const animation = styles.animation ?? "none";
@@ -116,7 +115,80 @@ export function MotionBlockWrapper({ styles, children, className, style }: Motio
   const hasHover = hoverEffect !== "none";
   const hasParallax = scrollTrigger === "parallax";
 
-  // No animation at all — render plain div
+  const ref = useRef<HTMLDivElement>(null);
+
+  // GSAP scroll-triggered animations
+  // Uses useEffect (after paint) so the browser has laid out elements
+  // and ScrollTrigger can accurately measure positions.
+  useEffect(() => {
+    if (!ref.current || (!hasAnimation && !hasParallax)) return;
+
+    let cleanup: (() => void) | undefined;
+
+    // Dynamic import ensures GSAP + ScrollTrigger load only on client
+    // and avoids Next.js SSR bundling issues
+    (async () => {
+      const gsap = (await import("gsap")).default;
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      gsap.registerPlugin(ScrollTrigger);
+
+      const el = ref.current;
+      if (!el) return;
+
+      const scroller = getScrollParent(el);
+
+      const ctx = gsap.context(() => {
+        if (hasParallax) {
+          // Make visible for parallax-only (no entrance anim hides it)
+          if (!hasAnimation) gsap.set(el, { visibility: "visible" });
+
+          gsap.to(el, {
+            y: parallaxSpeed * -100,
+            ease: "none",
+            scrollTrigger: {
+              trigger: el,
+              ...(scroller ? { scroller } : {}),
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          });
+        }
+
+        if (hasAnimation) {
+          const { from, to } = getGsapFromTo(animation);
+          // When parallax is active, animate a child to avoid transform conflicts
+          const target = hasParallax
+            ? (el.querySelector("[data-gsap-anim]") as HTMLElement) ?? el
+            : el;
+
+          // visibility:"visible" in `from` removes the inline hidden
+          // while opacity:0 (or other from-state) keeps it visually hidden
+          gsap.fromTo(target, { ...from, visibility: "visible" }, {
+            ...to,
+            duration,
+            delay,
+            ease: getGsapEase(easing),
+            scrollTrigger: {
+              trigger: el,
+              ...(scroller ? { scroller } : {}),
+              start: "top 90%",
+              toggleActions: "play none none none",
+            },
+          });
+        }
+
+        // Recalculate positions after everything is set up
+        ScrollTrigger.refresh();
+      });
+
+      cleanup = () => ctx.revert();
+    })();
+
+    return () => cleanup?.();
+  }, [hasAnimation, hasParallax, animation, duration, delay, easing, parallaxSpeed]);
+
+  // ── No effects: plain div ──────────────────────────
   if (!hasAnimation && !hasHover && !hasParallax) {
     return (
       <div className={className} style={style}>
@@ -125,71 +197,48 @@ export function MotionBlockWrapper({ styles, children, className, style }: Motio
     );
   }
 
-  // Build transition
-  const transition: Record<string, unknown> = { duration, delay };
-  if (easing === "spring") {
-    transition.type = "spring";
-    transition.stiffness = 200;
-    transition.damping = 20;
-  } else if (easing === "bounce") {
-    transition.type = "spring";
-    transition.stiffness = 300;
-    transition.damping = 10;
-    transition.mass = 0.8;
-  } else {
-    transition.ease = easingMap[easing] ?? [0, 0, 0.58, 1];
-  }
+  // ── Build hover wrapper (Framer Motion) ────────────
+  const content = hasHover ? (
+    <motion.div
+      style={{ perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
+      whileHover={getHoverProps(hoverEffect)}
+      transition={{ duration: 0.25 }}
+    >
+      {children}
+    </motion.div>
+  ) : (
+    children
+  );
 
-  const variants = hasAnimation ? getAnimationVariants(animation) : undefined;
-  const hoverProps = hasHover ? getHoverProps(hoverEffect) : undefined;
+  // ── Scroll-triggered (GSAP on ref div) ─────────────
+  if (hasAnimation || hasParallax) {
+    // Start invisible — GSAP will reveal on scroll.
+    // Inline visibility:hidden prevents flash before GSAP sets initial state.
+    const hiddenStyle: React.CSSProperties = {
+      ...style,
+      visibility: "hidden",
+    };
 
-  // Parallax mode
-  if (hasParallax) {
+    if (hasParallax && hasAnimation) {
+      return (
+        <div ref={ref} className={className} style={hiddenStyle}>
+          <div data-gsap-anim="">{content}</div>
+        </div>
+      );
+    }
     return (
-      <ParallaxWrapper speed={parallaxSpeed} className={className} style={style}>
-        {hasAnimation ? (
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={variants}
-            transition={transition}
-            whileHover={hoverProps}
-            style={{ perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
-          >
-            {children}
-          </motion.div>
-        ) : (
-          children
-        )}
-      </ParallaxWrapper>
+      <div ref={ref} className={className} style={hiddenStyle}>
+        {content}
+      </div>
     );
   }
 
-  // Scroll-triggered reveal
-  if (scrollTrigger === "reveal" || hasAnimation) {
-    return (
-      <motion.div
-        className={className}
-        style={{ ...style, perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }}
-        variants={variants}
-        transition={transition}
-        whileHover={hoverProps}
-      >
-        {children}
-      </motion.div>
-    );
-  }
-
-  // Hover-only
+  // ── Hover only: Framer Motion ──────────────────────
   return (
     <motion.div
       className={className}
       style={{ ...style, perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
-      whileHover={hoverProps}
+      whileHover={getHoverProps(hoverEffect)}
       transition={{ duration: 0.25 }}
     >
       {children}
