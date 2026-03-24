@@ -82,6 +82,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
 import {
   BLOCK_REGISTRY,
   BLOCK_CATEGORIES,
@@ -736,6 +737,7 @@ export function BuilderWorkspace({
   );
   const [showAddSection, setShowAddSection] = useState(false);
   const [addSectionName, setAddSectionName] = useState("");
+  const [showFrameTemplateDialog, setShowFrameTemplateDialog] = useState(false);
   const [rightPanel, setRightPanel] = useState<"properties" | "theme" | "seo">(
     "properties",
   );
@@ -1101,6 +1103,68 @@ export function BuilderWorkspace({
       setAddSectionName("");
       setShowAddSection(false);
       setExpandedSections((p) => new Set([...p, res.id]));
+    } catch {
+      /* handle */
+    }
+  };
+
+  const addSectionFromTemplate = async (template: FrameTemplate) => {
+    const yOffset = portfolio.sections.reduce((max, s) => {
+      const ss = s.styles as SectionStyles;
+      return Math.max(max, (ss.frameY ?? 0) + (ss.frameHeight ?? DEFAULT_FRAME_HEIGHT));
+    }, 0);
+
+    try {
+      // Create the section
+      const res = await apiPost<SectionWithBlocks>(
+        `/portfolios/${portfolio.id}/sections`,
+        {
+          name: template.name,
+          sortOrder: portfolio.sections.length,
+          styles: {
+            frameX: 0,
+            frameY: yOffset + 80,
+            frameWidth: DEFAULT_FRAME_WIDTH,
+            frameHeight: template.frameHeight,
+            layout: "absolute",
+            // Enable stagger for templates with multiple blocks
+            ...(template.id !== "blank" ? { staggerChildren: true, staggerAnimation: "fade-up", staggerDelay: 100 } : {}),
+          },
+        },
+      );
+
+      builderStore.pushSnapshot("add-section-template");
+      portfolioStore.addSection(res);
+      setExpandedSections((p) => new Set([...p, res.id]));
+      setSelectedSectionId(res.id);
+      setSelectedBlockId(null);
+
+      // Add template blocks
+      const templateBlocks = template.blocks(theme);
+      for (let i = 0; i < templateBlocks.length; i++) {
+        const tb = templateBlocks[i]!;
+        const def = BLOCK_REGISTRY[tb.type as BlockType];
+        if (!def) continue;
+
+        const newBlock = {
+          id: crypto.randomUUID(),
+          sectionId: res.id,
+          type: tb.type,
+          sortOrder: i,
+          isVisible: true,
+          isLocked: false,
+          content: { ...def.defaultContent, ...tb.content },
+          styles: { ...def.defaultStyles, ...tb.styles },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as unknown as BlockWithStyles;
+
+        portfolioStore.addBlockToSection(res.id, newBlock);
+      }
+
+      builderStore.setDirty(true);
+      scheduleAutoSave();
+      setShowFrameTemplateDialog(false);
     } catch {
       /* handle */
     }
@@ -2291,7 +2355,7 @@ ${sectionsHtml}
                 </span>
                 <div className="flex items-center gap-0.5">
                   <button
-                    onClick={() => setShowAddSection(true)}
+                    onClick={() => setShowFrameTemplateDialog(true)}
                     className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
                     style={{ color: "var(--b-text-3)" }}
                     title="Add frame"
@@ -2684,7 +2748,7 @@ ${sectionsHtml}
                   adding elements.
                 </p>
                 <button
-                  onClick={() => setShowAddSection(true)}
+                  onClick={() => setShowFrameTemplateDialog(true)}
                   className="mt-5 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:opacity-90"
                   style={{
                     background:
@@ -3489,6 +3553,14 @@ ${sectionsHtml}
           dropdownColors={dropdownColors}
         />
       )}
+
+      {/* ── Frame Template Dialog ──────────────────────────────────── */}
+      <FrameTemplateDialog
+        open={showFrameTemplateDialog}
+        onClose={() => setShowFrameTemplateDialog(false)}
+        onSelect={addSectionFromTemplate}
+        theme={theme}
+      />
     </div>
   );
 }

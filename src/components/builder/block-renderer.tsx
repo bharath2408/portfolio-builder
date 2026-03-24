@@ -134,8 +134,10 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
   switch (block.type) {
     // ── HEADING ──
     case "heading": {
-      const Tag = `h${(c.level as number) ?? 2}` as keyof React.JSX.IntrinsicElements;
-      const level = (c.level as number) ?? 2;
+      const rawLevel = c.level;
+      const level = typeof rawLevel === "number" ? rawLevel : typeof rawLevel === "string" ? parseInt(rawLevel.replace(/\D/g, ""), 10) || 2 : 2;
+      const safeLevel = Math.max(1, Math.min(6, level));
+      const Tag = `h${safeLevel}` as keyof React.JSX.IntrinsicElements;
       // Fluid font sizes: scale down on small screens using clamp()
       const fluidSizes: Record<number, string> = {
         1: "clamp(28px, 5vw, 56px)",
