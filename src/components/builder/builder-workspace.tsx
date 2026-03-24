@@ -975,8 +975,8 @@ export function BuilderWorkspace({
       const snap = builderStore.snapToGrid;
       const sx = snap ? Math.round(newX / gs) * gs : newX;
       const sy = snap ? Math.round(newY / gs) * gs : newY;
-      const sw = snap ? Math.round(newW / gs) * gs : newW;
-      const sh = snap ? Math.round(newH / gs) * gs : newH;
+      const sw = Math.max(20, snap ? Math.round(newW / gs) * gs : newW);
+      const sh = Math.max(10, snap ? Math.round(newH / gs) * gs : newH);
       const device = builderStore.devicePreview;
       if (device === "desktop") {
         portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
@@ -1050,6 +1050,8 @@ export function BuilderWorkspace({
             x: (block.styles.x ?? 0) + 20,
             y: (block.styles.y ?? 0) + 20,
           },
+          tabletStyles: block.tabletStyles ?? {},
+          mobileStyles: block.mobileStyles ?? {},
         },
       );
       portfolioStore.addBlockToSection(sectionId, res);
@@ -1335,6 +1337,8 @@ export function BuilderWorkspace({
           type: b.type,
           content: b.content,
           styles: b.styles,
+          tabletStyles: b.tabletStyles ?? {},
+          mobileStyles: b.mobileStyles ?? {},
           sortOrder: b.sortOrder,
         })),
       })),

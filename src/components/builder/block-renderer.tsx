@@ -522,7 +522,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
               }
             } catch { /* ignore */ }
           }}
-          style={{ ...inlineStyles, display: "flex", flexDirection: "column", gap: 16 }}
+          style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 16 }}
         >
           {fields.map((field) => (
             <div key={field.name}>
@@ -616,13 +616,12 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     // ── EMBED ──
     case "embed": {
       const embedUrl = (c.url as string) ?? "";
-      const embedH = (c.height as number) ?? 400;
       return embedUrl ? (
-        <div style={inlineStyles}>
-          <iframe src={embedUrl} width="100%" height={embedH} style={{ border: "none", borderRadius: inlineStyles.borderRadius ?? 8 }} allowFullScreen />
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden" }}>
+          <iframe src={embedUrl} width="100%" height="100%" style={{ border: "none", borderRadius: inlineStyles.borderRadius ?? 8 }} allowFullScreen />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}` }}>Paste an embed URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}` }}>Paste an embed URL</div>
       );
     }
 
@@ -632,7 +631,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const ytMatch = ytUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
       const ytId = ytMatch?.[1];
       return ytId ? (
-        <div style={{ ...inlineStyles, aspectRatio: "16/9", overflow: "hidden", borderRadius: inlineStyles.borderRadius ?? 12 }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden", borderRadius: inlineStyles.borderRadius ?? 12 }}>
           <iframe
             src={`https://www.youtube.com/embed/${ytId}${(c.autoplay as boolean) ? "?autoplay=1&mute=1" : ""}`}
             width="100%" height="100%"
@@ -642,30 +641,28 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12, aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center" }}>Paste a YouTube URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste a YouTube URL</div>
       );
     }
 
     // ── SPOTIFY ──
     case "spotify": {
       const spUrl = (c.url as string) ?? "";
-      // Extract Spotify URI: track/album/playlist/episode
       const spMatch = spUrl.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
       const spType = spMatch?.[1];
       const spId = spMatch?.[2];
       const spCompact = (c.compact as boolean) ?? false;
-      const spHeight = spCompact ? 80 : (spType === "track" ? 152 : 380);
       return spId ? (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden" }}>
           <iframe
             src={`https://open.spotify.com/embed/${spType}/${spId}${spCompact ? "?theme=0" : ""}`}
-            width="100%" height={spHeight}
+            width="100%" height="100%"
             style={{ border: "none", borderRadius: 12 }}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste a Spotify URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste a Spotify URL</div>
       );
     }
 
@@ -674,16 +671,16 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const mapQuery = (c.query as string) ?? "";
       const mapZoom = (c.zoom as number) ?? 14;
       return mapQuery ? (
-        <div style={{ ...inlineStyles, overflow: "hidden", borderRadius: inlineStyles.borderRadius ?? 12 }}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden", borderRadius: inlineStyles.borderRadius ?? 12 }}>
           <iframe
             src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=${mapZoom}&output=embed`}
-            width="100%" height={300}
+            width="100%" height="100%"
             style={{ border: "none" }}
             loading="lazy"
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>Enter a location</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Enter a location</div>
       );
     }
 
@@ -691,15 +688,15 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "calendly": {
       const calUrl = (c.url as string) ?? "";
       return calUrl ? (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden" }}>
           <iframe
             src={calUrl}
-            width="100%" height={630}
+            width="100%" height="100%"
             style={{ border: "none", borderRadius: 12 }}
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste your Calendly URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste your Calendly URL</div>
       );
     }
 
@@ -707,37 +704,32 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     case "github_contrib": {
       const ghUser = (c.username as string) ?? "";
       return ghUser ? (
-        <div style={inlineStyles}>
-          {/* Uses ghchart.rshah.org for contribution graph image */}
+        <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
           <img
             src={`https://ghchart.rshah.org/14b8a6/${ghUser}`}
             alt={`${ghUser}'s GitHub contributions`}
-            style={{ width: "100%", borderRadius: 8 }}
+            style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 8 }}
           />
-          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.5, textAlign: "center" }}>
-            @{ghUser} on GitHub
-          </div>
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Enter a GitHub username</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Enter a GitHub username</div>
       );
     }
 
     // ── CUSTOM HTML ──
     case "custom_html": {
       const customHtml = (c.html as string) ?? "";
-      const customH = (c.height as number) ?? 300;
       return customHtml ? (
-        <div style={inlineStyles}>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden" }}>
           <iframe
             srcDoc={customHtml}
-            width="100%" height={customH}
+            width="100%" height="100%"
             style={{ border: "none", borderRadius: 8 }}
             sandbox="allow-scripts allow-same-origin"
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, padding: 24, textAlign: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 8 }}>Add custom HTML code</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 8 }}>Add custom HTML code</div>
       );
     }
 
