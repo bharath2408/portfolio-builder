@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Loader2,
   Lock,
+  LogOut,
   Maximize,
   Monitor,
   Moon,
@@ -28,6 +29,7 @@ import {
   Rocket,
   Save,
   Settings,
+  Sparkles,
   Smartphone,
   Sun,
   Tablet,
@@ -39,7 +41,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
   memo,
   useCallback,
@@ -50,6 +52,7 @@ import {
 } from "react";
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
+import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
 import { CommandPalette } from "@/components/builder/command-palette";
 import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
@@ -86,6 +89,7 @@ import {
   getBlocksByCategory,
 } from "@/config/block-registry";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
@@ -1685,17 +1689,12 @@ ${sectionsHtml}
       >
         {/* Left: Back + File + View */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-            style={{ color: "var(--b-text-3)" }}
-            asChild
-          >
-            <Link href="/dashboard/portfolios">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <Link href="/dashboard/portfolios" className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors" style={{ color: "var(--b-text-3)" }}>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "linear-gradient(135deg, var(--b-accent), #0891b2)" }}>
+              <Sparkles className="h-3 w-3 text-white" />
+            </div>
+          </Link>
 
           <div
             className="mx-0.5 h-4 w-px"
@@ -2172,6 +2171,39 @@ ${sectionsHtml}
               </>
             )}
           </button>
+
+          <div className="mx-1 h-4 w-px" style={{ backgroundColor: "var(--b-border)" }} />
+
+          {/* Profile dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors" style={{ color: "var(--b-text-2)" }}>
+                {sessionData?.user?.image ? (
+                  <img src={sessionData.user.image} alt="" className="h-7 w-7 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)" }}>
+                    {getInitials(sessionData?.user?.name)}
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8} style={{ backgroundColor: dropdownColors.bg, borderColor: dropdownColors.border, minWidth: 180 }}>
+              <div className="px-3 py-2" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
+                <p className="text-[12px] font-semibold" style={{ color: dropdownColors.text }}>{sessionData?.user?.name ?? "User"}</p>
+                <p className="text-[10px]" style={{ color: dropdownColors.textMuted }}>{sessionData?.user?.email}</p>
+              </div>
+              <DropdownMenuItem asChild className="text-[12px]" style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+                <Link href="/dashboard"><LayoutGrid className="mr-2 h-3.5 w-3.5" />Dashboard</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[12px]" style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+                <Link href="/dashboard/settings"><Settings className="mr-2 h-3.5 w-3.5" />Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })} className="text-[12px]" style={{ color: "#ef4444", backgroundColor: "transparent" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+                <LogOut className="mr-2 h-3.5 w-3.5" />Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Publish feedback bar */}
@@ -3090,31 +3122,15 @@ ${sectionsHtml}
                           Following portfolio theme
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="color"
-                          value={
-                            (ss as Record<string, unknown>).backgroundCustom && ss.backgroundColor && (ss.backgroundColor as string).startsWith("#")
-                              ? (ss.backgroundColor as string)
-                              : theme.backgroundColor
-                          }
-                          onChange={(e) => updateSec({ backgroundColor: e.target.value, backgroundCustom: true } as Partial<SectionStyles>)}
-                          className="h-7 w-7 flex-shrink-0 cursor-pointer rounded-md border-0 p-0.5"
-                          style={{ backgroundColor: "var(--b-surface)" }}
-                        />
-                        <input
-                          type="text"
-                          value={
-                            (ss as Record<string, unknown>).backgroundCustom
-                              ? ((ss.backgroundColor as string) ?? "")
-                              : theme.backgroundColor
-                          }
-                          onChange={(e) => updateSec({ backgroundColor: e.target.value, backgroundCustom: true } as Partial<SectionStyles>)}
-                          placeholder={theme.backgroundColor}
-                          className="h-7 flex-1 rounded-md border-0 px-2 font-mono text-[11px] outline-none"
-                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)" }}
-                        />
-                      </div>
+                      <AdvancedColorInput
+                        value={
+                          (ss as Record<string, unknown>).backgroundCustom
+                            ? ((ss.backgroundColor as string) ?? "")
+                            : theme.backgroundColor
+                        }
+                        onChange={(v) => updateSec({ backgroundColor: v, backgroundCustom: true } as Partial<SectionStyles>)}
+                        placeholder={theme.backgroundColor}
+                      />
                     </div>
 
                     {/* Frame Dimensions */}

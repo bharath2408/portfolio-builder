@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
+import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { ImageUpload } from "@/components/common/image-upload";
 import { Tooltip } from "@/components/builder/tooltip";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
@@ -174,41 +175,7 @@ function SelectInput({
   );
 }
 
-function ColorInput({
-  value, onChange, placeholder,
-}: {
-  value: string | undefined;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border"
-        style={{ borderColor: "var(--b-border)", backgroundColor: "var(--b-surface)" }}
-      >
-        <input
-          type="color"
-          value={value && value.startsWith("#") ? value : "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-5 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
-        />
-      </div>
-      <input
-        type="text"
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-7 flex-1 rounded-md border px-2.5 font-mono text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
-        style={{
-          backgroundColor: "var(--b-surface)",
-          borderColor: "var(--b-border)",
-          color: "var(--b-text)",
-        }}
-      />
-    </div>
-  );
-}
+// ColorInput replaced by AdvancedColorInput from color-picker.tsx
 
 function ToggleGroup({
   value, onChange, options,
@@ -432,7 +399,7 @@ export function BlockPropertiesPanel({
           <PropGrid>
             <div>
               <SubLabel>Background</SubLabel>
-              <ColorInput
+              <AdvancedColorInput
                 value={styles.backgroundColor}
                 onChange={(v) => updateStyle("backgroundColor", v)}
                 placeholder="transparent"
@@ -441,7 +408,7 @@ export function BlockPropertiesPanel({
 
             <div>
               <SubLabel>Border</SubLabel>
-              <ColorInput
+              <AdvancedColorInput
                 value={styles.borderColor}
                 onChange={(v) => updateStyle("borderColor", v)}
                 placeholder="none"
@@ -586,7 +553,7 @@ export function BlockPropertiesPanel({
               </PropRow>
 
               <PropRow label="Color">
-                <ColorInput
+                <AdvancedColorInput
                   value={styles.color}
                   onChange={(v) => updateStyle("color", v)}
                   placeholder="inherit"
@@ -1051,7 +1018,7 @@ function ContentEditor({
           {fillType === "color" ? (
             <div>
               <SubLabel>Fill Color</SubLabel>
-              <ColorInput value={(content.fill as string) ?? ""} onChange={(v) => updateContent("fill", v)} placeholder="#6366f1" />
+              <AdvancedColorInput value={(content.fill as string) ?? ""} onChange={(v) => updateContent("fill", v)} placeholder="#6366f1" />
             </div>
           ) : (
             <div>
@@ -1070,7 +1037,7 @@ function ContentEditor({
 
           <div>
             <SubLabel>Border Color</SubLabel>
-            <ColorInput value={(content.borderColor as string) ?? ""} onChange={(v) => updateContent("borderColor", v)} placeholder="none" />
+            <AdvancedColorInput value={(content.borderColor as string) ?? ""} onChange={(v) => updateContent("borderColor", v)} placeholder="none" />
           </div>
           {field("Border Width", "borderWidth", { type: "number", placeholder: "0" })}
         </div>
@@ -1081,7 +1048,7 @@ function ContentEditor({
         <div className="space-y-2.5">
           <div>
             <SubLabel>Color</SubLabel>
-            <ColorInput value={(content.color as string) ?? ""} onChange={(v) => updateContent("color", v)} placeholder="#a1a1aa" />
+            <AdvancedColorInput value={(content.color as string) ?? ""} onChange={(v) => updateContent("color", v)} placeholder="#a1a1aa" />
           </div>
           {field("Thickness", "thickness", { type: "number", placeholder: "2" })}
           {field("Direction", "direction", { type: "select", options: [{ label: "Horizontal", value: "horizontal" }, { label: "Vertical", value: "vertical" }] })}

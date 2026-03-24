@@ -252,10 +252,11 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
         padding: paddings[size], borderRadius: theme.borderRadius,
         fontWeight: 600, fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14,
         textDecoration: "none", transition: "all 0.2s",
-        cursor: "pointer", border: "none",
+        cursor: "pointer",
+        borderWidth: 0, borderStyle: "none", borderColor: "transparent",
       };
       if (variant === "solid") { btnStyle.backgroundColor = theme.primaryColor; btnStyle.color = "#fff"; }
-      if (variant === "outline") { btnStyle.border = `2px solid ${theme.primaryColor}`; btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
+      if (variant === "outline") { btnStyle.borderWidth = 2; btnStyle.borderStyle = "solid"; btnStyle.borderColor = theme.primaryColor; btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
       if (variant === "ghost") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; }
       if (variant === "link") { btnStyle.color = theme.primaryColor; btnStyle.backgroundColor = "transparent"; btnStyle.textDecoration = "underline"; }
       const btnUrl = (c.url as string) ?? "#";
@@ -622,7 +623,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           <iframe src={embedUrl} width="100%" height="100%" style={{ border: "none", borderRadius: inlineStyles.borderRadius ?? 8 }} allowFullScreen />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}` }}>Paste an embed URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor }}>Paste an embed URL</div>
       );
     }
 
@@ -642,7 +643,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste a YouTube URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 12 }}>Paste a YouTube URL</div>
       );
     }
 
@@ -663,7 +664,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste a Spotify URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 12 }}>Paste a Spotify URL</div>
       );
     }
 
@@ -681,7 +682,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Enter a location</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 12 }}>Enter a location</div>
       );
     }
 
@@ -697,7 +698,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Paste your Calendly URL</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 12 }}>Paste your Calendly URL</div>
       );
     }
 
@@ -713,7 +714,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 12 }}>Enter a GitHub username</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 12 }}>Enter a GitHub username</div>
       );
     }
 
@@ -730,14 +731,14 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           />
         </div>
       ) : (
-        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 8 }}>Add custom HTML code</div>
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 8 }}>Add custom HTML code</div>
       );
     }
 
     // ── FALLBACK ──
     default:
       return (
-        <div style={{ ...inlineStyles, padding: 16, border: `1px dashed ${theme.surfaceColor}`, borderRadius: 8, fontSize: 13, opacity: 0.5 }}>
+        <div style={{ ...inlineStyles, padding: 16, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 8, fontSize: 13, opacity: 0.5 }}>
           Unknown block type: {block.type}
         </div>
       );

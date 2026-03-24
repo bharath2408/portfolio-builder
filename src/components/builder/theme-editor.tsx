@@ -3,6 +3,7 @@
 import { ChevronRight, Save, Droplets } from "lucide-react";
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 
+import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { COLOR_PRESETS, FONT_OPTIONS } from "@/config/constants";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
@@ -57,20 +58,9 @@ function ColorRow({
       >
         {label}
       </span>
-      <input
-        type="color"
-        value={value && value.startsWith("#") ? value : "#000000"}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-6 w-6 flex-shrink-0 cursor-pointer rounded border-0 p-0"
-        style={{ backgroundColor: "var(--b-surface)" }}
-      />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-6 flex-1 rounded border-0 px-1.5 font-mono text-[10px] uppercase outline-none"
-        style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)" }}
-      />
+      <div className="flex-1">
+        <AdvancedColorInput value={value} onChange={onChange} />
+      </div>
     </div>
   );
 }
