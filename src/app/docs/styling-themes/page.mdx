@@ -100,6 +100,21 @@ Only shown for text-based blocks (heading, text, quote, list, button, badge, sta
 - **Text Color** — overrides the theme text color for this specific block
 - **Background Color** — sets a background behind this block
 - **Background Gradient** — a CSS gradient that replaces the solid background. Examples:
+
+#### Advanced Color Picker
+
+All color inputs throughout the editor use the **Advanced Color Picker**, which provides:
+
+- **Saturation/Lightness gradient** — a 2D gradient area to visually pick the exact shade
+- **Hue slider** — a horizontal slider to select the base hue
+- **Eyedropper tool** — sample any color from your screen with a single click
+- **Theme color tokens** — quick buttons for `primary`, `secondary`, `accent`, `text`, `muted`, `surface`, and `background` so you can reference your theme directly
+- **Preset swatches** — a grid of commonly used colors for fast selection
+- **Recent colors** — your last-used colors are saved for easy reuse
+
+The picker accepts and outputs hex values, and you can always type a hex code directly into the input field.
+
+Gradient examples:
   - `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` — diagonal purple
   - `linear-gradient(to right, #00b4db, #0083b0)` — horizontal blue
   - `radial-gradient(circle, #ff9a9e 0%, #fad0c4 100%)` — radial pink
@@ -147,6 +162,16 @@ Control visibility across screen sizes:
 - **Hide on Desktop** — block is hidden on screens at or above `md`. Uses `md:hidden` class
 
 This lets you create different experiences for mobile and desktop. For example, show a compact stat on mobile and a full skill grid on desktop.
+
+#### Per-Device Style Overrides
+
+When you switch to **Tablet** or **Mobile** view using the device preview toggles in the editor's top bar, any style changes you make to blocks are saved as **device-specific overrides**. This means:
+
+- Editing a block's font size while in Mobile view only changes it on mobile — the desktop value stays untouched
+- You can set different padding, margins, positions, and dimensions for each device
+- Overrides apply to all style properties: typography, spacing, colors, transforms, and more
+
+This gives you precise control over how your portfolio looks on every screen size, going beyond simple show/hide toggles to allow fully tailored layouts per device.
 
 ### Custom CSS
 
