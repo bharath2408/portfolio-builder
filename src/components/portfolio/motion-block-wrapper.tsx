@@ -151,7 +151,7 @@ export function MotionBlockWrapper({ styles, children, className, style }: Motio
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: true, amount: 0.1 }}
             variants={variants}
             transition={transition}
             whileHover={hoverProps}
@@ -174,7 +174,7 @@ export function MotionBlockWrapper({ styles, children, className, style }: Motio
         style={{ ...style, perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{ once: true, amount: 0.1 }}
         variants={variants}
         transition={transition}
         whileHover={hoverProps}
