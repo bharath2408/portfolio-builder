@@ -31,7 +31,6 @@ export async function GET() {
         onboardingDone: true,
         createdAt: true,
         password: true,
-        _count: { select: { portfolios: true } },
         portfolios: {
           select: { id: true, title: true, isDefault: true },
           orderBy: { createdAt: "desc" },

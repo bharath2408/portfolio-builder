@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { PasswordGate } from "@/components/portfolio/password-gate";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
@@ -12,10 +13,10 @@ interface Props {
   params: Promise<{ username: string; slug: string }>;
 }
 
-async function getPortfolioData(
+const getPortfolioData = cache(async (
   username: string,
   slug: string,
-): Promise<PortfolioWithRelations | null> {
+): Promise<PortfolioWithRelations | null> => {
   const user = await db.user.findUnique({
     where: { username },
     select: { id: true },
@@ -51,7 +52,7 @@ async function getPortfolioData(
   if (!portfolio) return null;
 
   return portfolio as PortfolioWithRelations;
-}
+});
 
 function parseDeviceType(userAgent: string | null): string {
   if (!userAgent) return "desktop";
@@ -120,6 +121,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 }
+
+export const revalidate = 60;
 
 export default async function PortfolioBySlugPage({ params }: Props) {
   const { username, slug } = await params;

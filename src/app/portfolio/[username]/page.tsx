@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { PasswordGate } from "@/components/portfolio/password-gate";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
@@ -12,57 +13,37 @@ interface PublicPortfolioPageProps {
   params: Promise<{ username: string }>;
 }
 
-async function getPublicPortfolioData(username: string): Promise<PortfolioWithRelations | null> {
-  const user = await db.user.findUnique({
-    where: { username },
-    select: { id: true },
-  });
-
-  if (!user) return null;
-
-  const portfolio = await db.portfolio.findFirst({
-    where: {
-      userId: user.id,
-      status: "PUBLISHED",
-      isDefault: true,
-    },
+const portfolioInclude = {
+  sections: {
+    where: { isVisible: true },
+    orderBy: { sortOrder: "asc" as const },
     include: {
-      sections: {
+      blocks: {
         where: { isVisible: true },
-        orderBy: { sortOrder: "asc" },
-        include: {
-          blocks: {
-            where: { isVisible: true },
-            orderBy: { sortOrder: "asc" },
-          },
-        },
+        orderBy: { sortOrder: "asc" as const },
       },
-      theme: true,
-      template: true,
-      user: { select: { id: true, name: true, username: true, image: true } },
     },
+  },
+  theme: true,
+  template: true,
+  user: { select: { id: true, name: true, username: true, image: true } },
+};
+
+// React cache deduplicates calls within the same request (metadata + page)
+const getPublicPortfolioData = cache(async (username: string): Promise<PortfolioWithRelations | null> => {
+  // Single query: find default published portfolio, fallback to any published
+  const portfolios = await db.portfolio.findMany({
+    where: {
+      user: { username },
+      status: "PUBLISHED",
+    },
+    include: portfolioInclude,
+    orderBy: { isDefault: "desc" },
+    take: 1,
   });
 
-  if (!portfolio) {
-    // Fallback: any published portfolio
-    const fallback = await db.portfolio.findFirst({
-      where: { userId: user.id, status: "PUBLISHED" },
-      include: {
-        sections: {
-          where: { isVisible: true },
-          orderBy: { sortOrder: "asc" },
-          include: { blocks: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } } },
-        },
-        theme: true,
-        template: true,
-        user: { select: { id: true, name: true, username: true, image: true } },
-      },
-    });
-    return fallback as PortfolioWithRelations | null;
-  }
-
-  return portfolio as PortfolioWithRelations;
-}
+  return (portfolios[0] as PortfolioWithRelations) ?? null;
+});
 
 function parseDeviceType(userAgent: string | null): string {
   if (!userAgent) return "desktop";
@@ -123,6 +104,9 @@ export async function generateMetadata({ params }: PublicPortfolioPageProps): Pr
     twitter: { card: "summary_large_image", title, description },
   };
 }
+
+// Revalidate public portfolio pages every 60 seconds (ISR)
+export const revalidate = 60;
 
 export default async function PublicPortfolioPage({ params }: PublicPortfolioPageProps) {
   const { username } = await params;
