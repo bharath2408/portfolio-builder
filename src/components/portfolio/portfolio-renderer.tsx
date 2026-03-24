@@ -203,6 +203,21 @@ function PortfolioSection({
 
   if (visibleBlocks.length === 0) return null;
 
+  // Stagger: compute per-block stagger index based on section settings
+  const staggerEnabled = ss.staggerChildren ?? false;
+  const staggerDelay = staggerEnabled ? (ss.staggerDelay ?? 100) : 0;
+  const staggerFrom = ss.staggerFrom ?? "start";
+
+  function getStaggerIndex(i: number, total: number): number {
+    if (!staggerEnabled) return 0;
+    switch (staggerFrom) {
+      case "end": return total - 1 - i;
+      case "center": return Math.abs(i - Math.floor(total / 2));
+      case "random": return Math.floor(Math.random() * total);
+      default: return i; // "start"
+    }
+  }
+
   // Calculate content height for absolute layout
   const contentHeight = isAbsolute ? (() => {
     let maxBottom = 0;
@@ -250,7 +265,7 @@ function PortfolioSection({
               transformOrigin: "top left",
             }}
           >
-            {visibleBlocks.map((block) => {
+            {visibleBlocks.map((block, i) => {
               const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
               const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
               const responsiveClass = [
@@ -263,6 +278,8 @@ function PortfolioSection({
                   key={block.id}
                   styles={bs}
                   className={responsiveClass}
+                  staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
+                  staggerDelay={staggerDelay}
                   style={{
                     position: "absolute",
                     left: bs.x ?? 0,
@@ -304,7 +321,7 @@ function PortfolioSection({
                 : undefined,
           }}
         >
-          {visibleBlocks.map((block) => {
+          {visibleBlocks.map((block, i) => {
             const bs = mergeDeviceStyles(block.styles, block.tabletStyles, block.mobileStyles, deviceType);
             const mergedBlock = { ...block, styles: bs } as BlockWithStyles;
             const responsiveClass = [
@@ -317,6 +334,8 @@ function PortfolioSection({
                 key={block.id}
                 styles={bs}
                 className={responsiveClass}
+                staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
+                staggerDelay={staggerDelay}
                 style={{ maxWidth: "100%" }}
               >
                 <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />

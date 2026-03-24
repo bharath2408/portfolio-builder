@@ -3204,6 +3204,73 @@ ${sectionsHtml}
                       </div>
                     </div>
 
+                    {/* Stagger Animation */}
+                    <div style={{ borderTop: "1px solid var(--b-border)", padding: "12px" }}>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>Stagger Children</span>
+                        <label className="relative inline-flex cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            checked={ss.staggerChildren ?? false}
+                            onChange={(e) => {
+                              if (!selectedSectionId) return;
+                              builderStore.pushSnapshot("stagger-toggle");
+                              portfolioStore.updateSection(selectedSectionId, { styles: { ...ss, staggerChildren: e.target.checked } });
+                              builderStore.setDirty(true);
+                              scheduleAutoSave();
+                            }}
+                            className="peer sr-only"
+                          />
+                          <div className="peer h-4 w-7 rounded-full bg-gray-600 after:absolute after:left-[2px] after:top-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all peer-checked:bg-teal-500 peer-checked:after:translate-x-full" />
+                        </label>
+                      </div>
+                      {ss.staggerChildren && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-14 text-[10px]" style={{ color: "var(--b-text-3)" }}>Delay</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={1000}
+                              step={10}
+                              value={ss.staggerDelay ?? 100}
+                              onChange={(e) => {
+                                if (!selectedSectionId) return;
+                                portfolioStore.updateSection(selectedSectionId, { styles: { ...ss, staggerDelay: Number(e.target.value) } });
+                                builderStore.setDirty(true);
+                                scheduleAutoSave();
+                              }}
+                              className="h-6 w-16 rounded border px-1.5 text-[10px] outline-none"
+                              style={{ backgroundColor: "var(--b-input)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                            />
+                            <span className="text-[9px]" style={{ color: "var(--b-text-4)" }}>ms</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-14 text-[10px]" style={{ color: "var(--b-text-3)" }}>From</span>
+                            <select
+                              value={ss.staggerFrom ?? "start"}
+                              onChange={(e) => {
+                                if (!selectedSectionId) return;
+                                portfolioStore.updateSection(selectedSectionId, { styles: { ...ss, staggerFrom: e.target.value as SectionStyles["staggerFrom"] } });
+                                builderStore.setDirty(true);
+                                scheduleAutoSave();
+                              }}
+                              className="h-6 rounded border px-1 text-[10px] outline-none"
+                              style={{ backgroundColor: "var(--b-input)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                            >
+                              <option value="start">Start → End</option>
+                              <option value="end">End → Start</option>
+                              <option value="center">Center → Edges</option>
+                              <option value="random">Random</option>
+                            </select>
+                          </div>
+                          <p className="text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                            Blocks with entrance animations will play one-by-one
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Auto Layout */}
                     <div style={{ borderTop: "1px solid var(--b-border)", padding: "12px" }}>
                       <button

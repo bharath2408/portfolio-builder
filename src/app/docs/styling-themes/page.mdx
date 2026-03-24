@@ -131,24 +131,56 @@ Fine-grained control over inner and outer spacing:
 ### Effects
 
 #### Entrance Animations
-How the block appears when scrolled into view on the published portfolio:
+How the block appears when scrolled into view on the published portfolio. Powered by **GSAP ScrollTrigger** for reliable detection in all scroll contexts, including the preview page.
+
+Choose from 12 animation presets:
 
 - **None** — appears instantly
-- **Fade Up** — fades in while sliding upward 20px. Duration: 0.6s
-- **Fade In** — simple opacity fade from 0 to 1. Duration: 0.6s
-- **Slide Left** — slides in from 30px left. Duration: 0.6s
-- **Slide Right** — slides in from 30px right. Duration: 0.6s
-- **Scale** — scales up from 90% to 100%. Duration: 0.6s
-- **Blur In** — fades in with an 8px blur clearing to sharp. Duration: 0.6s
+- **Fade Up** — fades in while sliding upward
+- **Fade In** — simple opacity fade from 0 to 1
+- **Slide Left** — slides in from the left
+- **Slide Right** — slides in from the right
+- **Scale** — scales up from 85% to 100%
+- **Blur In** — fades in with a blur-to-clear effect
+- **Bounce In** — bounces in from small to full size
+- **Flip X** — rotates in around the horizontal axis (3D)
+- **Flip Y** — rotates in around the vertical axis (3D)
+- **Rotate In** — spins in from -180° while scaling up
+- **Zoom In** — scales from 0 to 100%
+- **Typewriter** — width expands from 0 to full, revealing content
 
-> **Note:** Animations only play on the published portfolio, not in the editor canvas.
+#### Animation Controls
+
+When an entrance animation is selected, additional controls appear:
+
+- **Duration** — animation length in seconds (default: 0.6s). Range: 0.1–3s
+- **Delay** — time before animation starts, in milliseconds (default: 0). Useful for staggering multiple blocks
+- **Easing** — the acceleration curve:
+  - **Ease Out** (default) — starts fast, decelerates
+  - **Ease In** — starts slow, accelerates
+  - **Ease In-Out** — smooth acceleration and deceleration
+  - **Spring** — elastic overshoot effect
+  - **Bounce** — bouncing settle effect
+
+#### Scroll Trigger
+
+Controls when the entrance animation fires:
+
+- **None** — animation plays immediately on page load
+- **Reveal** — animation plays when the block scrolls into view (recommended)
+- **Parallax** — the block moves at a different rate than the scroll, creating a depth effect. Configure **Parallax Speed** (0.1 = subtle, 1.0 = dramatic)
+
+> **Note:** Scroll reveal animations work in both the preview page and the published portfolio. GSAP ScrollTrigger automatically detects the nearest scroll container for reliable viewport detection.
 
 #### Hover Effects
-Interactive effects when visitors hover over a block:
+Interactive effects when visitors hover over a block. Choose from 5 presets:
 
-- **Hover Scale** — transform scale value on hover (e.g., 1.05 to grow 5%)
-- **Hover Opacity** — opacity value on hover (e.g., 0.8 to dim slightly)
-- **Hover Background** — background color change on hover
+- **None** — no hover effect
+- **Lift** — rises up 8px with a floating shadow
+- **Tilt 3D** — tilts in 3D with a slight scale increase
+- **Glow** — adds a teal glow around the block
+- **Grow** — scales up to 108%
+- **Shake** — quick horizontal shake animation
 
 #### Cursor
 - **Default** — standard arrow cursor

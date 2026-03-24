@@ -100,12 +100,18 @@ interface MotionBlockWrapperProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /** Index of this block within its section (used for stagger delay) */
+  staggerIndex?: number;
+  /** Stagger delay in ms between each child (from section settings) */
+  staggerDelay?: number;
 }
 
-export function MotionBlockWrapper({ styles, children, className, style }: MotionBlockWrapperProps) {
+export function MotionBlockWrapper({ styles, children, className, style, staggerIndex = 0, staggerDelay = 0 }: MotionBlockWrapperProps) {
   const animation = styles.animation ?? "none";
   const duration = styles.animationDuration ?? 0.6;
-  const delay = styles.animationDelay ? styles.animationDelay / 1000 : 0;
+  const baseDelay = styles.animationDelay ? styles.animationDelay / 1000 : 0;
+  // Add stagger offset: staggerIndex * staggerDelay (converted from ms to s)
+  const delay = baseDelay + (staggerIndex * staggerDelay) / 1000;
   const easing = styles.animationEasing ?? "ease-out";
   const scrollTrigger = styles.scrollTrigger ?? "none";
   const hoverEffect = styles.hoverEffect ?? "none";

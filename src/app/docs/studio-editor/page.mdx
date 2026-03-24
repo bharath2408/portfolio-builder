@@ -144,18 +144,15 @@ Each block type has its own content fields:
 - All values are in pixels
 
 #### Effects Section
-- **Entrance Animation** — how the block appears when scrolled into view:
-  - **None** — no animation
-  - **Fade Up** — fades in while sliding upward
-  - **Fade In** — simple opacity fade
-  - **Slide Left** — slides in from the left
-  - **Slide Right** — slides in from the right
-  - **Scale** — scales up from 90% to 100%
-  - **Blur In** — fades in with a blur-to-clear effect
+- **Entrance Animation** — 12 presets for how the block appears when scrolled into view: Fade Up, Fade In, Slide Left, Slide Right, Scale, Blur In, Bounce In, Flip X, Flip Y, Rotate In, Zoom In, Typewriter
+- **Animation Duration / Delay / Easing** — fine-tune timing and acceleration curves (spring, bounce, ease-in/out)
+- **Scroll Trigger** — None (immediate), Reveal (on scroll into view), or Parallax (depth effect with configurable speed)
+- **Hover Effect** — 5 presets: Lift, Tilt 3D, Glow, Grow, Shake
 
 #### Responsive Section
 - **Hide on Mobile** — checkbox, hides this block on screens smaller than `md` breakpoint
 - **Hide on Desktop** — checkbox, hides this block on screens `md` and larger
+- **Per-device overrides** — switch to Tablet or Mobile view in the top bar, then edit any style property. Changes are saved as device-specific overrides that only apply at that screen size
 
 #### Custom CSS Section
 A text area where you can write raw CSS properties. Each property goes on a line as `property: value;`. Examples:
@@ -224,9 +221,24 @@ If you have uploaded a profile picture, it shows your photo; otherwise it displa
 
 ### Zooming
 - **Scroll wheel** — zoom in/out centered on cursor
+- **Pinch to zoom** — on touch devices, use two-finger pinch gestures
 - **Zoom controls** (bottom bar) — `+` and `-` buttons, percentage display
 - **Fit to screen** — auto-zoom to show all sections
 - **Reset zoom** — return to 100%
+
+### Touch Support (Tablets & Mobile)
+
+The studio editor fully supports touch input, so you can design on tablets and phones:
+
+- **Single-finger drag on canvas** — pans the canvas (same as Space + drag on desktop)
+- **Single-finger drag on element** — moves the selected block
+- **Pinch to zoom** — two-finger pinch gesture zooms in/out
+- **Two-finger drag** — pans the canvas
+- **Tap element** — selects it
+- **Tap canvas** — deselects current selection
+- **Drag resize handles** — resize blocks by dragging corner/edge handles
+
+All pointer interactions (drag, resize, draw) work seamlessly across mouse, touch, and stylus input.
 
 ### Section Management on Canvas
 - Sections are rendered as horizontal frames stacked vertically
@@ -236,6 +248,10 @@ If you have uploaded a profile picture, it shows your photo; otherwise it displa
 
 ### Smart Guides
 When dragging blocks in absolute-layout sections, smart alignment guides appear to help you align elements with each other.
+
+### Minimap
+
+When a frame is selected, a **minimap** appears showing a small-scale overview of the frame's content. The minimap highlights the currently selected block, making it easy to see where you are in large or complex sections.
 
 ## Auto-Save
 

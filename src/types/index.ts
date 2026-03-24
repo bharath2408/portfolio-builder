@@ -231,6 +231,9 @@ export interface SectionStyles {
   borderBottom?: boolean;
   borderColor?: string;
   overflow?: "visible"|"hidden";
+  staggerChildren?: boolean;
+  staggerDelay?: number; // ms between each child animation (default 100)
+  staggerFrom?: "start"|"center"|"end"|"random";
 }
 
 // ═══════════════════════════════════════════════════════════════════
