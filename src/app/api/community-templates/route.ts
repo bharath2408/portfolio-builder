@@ -30,14 +30,16 @@ export async function GET(req: Request) {
     const tag = searchParams.get("tag");
     const sort = searchParams.get("sort") ?? "most_used";
     const search = searchParams.get("search") ?? "";
-    const limit = Math.min(Number(searchParams.get("limit") ?? 12), 24);
+    const limit = Math.min(Number(searchParams.get("limit") ?? 12), 24) || 12;
     const cursor = searchParams.get("cursor") ?? undefined;
 
     const cleanSearch = search.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
 
+    const VALID_CATEGORIES = ["DEVELOPER", "DESIGNER", "WRITER", "OTHER"];
+
     const where: Prisma.CommunityTemplateWhereInput = {};
-    if (category) where.category = category as Prisma.EnumCommunityTemplateCategoryFilter;
-    if (isDarkParam !== null) where.isDark = isDarkParam === "true";
+    if (category && VALID_CATEGORIES.includes(category)) where.category = category as Prisma.EnumCommunityTemplateCategoryFilter;
+    if (isDarkParam === "true" || isDarkParam === "false") where.isDark = isDarkParam === "true";
     if (tag) where.tags = { has: tag };
     if (cleanSearch.length >= 2) {
       where.OR = [
