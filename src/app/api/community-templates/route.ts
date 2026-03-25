@@ -38,11 +38,21 @@ export async function GET(req: Request) {
     const limit = Math.min(Number(searchParams.get("limit") ?? 12), 24) || 12;
     const cursor = searchParams.get("cursor") ?? undefined;
 
+    const mine = searchParams.get("mine") === "true";
     const cleanSearch = search.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
 
     const VALID_CATEGORIES = ["DEVELOPER", "DESIGNER", "WRITER", "OTHER"];
 
     const where: Prisma.CommunityTemplateWhereInput = {};
+
+    // "mine" filter — requires auth
+    if (mine) {
+      const { auth } = await import("@/lib/auth");
+      const session = await auth();
+      if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+      where.userId = session.user.id;
+    }
+
     if (category && VALID_CATEGORIES.includes(category)) where.category = category as Prisma.EnumCommunityTemplateCategoryFilter;
     if (isDarkParam === "true" || isDarkParam === "false") where.isDark = isDarkParam === "true";
     if (tag) where.tags = { has: tag };

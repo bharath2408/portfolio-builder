@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, Loader2, Moon, Sun, User } from "lucide-react";
+import { Download, ExternalLink, Loader2, Moon, Sun, Trash2, User } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -100,13 +100,15 @@ function PlaceholderThumbnail({ category }: { category: string }) {
 export interface TemplateCardProps {
   template: CommunityTemplate;
   onUse: (id: string) => void;
+  onDelete?: (id: string) => void;
   showPreview?: boolean;
   loading?: boolean;
+  deleting?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────
 
-export function TemplateCard({ template, onUse, showPreview = true, loading = false }: TemplateCardProps) {
+export function TemplateCard({ template, onUse, onDelete, showPreview = true, loading = false, deleting = false }: TemplateCardProps) {
   const [imgError, setImgError] = useState(false);
 
   const author = getAuthorName(template.user);
@@ -225,46 +227,94 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
 
       {/* ── Footer Actions ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 border-t border-border/60 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => onUse(template.id)}
-          disabled={loading}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-all duration-150",
-            "bg-primary text-primary-foreground",
-            "hover:opacity-90 active:scale-[0.98]",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-          )}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Applying…</span>
-            </>
-          ) : (
-            <>
-              <Download className="h-3.5 w-3.5" />
-              <span>Use Template</span>
-            </>
-          )}
-        </button>
-
-        {canPreview && (
-          <a
-            href={previewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "flex items-center justify-center gap-1.5 rounded-lg border border-border/80 px-3 py-2 text-[12px] font-medium",
-              "text-muted-foreground transition-all duration-150",
-              "hover:border-border hover:text-foreground",
-              "active:scale-[0.98]",
+        {onDelete ? (
+          // My Templates mode: use + preview + delete
+          <>
+            <button
+              type="button"
+              onClick={() => onUse(template.id)}
+              disabled={loading}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-all duration-150",
+                "bg-primary text-primary-foreground",
+                "hover:opacity-90 active:scale-[0.98]",
+                "disabled:cursor-not-allowed disabled:opacity-60",
+              )}
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              <span>{loading ? "Applying…" : "Use"}</span>
+            </button>
+            {canPreview && (
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-lg border border-border/80 px-3 py-2 text-[12px] font-medium",
+                  "text-muted-foreground transition-all duration-150",
+                  "hover:border-border hover:text-foreground active:scale-[0.98]",
+                )}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
             )}
-            aria-label={`Preview ${template.name}`}
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>Preview</span>
-          </a>
+            <button
+              type="button"
+              onClick={() => onDelete(template.id)}
+              disabled={deleting}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-all duration-150",
+                "border border-red-500/30 bg-red-500/10 text-red-500",
+                "hover:bg-red-500/20 active:scale-[0.98]",
+                "disabled:cursor-not-allowed disabled:opacity-60",
+              )}
+            >
+              {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+            </button>
+          </>
+        ) : (
+          // Global mode: use + preview
+          <>
+            <button
+              type="button"
+              onClick={() => onUse(template.id)}
+              disabled={loading}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-all duration-150",
+                "bg-primary text-primary-foreground",
+                "hover:opacity-90 active:scale-[0.98]",
+                "disabled:cursor-not-allowed disabled:opacity-60",
+              )}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Applying…</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Use Template</span>
+                </>
+              )}
+            </button>
+            {canPreview && (
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-lg border border-border/80 px-3 py-2 text-[12px] font-medium",
+                  "text-muted-foreground transition-all duration-150",
+                  "hover:border-border hover:text-foreground active:scale-[0.98]",
+                )}
+                aria-label={`Preview ${template.name}`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>Preview</span>
+              </a>
+            )}
+          </>
         )}
       </div>
 

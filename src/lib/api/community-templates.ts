@@ -1,5 +1,5 @@
 // src/lib/api/community-templates.ts
-import { apiGet, apiPost } from "./client";
+import { apiDelete, apiGet, apiPost } from "./client";
 
 export type CommunityTemplateCategory = "DEVELOPER" | "DESIGNER" | "WRITER" | "OTHER";
 
@@ -31,6 +31,7 @@ export async function fetchCommunityTemplates(params: {
   search?: string;
   limit?: number;
   cursor?: string;
+  mine?: boolean;
 }): Promise<{ templates: CommunityTemplate[]; nextCursor: string | null }> {
   const query = new URLSearchParams();
   if (params.category) query.set("category", params.category);
@@ -40,6 +41,7 @@ export async function fetchCommunityTemplates(params: {
   if (params.search) query.set("search", params.search);
   if (params.limit) query.set("limit", String(params.limit));
   if (params.cursor) query.set("cursor", params.cursor);
+  if (params.mine) query.set("mine", "true");
   return apiGet<{ templates: CommunityTemplate[]; nextCursor: string | null }>(
     `/community-templates?${query}`,
   );
@@ -58,4 +60,8 @@ export async function shareCommunityTemplate(data: {
 
 export async function cloneCommunityTemplate(id: string): Promise<{ portfolioId: string }> {
   return apiPost<{ portfolioId: string }>(`/community-templates/${id}/use`);
+}
+
+export async function deleteCommunityTemplate(id: string): Promise<void> {
+  await apiDelete(`/community-templates/${id}`);
 }
