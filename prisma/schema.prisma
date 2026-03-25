@@ -313,4 +313,8 @@ model CommunityTemplate {
 
   portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@map("community_templates")
 }
