@@ -7,6 +7,8 @@ import {
   notFoundResponse,
   conflictResponse,
   internalErrorResponse,
+  unauthorizedResponse,
+  AuthRequiredError,
 } from "@/lib/api/response";
 
 function toSlug(text: string): string {
@@ -117,6 +119,7 @@ export async function POST(
 
     return createdResponse({ portfolioId: newPortfolio.id });
   } catch (error) {
+    if (error instanceof AuthRequiredError) return unauthorizedResponse();
     console.error("[community-templates/[id]/use POST]", error);
     return internalErrorResponse();
   }
