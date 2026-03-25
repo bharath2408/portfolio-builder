@@ -219,6 +219,7 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
       {/* ── Footer Actions ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 border-t border-border/60 px-4 py-3">
         <button
+          type="button"
           onClick={() => onUse(template.id)}
           disabled={loading}
           className={cn(

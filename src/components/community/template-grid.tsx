@@ -91,7 +91,7 @@ function FilterPill({
 export interface TemplateGridProps {
   initialTemplates: CommunityTemplate[];
   initialNextCursor: string | null;
-  onUse: (id: string) => void;
+  onUse: (id: string) => void | Promise<void>;
   showPreview?: boolean;
 }
 
@@ -148,6 +148,7 @@ export function TemplateGrid({
       return;
     }
 
+    setNextCursor(null);
     const controller = new AbortController();
 
     async function refetch() {
