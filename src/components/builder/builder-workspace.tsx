@@ -1251,26 +1251,30 @@ export function BuilderWorkspace({
     isSavingRef.current = true;
     setSaving(true);
     try {
-      await apiPut(`/portfolios/${portfolio.id}/batch`, {
-        sections: portfolio.sections.map((s) => ({
-          id: s.id,
-          name: s.name,
-          sortOrder: s.sortOrder,
-          styles: s.styles,
-          isVisible: s.isVisible,
-          blocks: s.blocks.map((b) => ({
-            id: b.id,
-            type: b.type,
-            sortOrder: b.sortOrder,
-            content: b.content,
-            styles: b.styles,
-            tabletStyles: b.tabletStyles ?? {},
-            mobileStyles: b.mobileStyles ?? {},
-            isVisible: b.isVisible,
-            isLocked: b.isLocked,
+      await apiPut(
+        `/portfolios/${portfolio.id}/batch`,
+        {
+          sections: portfolio.sections.map((s) => ({
+            id: s.id,
+            name: s.name,
+            sortOrder: s.sortOrder,
+            styles: s.styles,
+            isVisible: s.isVisible,
+            blocks: s.blocks.map((b) => ({
+              id: b.id,
+              type: b.type,
+              sortOrder: b.sortOrder,
+              content: b.content,
+              styles: b.styles,
+              tabletStyles: b.tabletStyles ?? {},
+              mobileStyles: b.mobileStyles ?? {},
+              isVisible: b.isVisible,
+              isLocked: b.isLocked,
+            })),
           })),
-        })),
-      });
+        },
+        { timeout: 60000 },
+      );
       builderStore.markSaved();
       markBackupSynced(portfolio.id);
     } catch {

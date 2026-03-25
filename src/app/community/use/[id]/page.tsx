@@ -42,22 +42,28 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
 
   const userId = session.user.id;
 
-  // 2. Find template
+  // 2. Find template — use snapshot only, not the live portfolio
   const template = await db.communityTemplate.findUnique({
     where: { id },
-    include: {
-      portfolio: {
-        include: {
-          sections: { include: { blocks: true } },
-          theme: true,
-        },
-      },
-    },
+    select: { id: true, name: true, snapshotData: true },
   });
 
-  if (!template) {
+  if (!template || !template.snapshotData) {
     redirect("/community?error=not_found");
   }
+
+  const snapshot = template.snapshotData as {
+    sections: Array<{
+      name: string; sortOrder: number; isVisible: boolean; isLocked: boolean;
+      styles: Prisma.InputJsonValue;
+      blocks: Array<{
+        type: string; sortOrder: number; isVisible: boolean; isLocked: boolean;
+        content: Prisma.InputJsonValue; styles: Prisma.InputJsonValue;
+        tabletStyles: Prisma.InputJsonValue; mobileStyles: Prisma.InputJsonValue;
+      }>;
+    }>;
+    theme: Record<string, unknown> | null;
+  };
 
   // 3. Portfolio limit check
   const portfolioCount = await db.portfolio.count({ where: { userId } });
@@ -65,7 +71,7 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
     redirect("/community?error=limit_reached");
   }
 
-  // 4–6. Generate slug, clone transaction, redirect to editor
+  // 4–6. Generate slug, clone from snapshot, redirect to editor
   try {
     const slug = await uniqueSlug(template.name, userId);
 
@@ -77,20 +83,20 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
           slug,
           status: "DRAFT",
           sections: {
-            create: template.portfolio.sections.map((s) => ({
+            create: snapshot.sections.map((s) => ({
               name: s.name,
               sortOrder: s.sortOrder,
               isVisible: s.isVisible,
               isLocked: s.isLocked,
-              styles: s.styles as Prisma.InputJsonValue,
+              styles: s.styles,
               blocks: {
                 create: s.blocks.map((b) => ({
                   type: b.type,
                   sortOrder: b.sortOrder,
-                  content: b.content as Prisma.InputJsonValue,
-                  styles: b.styles as Prisma.InputJsonValue,
-                  tabletStyles: b.tabletStyles as Prisma.InputJsonValue,
-                  mobileStyles: b.mobileStyles as Prisma.InputJsonValue,
+                  content: b.content,
+                  styles: b.styles,
+                  tabletStyles: b.tabletStyles,
+                  mobileStyles: b.mobileStyles,
                   isVisible: b.isVisible,
                   isLocked: b.isLocked,
                 })),
@@ -100,16 +106,12 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
         },
       });
 
-      if (template.portfolio.theme) {
-        const {
-          id: _id,
-          portfolioId: _pid,
-          createdAt: _createdAt,
-          updatedAt: _updatedAt,
-          ...themeData
-        } = template.portfolio.theme;
+      if (snapshot.theme) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _id, portfolioId: _pid, createdAt: _ca, updatedAt: _ua, ...themeData } =
+          snapshot.theme as Record<string, unknown>;
         await tx.theme.create({
-          data: { ...themeData, portfolioId: portfolio.id },
+          data: { ...themeData, portfolioId: portfolio.id } as Prisma.ThemeUncheckedCreateInput,
         });
       }
 

@@ -10,6 +10,7 @@ import {
   requireAuth,
 } from "@/lib/api/response";
 import { db } from "@/lib/db";
+import { generateOgImageBuffer } from "@/lib/server/og-image";
 
 const createSchema = z.object({
   portfolioId: z.string().cuid(),
@@ -90,7 +91,24 @@ export async function POST(req: Request) {
 
     const portfolio = await db.portfolio.findFirst({
       where: { id: portfolioId, userId: user.id },
-      select: { status: true, ogImageUrl: true },
+      select: {
+        status: true,
+        ogImageUrl: true,
+        title: true,
+        description: true,
+        user: { select: { name: true, username: true, id: true, image: true } },
+        theme: true,
+        sections: {
+          where: { isVisible: true },
+          orderBy: { sortOrder: "asc" },
+          include: {
+            blocks: {
+              where: { isVisible: true },
+              orderBy: { sortOrder: "asc" },
+            },
+          },
+        },
+      },
     });
 
     if (!portfolio) {
@@ -100,6 +118,48 @@ export async function POST(req: Request) {
     if (portfolio.status !== "PUBLISHED") {
       return errorResponse("BAD_REQUEST", "Portfolio must be published before sharing as a template", 400);
     }
+
+    // Generate and upload OG image if missing or pointing at the internal route
+    let thumbnailUrl = portfolio.ogImageUrl ?? null;
+    const needsGeneration = !thumbnailUrl || thumbnailUrl.startsWith("/api/");
+    if (needsGeneration) {
+      try {
+        const buffer = await generateOgImageBuffer({
+          title: portfolio.title,
+          description: portfolio.description ?? null,
+          userName: portfolio.user.name ?? "Portfolio",
+          theme: portfolio.theme,
+        });
+
+        const base64 = Buffer.from(buffer).toString("base64");
+        const form = new FormData();
+        form.append("file", `data:image/png;base64,${base64}`);
+        form.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "");
+
+        const cloudRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: "POST", body: form },
+        );
+        const cloudData = await cloudRes.json() as { secure_url?: string };
+
+        if (cloudData.secure_url) {
+          thumbnailUrl = cloudData.secure_url;
+          await db.portfolio.update({
+            where: { id: portfolioId },
+            data: { ogImageUrl: thumbnailUrl },
+          });
+        }
+      } catch (err) {
+        console.error("[community-templates POST] OG image generation failed:", err);
+        thumbnailUrl = null;
+      }
+    }
+
+    const snapshotData = {
+      sections: portfolio.sections,
+      theme: portfolio.theme,
+      user: portfolio.user,
+    };
 
     const template = await db.communityTemplate.upsert({
       where: { portfolioId },
@@ -111,9 +171,10 @@ export async function POST(req: Request) {
         category,
         isDark,
         tags,
-        thumbnail: portfolio.ogImageUrl ?? null,
+        thumbnail: thumbnailUrl,
+        snapshotData,
       },
-      update: { name, description, category, isDark, tags, thumbnail: portfolio.ogImageUrl ?? null },
+      update: { name, description, category, isDark, tags, thumbnail: thumbnailUrl, snapshotData },
     });
 
     return successResponse(template);

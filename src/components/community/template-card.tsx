@@ -1,8 +1,9 @@
 "use client";
 
-import { Download, ExternalLink, Loader2, Moon, Sun, User, X } from "lucide-react";
+import { Download, ExternalLink, Loader2, Moon, Sun, User } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+
 
 import { type CommunityTemplate, getAuthorName } from "@/lib/api/community-templates";
 import { cn } from "@/lib/utils";
@@ -107,16 +108,14 @@ export interface TemplateCardProps {
 
 export function TemplateCard({ template, onUse, showPreview = true, loading = false }: TemplateCardProps) {
   const [imgError, setImgError] = useState(false);
-  const [showModal, setShowModal] = useState(false);
 
   const author = getAuthorName(template.user);
   const catConfig = CATEGORY_COLORS[template.category] ?? FALLBACK_COLORS;
   const catLabel = CATEGORY_LABELS[template.category] ?? template.category;
   const showImage = !!template.thumbnail && !imgError;
 
-  // Preview shows the thumbnail snapshot (captured at publish time), NOT the
-  // live portfolio URL — which would reflect ongoing auto-saves by the author.
-  const canPreview = showPreview && showImage;
+  const previewUrl = `/community/preview/${template.id}`;
+  const canPreview = showPreview;
 
   return (
     <article
@@ -251,9 +250,10 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
         </button>
 
         {canPreview && (
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
               "flex items-center justify-center gap-1.5 rounded-lg border border-border/80 px-3 py-2 text-[12px] font-medium",
               "text-muted-foreground transition-all duration-150",
@@ -264,44 +264,10 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
           >
             <ExternalLink className="h-3.5 w-3.5" />
             <span>Preview</span>
-          </button>
+          </a>
         )}
       </div>
 
-      {/* ── Thumbnail lightbox ──────────────────────────────────── */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl overflow-hidden rounded-xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm hover:bg-black/80"
-              aria-label="Close preview"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="relative aspect-[16/9] w-full">
-              <Image
-                src={template.thumbnail!}
-                alt={`${template.name} preview`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1280px) 100vw, 1280px"
-              />
-            </div>
-            <div className="bg-card px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">{template.name}</p>
-              <p className="text-xs text-muted-foreground">by {author} · Snapshot from publish time</p>
-            </div>
-          </div>
-        </div>
-      )}
     </article>
   );
 }
