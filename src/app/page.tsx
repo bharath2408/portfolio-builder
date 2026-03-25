@@ -24,6 +24,7 @@ import Link from "next/link";
 import { LandingHeader } from "@/components/common/landing-header";
 import { APP_NAME } from "@/config/constants";
 import { db } from "@/lib/db";
+
 import { CommunityShowcase } from "./_components/community-showcase";
 
 export default async function HomePage() {

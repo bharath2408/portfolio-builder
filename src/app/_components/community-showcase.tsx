@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { TemplateCard } from "@/components/community/template-card";
 import type { CommunityTemplate } from "@/lib/api/community-templates";

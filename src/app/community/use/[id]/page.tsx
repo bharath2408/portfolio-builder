@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
+import { redirect } from "next/navigation";
 
+import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 
 // ─── Slug helpers ─────────────────────────────────────────────────
 
@@ -127,7 +127,7 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
     // can handle the redirect response correctly.
     if (
       error instanceof Error &&
-      (error as any).digest?.startsWith("NEXT_REDIRECT")
+      (error as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")
     ) {
       throw error;
     }

@@ -1,10 +1,11 @@
 import { ArrowRight, Sparkles, Users } from "lucide-react";
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 
-import { db } from "@/lib/db";
 import { LandingHeader } from "@/components/common/landing-header";
 import { APP_NAME } from "@/config/constants";
+import { db } from "@/lib/db";
+
 import { CommunityPageClient } from "./_components/community-page-client";
 
 export const metadata: Metadata = {

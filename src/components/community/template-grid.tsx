@@ -1,16 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchCommunityTemplates,
   type CommunityTemplate,
   type CommunityTemplateCategory,
 } from "@/lib/api/community-templates";
+import { cn } from "@/lib/utils";
+
 import { TemplateCard } from "./template-card";
-import { Skeleton } from "@/components/ui/skeleton";
+
 
 // ─── Constants ───────────────────────────────────────────────────
 

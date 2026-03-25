@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+
 import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 import {
   requireAuth,
@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
   AuthRequiredError,
 } from "@/lib/api/response";
+import { db } from "@/lib/db";
 
 function toSlug(text: string): string {
   return text

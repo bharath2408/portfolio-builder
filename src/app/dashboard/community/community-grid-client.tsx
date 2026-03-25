@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
 import { TemplateGrid } from "@/components/community/template-grid";
-import { useCommunityTemplate, type CommunityTemplate } from "@/lib/api/community-templates";
 import { useToast } from "@/hooks/use-toast";
 import { ApiClientError } from "@/lib/api/client";
+import { cloneCommunityTemplate, type CommunityTemplate } from "@/lib/api/community-templates";
 
 interface Props {
   initialTemplates: CommunityTemplate[];
@@ -20,7 +20,7 @@ export function CommunityGridClient({ initialTemplates, initialNextCursor }: Pro
   const handleUse = useCallback(
     async (id: string) => {
       try {
-        const { portfolioId } = await useCommunityTemplate(id);
+        const { portfolioId } = await cloneCommunityTemplate(id);
         router.push(`/dashboard/portfolios/${portfolioId}/edit`);
       } catch (err) {
         if (err instanceof ApiClientError && err.status === 409) {

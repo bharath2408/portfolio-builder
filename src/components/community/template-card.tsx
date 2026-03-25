@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Download, ExternalLink, Loader2, Moon, Sun, User } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 
-import { cn } from "@/lib/utils";
 import { type CommunityTemplate, getAuthorName } from "@/lib/api/community-templates";
+import { cn } from "@/lib/utils";
 
 // ─── Category Config ─────────────────────────────────────────────
 

@@ -56,6 +56,6 @@ export async function shareCommunityTemplate(data: {
   return apiPost<CommunityTemplate>("/community-templates", data);
 }
 
-export async function useCommunityTemplate(id: string): Promise<{ portfolioId: string }> {
+export async function cloneCommunityTemplate(id: string): Promise<{ portfolioId: string }> {
   return apiPost<{ portfolioId: string }>(`/community-templates/${id}/use`);
 }

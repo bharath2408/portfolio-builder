@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useCallback } from "react";
 
 import { TemplateGrid } from "@/components/community/template-grid";
-import { useCommunityTemplate, type CommunityTemplate } from "@/lib/api/community-templates";
 import { useToast } from "@/hooks/use-toast";
 import { ApiClientError } from "@/lib/api/client";
+import { cloneCommunityTemplate, type CommunityTemplate } from "@/lib/api/community-templates";
 
 interface CommunityPageClientProps {
   initialTemplates: CommunityTemplate[];
@@ -32,7 +32,7 @@ export function CommunityPageClient({
       }
 
       try {
-        const result = await useCommunityTemplate(id);
+        const result = await cloneCommunityTemplate(id);
         router.push(`/dashboard/portfolios/${result.portfolioId}/edit`);
       } catch (err) {
         if (err instanceof ApiClientError && err.status === 409) {

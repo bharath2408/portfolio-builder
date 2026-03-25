@@ -1,9 +1,10 @@
-import { redirect } from "next/navigation";
 import { Users } from "lucide-react";
+import { redirect } from "next/navigation";
 
+import type { CommunityTemplate } from "@/lib/api/community-templates";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import type { CommunityTemplate } from "@/lib/api/community-templates";
+
 import { CommunityGridClient } from "./community-grid-client";
 
 // ─── Page ─────────────────────────────────────────────────────────
