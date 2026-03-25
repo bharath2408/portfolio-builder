@@ -90,6 +90,7 @@ import {
   getBlocksByCategory,
 } from "@/config/block-registry";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { shareCommunityTemplate, type CommunityTemplateCategory } from "@/lib/api/community-templates";
 import { saveBackup, markBackupSynced, getUnsyncedBackup, clearBackup } from "@/lib/idb-backup";
 import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
@@ -751,6 +752,16 @@ export function BuilderWorkspace({
   const [publishError, setPublishError] = useState<string | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [publishPassword, setPublishPassword] = useState(portfolio.accessPassword ?? "");
+  const [publishTab, setPublishTab] = useState<"publish" | "template">("publish");
+  const [templateName, setTemplateName] = useState(portfolio.title);
+  const [templateDesc, setTemplateDesc] = useState("");
+  const [templateCategory, setTemplateCategory] = useState<CommunityTemplateCategory>("DEVELOPER");
+  const [templateIsDark, setTemplateIsDark] = useState(true);
+  const [templateTags, setTemplateTags] = useState<string[]>([]);
+  const [templateTagInput, setTemplateTagInput] = useState("");
+  const [sharingTemplate, setSharingTemplate] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [guides, _setGuides] = useState<GuideInfo[]>([]);
 
   // ── Draw mode (Figma-style click-drag to create) ──────────────
@@ -1378,6 +1389,31 @@ export function BuilderWorkspace({
       setTimeout(() => setPublishError(null), 5000);
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleShareTemplate = async () => {
+    setSharingTemplate(true);
+    setShareError(null);
+    try {
+      await shareCommunityTemplate({
+        portfolioId: portfolio.id,
+        name: templateName,
+        description: templateDesc,
+        category: templateCategory,
+        isDark: templateIsDark,
+        tags: templateTags,
+      });
+      setShareSuccess(true);
+      setTimeout(() => {
+        setShareSuccess(false);
+        setShowPublishDialog(false);
+        setPublishTab("publish");
+      }, 3000);
+    } catch (e: unknown) {
+      setShareError(e instanceof Error ? e.message : "Failed to share template");
+    } finally {
+      setSharingTemplate(false);
     }
   };
 
@@ -3624,72 +3660,266 @@ ${sectionsHtml}
       {/* ── Publish Dialog ────────────────────────────────────────── */}
       {showPublishDialog && (
         <>
-          <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm" onClick={() => setShowPublishDialog(false)} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm"
+            onClick={() => { setShowPublishDialog(false); setPublishTab("publish"); }}
+            aria-hidden="true"
+          />
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="publish-dialog-title"
-            className="fixed left-1/2 top-1/2 z-[301] w-[420px] max-w-[95vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
+            className="fixed left-1/2 top-1/2 z-[301] w-[460px] max-w-[95vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
             style={{ backgroundColor: dropdownColors.bg, border: `1px solid ${dropdownColors.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
           >
             <div className="px-5 pt-5">
               <h2 id="publish-dialog-title" className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>
-                {portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish Portfolio"}
+                {publishTab === "publish"
+                  ? (portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish Portfolio")
+                  : "Share as Template"}
               </h2>
-              <p className="mt-1 text-[11px] leading-relaxed" style={{ color: dropdownColors.textMuted }}>
-                Your portfolio will be live and accessible via URL.
-              </p>
-            </div>
-
-            <div className="space-y-4 px-5 pt-4">
-              {/* Password protection (optional) */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
-                  <Lock className="h-3 w-3" />
-                  Password Protection
-                  <span className="rounded px-1 py-0.5 text-[8px] font-semibold normal-case tracking-normal" style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.textMuted }}>Optional</span>
-                </label>
-                <input
-                  type="text"
-                  value={publishPassword}
-                  onChange={(e) => setPublishPassword(e.target.value)}
-                  placeholder="Leave empty for public access"
-                  className="h-8 w-full rounded-lg border px-3 text-[12px] outline-none transition-colors"
-                  style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
-                />
-                <p className="mt-1 text-[9px]" style={{ color: dropdownColors.textMuted }}>
-                  {publishPassword ? "Visitors must enter this password to view." : "Anyone with the URL can view."}
-                </p>
-              </div>
-
-              {/* Portfolio URL preview */}
-              <div className="rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: dropdownColors.textMuted }}>Portfolio URL</p>
-                <p className="mt-1 truncate font-mono text-[11px]" style={{ color: dropdownColors.text }}>
-                  /portfolio/{portfolio.user?.username}/{portfolio.slug}
-                </p>
+              {/* Tab pill toggle */}
+              <div className="mt-3 flex gap-1 rounded-lg p-1" style={{ backgroundColor: dropdownColors.hover }}>
+                <button
+                  onClick={() => setPublishTab("publish")}
+                  className="flex-1 rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all"
+                  style={{
+                    backgroundColor: publishTab === "publish" ? dropdownColors.bg : "transparent",
+                    color: publishTab === "publish" ? dropdownColors.text : dropdownColors.textMuted,
+                    boxShadow: publishTab === "publish" ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
+                  }}
+                >
+                  Publish
+                </button>
+                <button
+                  onClick={() => setPublishTab("template")}
+                  className="flex-1 rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all"
+                  style={{
+                    backgroundColor: publishTab === "template" ? dropdownColors.bg : "transparent",
+                    color: publishTab === "template" ? dropdownColors.text : dropdownColors.textMuted,
+                    boxShadow: publishTab === "template" ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
+                  }}
+                >
+                  Share as Template
+                </button>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 px-5 pb-5 pt-4">
-              <button
-                onClick={() => setShowPublishDialog(false)}
-                className="rounded-lg px-3.5 py-2 text-[12px] font-medium transition-colors"
-                style={{ color: dropdownColors.textMuted }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePublish}
-                disabled={publishing}
-                className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, var(--b-accent, #14b8a6), #0891b2)" }}
-              >
-                {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
-                {publishing ? "Publishing..." : portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish"}
-              </button>
-            </div>
+            {/* ── Publish tab ── */}
+            {publishTab === "publish" && (
+              <>
+                <div className="space-y-4 px-5 pt-4">
+                  {/* Password protection (optional) */}
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                      <Lock className="h-3 w-3" />
+                      Password Protection
+                      <span className="rounded px-1 py-0.5 text-[8px] font-semibold normal-case tracking-normal" style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.textMuted }}>Optional</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={publishPassword}
+                      onChange={(e) => setPublishPassword(e.target.value)}
+                      placeholder="Leave empty for public access"
+                      className="h-8 w-full rounded-lg border px-3 text-[12px] outline-none transition-colors"
+                      style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                    />
+                    <p className="mt-1 text-[9px]" style={{ color: dropdownColors.textMuted }}>
+                      {publishPassword ? "Visitors must enter this password to view." : "Anyone with the URL can view."}
+                    </p>
+                  </div>
+
+                  {/* Portfolio URL preview */}
+                  <div className="rounded-lg p-3" style={{ backgroundColor: dropdownColors.hover }}>
+                    <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: dropdownColors.textMuted }}>Portfolio URL</p>
+                    <p className="mt-1 truncate font-mono text-[11px]" style={{ color: dropdownColors.text }}>
+                      /portfolio/{portfolio.user?.username}/{portfolio.slug}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 px-5 pb-5 pt-4">
+                  <button
+                    onClick={() => { setShowPublishDialog(false); setPublishTab("publish"); }}
+                    className="rounded-lg px-3.5 py-2 text-[12px] font-medium transition-colors"
+                    style={{ color: dropdownColors.textMuted }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg, var(--b-accent, #14b8a6), #0891b2)" }}
+                  >
+                    {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                    {publishing ? "Publishing..." : portfolio.status === "PUBLISHED" ? "Update & Publish" : "Publish"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── Share as Template tab ── */}
+            {publishTab === "template" && (
+              <>
+                {portfolio.status !== "PUBLISHED" ? (
+                  <div className="px-5 py-6">
+                    <p className="text-[12px] leading-relaxed" style={{ color: dropdownColors.textMuted }}>
+                      Publish your portfolio first before sharing it as a template.
+                    </p>
+                  </div>
+                ) : shareSuccess ? (
+                  <div className="px-5 py-6">
+                    <p className="text-[13px] font-semibold" style={{ color: "#10b981" }}>
+                      ✓ Template shared to community!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 px-5 pt-4">
+                    {/* Template Name */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                        Template Name
+                      </label>
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        maxLength={80}
+                        placeholder="My Awesome Portfolio"
+                        className="h-8 w-full rounded-lg border px-3 text-[12px] outline-none transition-colors"
+                        style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                        Description
+                      </label>
+                      <textarea
+                        value={templateDesc}
+                        onChange={(e) => setTemplateDesc(e.target.value)}
+                        maxLength={300}
+                        rows={3}
+                        placeholder="Describe your template..."
+                        className="w-full resize-none rounded-lg border px-3 py-2 text-[12px] outline-none transition-colors"
+                        style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                      />
+                    </div>
+
+                    {/* Category + Color Theme row */}
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                          Category
+                        </label>
+                        <select
+                          value={templateCategory}
+                          onChange={(e) => setTemplateCategory(e.target.value as CommunityTemplateCategory)}
+                          className="h-8 w-full rounded-lg border px-2 text-[12px] outline-none transition-colors"
+                          style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                        >
+                          <option value="DEVELOPER">Developer</option>
+                          <option value="DESIGNER">Designer</option>
+                          <option value="WRITER">Writer</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                          Color Theme
+                        </label>
+                        <select
+                          value={templateIsDark ? "dark" : "light"}
+                          onChange={(e) => setTemplateIsDark(e.target.value === "dark")}
+                          className="h-8 w-full rounded-lg border px-2 text-[12px] outline-none transition-colors"
+                          style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                        >
+                          <option value="dark">Dark</option>
+                          <option value="light">Light</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: dropdownColors.textMuted }}>
+                        Tags <span className="normal-case font-normal tracking-normal">({templateTags.length}/5)</span>
+                      </label>
+                      {templateTags.length < 5 && (
+                        <input
+                          type="text"
+                          value={templateTagInput}
+                          onChange={(e) => setTemplateTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const tag = templateTagInput.trim();
+                              if (tag && !templateTags.includes(tag) && templateTags.length < 5) {
+                                setTemplateTags([...templateTags, tag]);
+                                setTemplateTagInput("");
+                              }
+                            }
+                          }}
+                          placeholder="Press Enter to add tag"
+                          className="h-8 w-full rounded-lg border px-3 text-[12px] outline-none transition-colors"
+                          style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                        />
+                      )}
+                      {templateTags.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {templateTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              style={{ backgroundColor: dropdownColors.hover, color: dropdownColors.text, border: `1px solid ${dropdownColors.separator}` }}
+                            >
+                              {tag}
+                              <button
+                                onClick={() => setTemplateTags(templateTags.filter((t) => t !== tag))}
+                                className="opacity-60 hover:opacity-100"
+                                style={{ color: dropdownColors.textMuted }}
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Share error */}
+                    {shareError && (
+                      <p className="text-[11px]" style={{ color: "#f43f5e" }}>{shareError}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                {portfolio.status === "PUBLISHED" && !shareSuccess && (
+                  <div className="flex items-center justify-end gap-2 px-5 pb-5 pt-3">
+                    <button
+                      onClick={() => { setShowPublishDialog(false); setPublishTab("publish"); }}
+                      className="rounded-lg px-3.5 py-2 text-[12px] font-medium transition-colors"
+                      style={{ color: dropdownColors.textMuted }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleShareTemplate}
+                      disabled={sharingTemplate || !templateName.trim() || !templateDesc.trim()}
+                      className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #8b5cf6, #6366f1)" }}
+                    >
+                      {sharingTemplate ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      {sharingTemplate ? "Sharing..." : "Share Template"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </>
       )}
