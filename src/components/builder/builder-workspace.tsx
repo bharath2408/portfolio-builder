@@ -90,6 +90,7 @@ import {
   getBlocksByCategory,
 } from "@/config/block-registry";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
+import { saveBackup, markBackupSynced, getUnsyncedBackup, clearBackup } from "@/lib/idb-backup";
 import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
@@ -743,6 +744,8 @@ export function BuilderWorkspace({
     "properties",
   );
   const [saving, setSaving] = useState(false);
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+  const recoveryDataRef = useRef<PortfolioWithRelations | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -1259,6 +1262,7 @@ export function BuilderWorkspace({
         })),
       });
       builderStore.markSaved();
+      markBackupSynced(portfolio.id);
     } catch {
       /* handle */
     }
@@ -1267,11 +1271,14 @@ export function BuilderWorkspace({
   }, [portfolio.sections, portfolio.id, builderStore]);
 
   const scheduleAutoSave = useCallback(() => {
+    // Immediately backup to IndexedDB (survives tab close / crash)
+    saveBackup(portfolio);
+
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       batchSave();
     }, 2000);
-  }, [batchSave]);
+  }, [batchSave, portfolio]);
 
   // Cleanup auto-save timer on unmount
   useEffect(() => {
@@ -1279,6 +1286,31 @@ export function BuilderWorkspace({
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, []);
+
+  // ── Save to IndexedDB on tab close (last chance before crash) ──
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (builderStore.isDirty) {
+        saveBackup(portfolio);
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [portfolio, builderStore.isDirty]);
+
+  // ── Crash Recovery: check for unsynced IndexedDB backup on mount ──
+  useEffect(() => {
+    (async () => {
+      const backup = await getUnsyncedBackup(portfolio.id);
+      if (backup && backup.savedAt > (portfolio.updatedAt ? new Date(portfolio.updatedAt).getTime() : 0)) {
+        recoveryDataRef.current = backup.data;
+        setShowRecoveryBanner(true);
+      } else {
+        // No recovery needed — clear stale backup
+        clearBackup(portfolio.id);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DnD reorder (layers panel) ─────────────────────────────────
   const dndSensors = useSensors(
@@ -1787,6 +1819,47 @@ ${sectionsHtml}
       style={{ backgroundColor: "var(--b-bg)" }}
       data-builder-theme={studioTheme}
     >
+      {/* ── Crash Recovery Banner ──────────────────────────────────── */}
+      {showRecoveryBanner && (
+        <div
+          className="relative z-30 flex items-center justify-between px-4 py-2.5 text-[12px]"
+          style={{ backgroundColor: "#f59e0b20", borderBottom: "1px solid #f59e0b40", color: "#fbbf24" }}
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-medium">Unsaved changes recovered from your last session.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (recoveryDataRef.current) {
+                  builderStore.pushSnapshot("crash-recovery");
+                  portfolioStore.replacePortfolio(recoveryDataRef.current);
+                  builderStore.setDirty(true);
+                  scheduleAutoSave();
+                }
+                setShowRecoveryBanner(false);
+                recoveryDataRef.current = null;
+              }}
+              className="rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
+              style={{ backgroundColor: "#f59e0b", color: "#000" }}
+            >
+              Restore
+            </button>
+            <button
+              onClick={() => {
+                clearBackup(portfolio.id);
+                setShowRecoveryBanner(false);
+                recoveryDataRef.current = null;
+              }}
+              className="rounded-md px-3 py-1 text-[11px] font-medium transition-colors hover:bg-white/10"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── TOP TOOLBAR ──────────────────────────────────────────── */}
       <div
         data-tour="top-bar"

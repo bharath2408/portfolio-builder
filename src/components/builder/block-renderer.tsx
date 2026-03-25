@@ -4,6 +4,7 @@ import {
   ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
   Mail, MapPin, Phone, Quote as QuoteIcon,
 } from "lucide-react";
+import { CounterStat } from "@/components/portfolio/counter-stat";
 import type { BlockWithStyles, ThemeTokens } from "@/types";
 
 interface BlockRendererProps {
@@ -403,15 +404,22 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     }
 
     // ── STAT ──
-    case "stat":
+    case "stat": {
+      const statValue = String(c.value ?? "0");
+      const statPrefix = (c.prefix as string) ?? "";
+      const statSuffix = (c.suffix as string) ?? "";
+      const statStyle = { fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor } as React.CSSProperties;
       return (
         <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
-          <div style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor }}>
-            {(c.prefix as string) ?? ""}{c.value as string}{(c.suffix as string) ?? ""}
-          </div>
+          {_isEditing ? (
+            <div style={statStyle}>{statPrefix}{statValue}{statSuffix}</div>
+          ) : (
+            <CounterStat value={statValue} prefix={statPrefix} suffix={statSuffix} style={statStyle} />
+          )}
           <div style={{ fontSize: "clamp(12px, 1.5vw, 14px)", opacity: 0.6, marginTop: 4 }}>{c.label as string}</div>
         </div>
       );
+    }
 
     // ── PROJECT CARD ──
     case "project_card": {
