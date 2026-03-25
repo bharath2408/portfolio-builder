@@ -3852,12 +3852,12 @@ ${sectionsHtml}
                         <input
                           type="text"
                           value={templateTagInput}
-                          onChange={(e) => setTemplateTagInput(e.target.value)}
+                          onChange={(e) => setTemplateTagInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
                               const tag = templateTagInput.trim();
-                              if (tag && !templateTags.includes(tag) && templateTags.length < 5) {
+                              if (tag && /^[a-z0-9-]+$/.test(tag) && !templateTags.includes(tag) && templateTags.length < 5) {
                                 setTemplateTags([...templateTags, tag]);
                                 setTemplateTagInput("");
                               }
