@@ -12,6 +12,7 @@ interface BlockRendererProps {
   theme: ThemeTokens;
   isEditing?: boolean;
   portfolioId?: string;
+  counterAnimation?: boolean;
 }
 
 // Resolve "primary", "secondary", "accent", "text", "muted", "surface" → real colors
@@ -128,7 +129,7 @@ const socialIconMap: Record<string, React.ComponentType<{className?: string}>> =
   Github, Linkedin, Twitter, Globe, Mail,
 };
 
-export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId }: BlockRendererProps) {
+export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId, counterAnimation }: BlockRendererProps) {
   const c = block.content as Record<string, unknown>;
   const inlineStyles = buildInlineStyles(block.styles, theme);
 
@@ -411,7 +412,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const statStyle = { fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, fontFamily: resolveFontFamily("heading", theme), color: theme.primaryColor } as React.CSSProperties;
       return (
         <div style={{ ...inlineStyles, width: "100%", height: "100%" }}>
-          {_isEditing ? (
+          {_isEditing || !counterAnimation ? (
             <div style={statStyle}>{statPrefix}{statValue}{statSuffix}</div>
           ) : (
             <CounterStat value={statValue} prefix={statPrefix} suffix={statSuffix} style={statStyle} />

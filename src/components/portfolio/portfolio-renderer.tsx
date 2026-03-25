@@ -203,6 +203,9 @@ function PortfolioSection({
 
   if (visibleBlocks.length === 0) return null;
 
+  // Counter animation for stat blocks
+  const counterEnabled = ss.counterAnimation ?? false;
+
   // Stagger: compute per-block stagger index based on section settings
   const staggerEnabled = ss.staggerChildren ?? false;
   const staggerAnimation = staggerEnabled ? (ss.staggerAnimation ?? "fade-up") : undefined;
@@ -299,7 +302,7 @@ function PortfolioSection({
                       : undefined,
                   }}
                 >
-                  <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
+                  <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
                 </MotionBlockWrapper>
               );
             })}
@@ -346,7 +349,7 @@ function PortfolioSection({
                 staggerDelay={staggerDelay}
                 style={{ maxWidth: "100%" }}
               >
-                <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} />
+                <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
               </MotionBlockWrapper>
             );
           })}

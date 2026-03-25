@@ -231,6 +231,7 @@ export interface SectionStyles {
   borderBottom?: boolean;
   borderColor?: string;
   overflow?: "visible"|"hidden";
+  counterAnimation?: boolean;
   staggerChildren?: boolean;
   staggerAnimation?: "fade-up"|"fade-in"|"slide-left"|"slide-right"|"scale"|"blur-in"|"bounce-in"|"flip-x"|"flip-y"|"rotate-in"|"zoom-in";
   staggerDelay?: number; // ms between each child animation (default 100)

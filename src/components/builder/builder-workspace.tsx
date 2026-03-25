@@ -3393,6 +3393,31 @@ ${sectionsHtml}
                       </div>
                     </div>
 
+                    {/* Counter Animation */}
+                    <div style={{ borderTop: "1px solid var(--b-border)", padding: "12px" }}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>Counter Animation</span>
+                          <p className="mt-0.5 text-[9px]" style={{ color: "var(--b-text-4)" }}>Stat blocks count up from 0 on scroll</p>
+                        </div>
+                        <label className="relative inline-flex cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            checked={ss.counterAnimation ?? false}
+                            onChange={(e) => {
+                              if (!selectedSectionId) return;
+                              builderStore.pushSnapshot("counter-toggle");
+                              portfolioStore.updateSection(selectedSectionId, { styles: { ...ss, counterAnimation: e.target.checked } });
+                              builderStore.setDirty(true);
+                              scheduleAutoSave();
+                            }}
+                            className="peer sr-only"
+                          />
+                          <div className="peer h-4 w-7 rounded-full bg-gray-600 after:absolute after:left-[2px] after:top-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all peer-checked:bg-teal-500 peer-checked:after:translate-x-full" />
+                        </label>
+                      </div>
+                    </div>
+
                     {/* Stagger Animation */}
                     <div style={{ borderTop: "1px solid var(--b-border)", padding: "12px" }}>
                       <div className="mb-2 flex items-center justify-between">
