@@ -9,6 +9,7 @@ import { APP_NAME } from "@/config/constants";
 const NAV_ITEMS = [
   { label: "Features", href: "#features" },
   { label: "How it Works", href: "#how-it-works" },
+  { label: "Community", href: "/community" },
   { label: "Docs", href: "/docs" },
 ];
 
