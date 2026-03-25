@@ -1056,11 +1056,15 @@ export function BuilderWorkspace({
         if (!section.isVisible) continue;
         // Restrict marquee to a single section — moveBlock assumes selectedSectionId
         if (hitSectionId && section.id !== hitSectionId) continue;
+        // Frame offset — block x/y are relative to the frame, marquee coords are absolute canvas
+        const ss = section.styles as SectionStyles;
+        const fx = ss.frameX ?? 0;
+        const fy = ss.frameY ?? portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80);
         for (const block of section.blocks) {
           if (!block.isVisible) continue;
           const bs = block.styles as BlockStyles;
-          const bx = bs.x ?? 0;
-          const by = bs.y ?? 0;
+          const bx = (bs.x ?? 0) + fx;
+          const by = (bs.y ?? 0) + fy;
           const bw = bs.w ?? 200;
           const bh = bs.h ?? 50;
           if (bx < canvasX2 && bx + bw > canvasX1 && by < canvasY2 && by + bh > canvasY1) {
