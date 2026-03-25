@@ -1401,6 +1401,11 @@ export function BuilderWorkspace({
     }, 2000);
   }, [batchSave, portfolio]);
 
+  const handleBlockDragOrResizeEnd = useCallback(() => {
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  }, [builderStore, scheduleAutoSave]);
+
   // Cleanup auto-save timer on unmount
   useEffect(() => {
     return () => {
@@ -2966,6 +2971,7 @@ ${sectionsHtml}
                             onMove={moveBlock}
                             onResize={resizeBlock}
                             onDragStart={handleBlockDragStart}
+                            onDragEnd={handleBlockDragOrResizeEnd}
                             sortOrder={block.sortOrder}
                             onContextMenu={handleBlockContextMenu}
                           >
