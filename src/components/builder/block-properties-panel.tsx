@@ -749,6 +749,36 @@ export function BlockPropertiesPanel({
               </div>
             )}
 
+            {/* Text Animation (heading + text blocks only) */}
+            {(block.type === "heading" || block.type === "text") && (
+              <>
+                <div>
+                  <SubLabel hint="Animate individual characters, words, or lines on scroll">Text Animation</SubLabel>
+                  <SelectInput
+                    value={styles.textAnimation}
+                    onChange={(v) => updateStyle("textAnimation", v)}
+                    options={[
+                      { label: "None", value: "none" },
+                      { label: "Char Fade", value: "char-fade" },
+                      { label: "Char Wave", value: "char-wave" },
+                      { label: "Char Blur", value: "char-blur" },
+                      { label: "Word Slide", value: "word-slide" },
+                      { label: "Word Fade", value: "word-fade" },
+                      { label: "Word Scale", value: "word-scale" },
+                      { label: "Line Slide", value: "line-slide" },
+                      { label: "Line Fade", value: "line-fade" },
+                    ]}
+                  />
+                </div>
+                {styles.textAnimation && styles.textAnimation !== "none" && (
+                  <div>
+                    <SubLabel hint="Milliseconds between each character/word/line">Text Stagger</SubLabel>
+                    <NumInput value={styles.textAnimationStagger} onChange={(v) => updateStyle("textAnimationStagger", v)} placeholder="30" />
+                  </div>
+                )}
+              </>
+            )}
+
             {/* Hover Effect */}
             <div>
               <SubLabel hint="Interactive effect when visitors hover over this block">Hover Effect</SubLabel>

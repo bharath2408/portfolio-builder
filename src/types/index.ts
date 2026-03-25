@@ -187,6 +187,8 @@ export interface BlockStyles {
   opacity?: number;
   overflow?: "visible"|"hidden"|"auto";
   animation?: "none"|"fade-up"|"fade-in"|"slide-left"|"slide-right"|"scale"|"blur-in"|"bounce-in"|"flip-x"|"flip-y"|"rotate-in"|"zoom-in"|"typewriter";
+  textAnimation?: "none"|"char-fade"|"char-wave"|"char-blur"|"word-slide"|"word-fade"|"word-scale"|"line-slide"|"line-fade";
+  textAnimationStagger?: number; // ms between each unit (default 30)
   animationDelay?: number;
   animationDuration?: number;
   animationEasing?: "ease"|"ease-in"|"ease-out"|"ease-in-out"|"spring"|"bounce";

@@ -5,6 +5,7 @@ import {
   Mail, MapPin, Phone, Quote as QuoteIcon,
 } from "lucide-react";
 import { CounterStat } from "@/components/portfolio/counter-stat";
+import { SplitText } from "@/components/portfolio/split-text";
 import type { BlockWithStyles, ThemeTokens } from "@/types";
 
 interface BlockRendererProps {
@@ -150,8 +151,26 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
         6: "clamp(14px, 1.5vw, 16px)",
       };
       const fontSize = inlineStyles.fontSize ?? fluidSizes[level];
+      const textAnim = block.styles.textAnimation;
+      const hasTextAnim = !_isEditing && textAnim && textAnim !== "none";
+      const headingStyle = { ...inlineStyles, width: "100%", height: "100%", fontSize, fontFamily: resolveFontFamily("heading", theme), lineHeight: 1.2, wordBreak: "break-word" as const };
+
+      if (hasTextAnim) {
+        return (
+          <Tag style={headingStyle}>
+            <SplitText
+              text={c.text as string}
+              animation={textAnim}
+              stagger={block.styles.textAnimationStagger ?? 30}
+              highlight={c.highlight as string}
+              highlightColor={theme.primaryColor}
+            />
+          </Tag>
+        );
+      }
+
       return (
-        <Tag style={{ ...inlineStyles, width: "100%", height: "100%", fontSize, fontFamily: resolveFontFamily("heading", theme), lineHeight: 1.2, wordBreak: "break-word" }}>
+        <Tag style={headingStyle}>
           {(c.highlight as string) ? (
             <>{(c.text as string).replace(c.highlight as string, "")}<span style={{ color: theme.primaryColor }}>{c.highlight as string}</span></>
           ) : (c.text as string)}
@@ -160,12 +179,26 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     }
 
     // ── TEXT ──
-    case "text":
+    case "text": {
+      const txtAnim = block.styles.textAnimation;
+      const hasTxtAnim = !_isEditing && txtAnim && txtAnim !== "none" && !c.html;
+      if (hasTxtAnim) {
+        return (
+          <div style={{ ...inlineStyles, width: "100%", height: "100%", fontFamily: resolveFontFamily("body", theme), wordBreak: "break-word", overflowWrap: "anywhere" }}>
+            <SplitText
+              text={c.text as string}
+              animation={txtAnim}
+              stagger={block.styles.textAnimationStagger ?? 30}
+            />
+          </div>
+        );
+      }
       return c.html ? (
         <div style={{ ...inlineStyles, width: "100%", height: "100%", wordBreak: "break-word", overflowWrap: "anywhere" }} dangerouslySetInnerHTML={{ __html: c.html as string }} />
       ) : (
         <p style={{ ...inlineStyles, width: "100%", height: "100%", fontFamily: resolveFontFamily("body", theme), wordBreak: "break-word", overflowWrap: "anywhere" }}>{c.text as string}</p>
       );
+    }
 
     // ── QUOTE ──
     case "quote":
