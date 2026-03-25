@@ -730,7 +730,8 @@ export function BuilderWorkspace({
     y: 100,
     scale: 0.6,
   });
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
+  const dragStartPositions = useRef<Map<string, { x: number; y: number }>>(new Map());
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     portfolio.sections[0]?.id ?? null,
   );
@@ -795,13 +796,14 @@ export function BuilderWorkspace({
   );
 
   const selectedBlock = useMemo(() => {
-    if (!selectedBlockId) return null;
+    if (selectedBlockIds.size !== 1) return null;
+    const id = [...selectedBlockIds][0];
     for (const s of portfolio.sections) {
-      const b = s.blocks.find((bl) => bl.id === selectedBlockId);
+      const b = s.blocks.find((bl) => bl.id === id);
       if (b) return b;
     }
     return null;
-  }, [selectedBlockId, portfolio.sections]);
+  }, [selectedBlockIds, portfolio.sections]);
 
   const hasNoSections = portfolio.sections.length === 0;
 
@@ -823,7 +825,7 @@ export function BuilderWorkspace({
       );
       builderStore.pushSnapshot("draw-block");
       portfolioStore.addBlockToSection(sectionId, res);
-      setSelectedBlockId(res.id);
+      setSelectedBlockIds(new Set([res.id]));
       setSelectedSectionId(sectionId);
       setRightPanel("properties");
     } catch { /* handle */ }
@@ -889,13 +891,24 @@ export function BuilderWorkspace({
   // ── Selection ─────────────────────────────────────────────────
 
   const handleCanvasClick = useCallback(() => {
-    setSelectedBlockId(null);
+    setSelectedBlockIds(new Set());
     setSelectedSectionId(null);
   }, []);
 
   const selectBlock = useCallback(
-    (blockId: string, _additive: boolean) => {
-      setSelectedBlockId(blockId);
+    (blockId: string, additive: boolean) => {
+      setSelectedBlockIds((prev) => {
+        if (additive) {
+          const next = new Set(prev);
+          if (next.has(blockId)) {
+            next.delete(blockId);
+          } else {
+            next.add(blockId);
+          }
+          return next;
+        }
+        return new Set([blockId]);
+      });
       for (const s of portfolio.sections) {
         if (s.blocks.some((b) => b.id === blockId)) {
           setSelectedSectionId(s.id);
@@ -909,7 +922,7 @@ export function BuilderWorkspace({
 
   const selectSection = useCallback((sectionId: string) => {
     setSelectedSectionId(sectionId);
-    setSelectedBlockId(null);
+    setSelectedBlockIds(new Set());
   }, []);
 
   // ── Block CRUD ────────────────────────────────────────────────
@@ -947,7 +960,7 @@ export function BuilderWorkspace({
 
     builderStore.pushSnapshot("add-block");
     portfolioStore.addBlockToSection(sectionId, newBlock);
-    setSelectedBlockId(newBlock.id);
+    setSelectedBlockIds(new Set([newBlock.id]));
     setSelectedSectionId(sectionId);
     setRightPanel("properties");
     builderStore.setDirty(true);
@@ -957,28 +970,110 @@ export function BuilderWorkspace({
   const moveBlock = useCallback(
     (blockId: string, newX: number, newY: number) => {
       if (!selectedSectionId) return;
-      const block = portfolio.sections
-        .find((s) => s.id === selectedSectionId)
-        ?.blocks.find((b) => b.id === blockId);
+      const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+      if (!section) return;
+      const block = section.blocks.find((b) => b.id === blockId);
       if (!block) return;
       const gs = builderStore.gridSize;
       const snap = builderStore.snapToGrid;
-      const sx = snap ? Math.round(newX / gs) * gs : newX;
-      const sy = snap ? Math.round(newY / gs) * gs : newY;
       const device = builderStore.devicePreview;
-      if (device === "desktop") {
-        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-          styles: { ...(block.styles as BlockStyles), x: sx, y: sy },
-        });
-      } else {
-        const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
-        const existing = (block[field] ?? {}) as Partial<BlockStyles>;
-        portfolioStore.updateBlockInSection(selectedSectionId, blockId, {
-          [field]: { ...existing, x: sx, y: sy },
-        });
+
+      const startPos = dragStartPositions.current.get(blockId);
+      const dx = startPos ? newX - startPos.x : 0;
+      const dy = startPos ? newY - startPos.y : 0;
+
+      const toMove: Array<{ b: typeof block; tx: number; ty: number }> = [];
+      if (selectedBlockIds.has(blockId) && startPos) {
+        for (const b of section.blocks) {
+          if (!selectedBlockIds.has(b.id)) continue;
+          const bStart = dragStartPositions.current.get(b.id);
+          if (!bStart) continue;
+          toMove.push({ b, tx: bStart.x + dx, ty: bStart.y + dy });
+        }
+      }
+      if (toMove.length === 0) {
+        toMove.push({ b: block, tx: newX, ty: newY });
+      }
+
+      for (const { b, tx, ty } of toMove) {
+        const sx = snap ? Math.round(tx / gs) * gs : tx;
+        const sy = snap ? Math.round(ty / gs) * gs : ty;
+        if (device === "desktop") {
+          portfolioStore.updateBlockInSection(selectedSectionId, b.id, {
+            styles: { ...(b.styles as BlockStyles), x: sx, y: sy },
+          });
+        } else {
+          const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
+          const existing = (b[field] ?? {}) as Partial<BlockStyles>;
+          portfolioStore.updateBlockInSection(selectedSectionId, b.id, {
+            [field]: { ...existing, x: sx, y: sy },
+          });
+        }
       }
     },
-    [selectedSectionId, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview],
+    [selectedSectionId, selectedBlockIds, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview],
+  );
+
+  const handleBlockDragStart = useCallback(
+    (blockId: string) => {
+      if (!selectedSectionId) return;
+      const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+      if (!section) return;
+      const device = builderStore.devicePreview;
+      const snapshot = new Map<string, { x: number; y: number }>();
+      for (const b of section.blocks) {
+        if (!selectedBlockIds.has(b.id)) continue;
+        const ms = mergeDeviceStyles(
+          b.styles,
+          b.tabletStyles as Partial<BlockStyles>,
+          b.mobileStyles as Partial<BlockStyles>,
+          device,
+        );
+        snapshot.set(b.id, { x: ms.x ?? 0, y: ms.y ?? 0 });
+      }
+      if (!snapshot.has(blockId)) {
+        const b = section.blocks.find((bl) => bl.id === blockId);
+        if (b) {
+          const ms = mergeDeviceStyles(
+            b.styles,
+            b.tabletStyles as Partial<BlockStyles>,
+            b.mobileStyles as Partial<BlockStyles>,
+            device,
+          );
+          snapshot.set(blockId, { x: ms.x ?? 0, y: ms.y ?? 0 });
+        }
+      }
+      dragStartPositions.current = snapshot;
+    },
+    [selectedSectionId, selectedBlockIds, portfolio.sections, builderStore.devicePreview],
+  );
+
+  const handleMarqueeEnd = useCallback(
+    (canvasX1: number, canvasY1: number, canvasX2: number, canvasY2: number) => {
+      const intersecting = new Set<string>();
+      let hitSectionId: string | null = null;
+      for (const section of portfolio.sections) {
+        if (!section.isVisible) continue;
+        for (const block of section.blocks) {
+          if (!block.isVisible) continue;
+          const bs = block.styles as BlockStyles;
+          const bx = bs.x ?? 0;
+          const by = bs.y ?? 0;
+          const bw = bs.w ?? 200;
+          const bh = bs.h ?? 50;
+          if (bx < canvasX2 && bx + bw > canvasX1 && by < canvasY2 && by + bh > canvasY1) {
+            intersecting.add(block.id);
+            hitSectionId = section.id;
+          }
+        }
+      }
+      if (intersecting.size > 0) {
+        setSelectedBlockIds(intersecting);
+        if (hitSectionId) setSelectedSectionId(hitSectionId);
+        setRightPanel("properties");
+      }
+    },
+    [portfolio.sections],
   );
 
   const resizeBlock = useCallback(
@@ -1048,7 +1143,13 @@ export function BuilderWorkspace({
     builderStore.pushSnapshot("delete-block");
     // Remove from store instantly (local-first)
     portfolioStore.removeBlockFromSection(sectionId, blockId);
-    if (selectedBlockId === blockId) setSelectedBlockId(null);
+    if (selectedBlockIds.has(blockId)) {
+      setSelectedBlockIds((prev) => {
+        const next = new Set(prev);
+        next.delete(blockId);
+        return next;
+      });
+    }
     // Delete from DB in background
     apiDelete(`/portfolios/${portfolio.id}/sections/${sectionId}/blocks/${blockId}`).catch(() => {});
     builderStore.setDirty(true);
@@ -1078,7 +1179,7 @@ export function BuilderWorkspace({
         },
       );
       portfolioStore.addBlockToSection(sectionId, res);
-      setSelectedBlockId(res.id);
+      setSelectedBlockIds(new Set([res.id]));
     } catch {
       /* handle */
     }
@@ -1151,7 +1252,7 @@ export function BuilderWorkspace({
       portfolioStore.addSection(res);
       setExpandedSections((p) => new Set([...p, res.id]));
       setSelectedSectionId(res.id);
-      setSelectedBlockId(null);
+      setSelectedBlockIds(new Set());
 
       // Add template blocks
       const templateBlocks = template.blocks(theme);
@@ -1234,7 +1335,7 @@ export function BuilderWorkspace({
       portfolioStore.removeSection(id);
       if (selectedSectionId === id) {
         setSelectedSectionId(null);
-        setSelectedBlockId(null);
+        setSelectedBlockIds(new Set());
       }
     } catch {
       /* handle */
@@ -1678,15 +1779,17 @@ ${sectionsHtml}
         return;
       }
 
+      const singleId = selectedBlockIds.size === 1 ? [...selectedBlockIds][0]! : null;
+
       // Arrow keys → Move selected block
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && selectedBlockId && selectedSectionId) {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && singleId && selectedSectionId) {
         const tag = (e.target as HTMLElement)?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;
         const block = portfolio.sections
           .find((s) => s.id === selectedSectionId)
-          ?.blocks.find((b) => b.id === selectedBlockId);
+          ?.blocks.find((b) => b.id === singleId);
         if (!block) return;
         const device = builderStore.devicePreview;
         const ms = mergeDeviceStyles(block.styles, block.tabletStyles as Partial<BlockStyles>, block.mobileStyles as Partial<BlockStyles>, device);
@@ -1697,13 +1800,13 @@ ${sectionsHtml}
         if (e.key === "ArrowLeft") nx -= step;
         if (e.key === "ArrowRight") nx += step;
         if (device === "desktop") {
-          portfolioStore.updateBlockInSection(selectedSectionId, selectedBlockId, {
+          portfolioStore.updateBlockInSection(selectedSectionId, singleId, {
             styles: { ...(block.styles as BlockStyles), x: nx, y: ny },
           });
         } else {
           const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
           const existing = (block[field] ?? {}) as Partial<BlockStyles>;
-          portfolioStore.updateBlockInSection(selectedSectionId, selectedBlockId, {
+          portfolioStore.updateBlockInSection(selectedSectionId, singleId, {
             [field]: { ...existing, x: nx, y: ny },
           });
         }
@@ -1713,12 +1816,12 @@ ${sectionsHtml}
       }
 
       // Delete / Backspace → Delete selected block
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId && selectedSectionId) {
+      if ((e.key === "Delete" || e.key === "Backspace") && singleId && selectedSectionId) {
         // Don't delete if user is typing in an input/textarea
         const tag = (e.target as HTMLElement)?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         e.preventDefault();
-        deleteBlock(selectedBlockId, selectedSectionId);
+        deleteBlock(singleId, selectedSectionId);
         return;
       }
 
@@ -1736,9 +1839,9 @@ ${sectionsHtml}
       if (e.key === "Escape" && drawMode) { setDrawMode(null); setDrawStart(null); setDrawRect(null); return; }
 
       // Ctrl+C → Copy block
-      if (mod && e.key === "c" && selectedBlockId) {
+      if (mod && e.key === "c" && singleId) {
         e.preventDefault();
-        const block = portfolio.sections.flatMap(s => s.blocks).find(b => b.id === selectedBlockId);
+        const block = portfolio.sections.flatMap(s => s.blocks).find(b => b.id === singleId);
         if (block) {
           builderStore.copyBlock({
             type: block.type,
@@ -1773,7 +1876,7 @@ ${sectionsHtml}
         } as unknown as BlockWithStyles;
         builderStore.pushSnapshot("paste-block");
         portfolioStore.addBlockToSection(selectedSectionId, pastedBlock);
-        setSelectedBlockId(pastedBlock.id);
+        setSelectedBlockIds(new Set([pastedBlock.id]));
         setRightPanel("properties");
         builderStore.setDirty(true);
         scheduleAutoSave();
@@ -2323,7 +2426,7 @@ ${sectionsHtml}
           />
 
           <button
-            onClick={() => { setRightPanel("seo"); setSelectedBlockId(null); }}
+            onClick={() => { setRightPanel("seo"); setSelectedBlockIds(new Set()); }}
             className="builder-toolbar-btn flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-medium"
             style={{ color: "var(--b-text-2)" }}
             title="SEO Settings"
@@ -2517,7 +2620,7 @@ ${sectionsHtml}
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => { setRightPanel("theme"); setSelectedBlockId(null); }}
+                    onClick={() => { setRightPanel("theme"); setSelectedBlockIds(new Set()); }}
                     className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
                     style={{ color: "var(--b-text-3)" }}
                     title="Theme"
@@ -2585,7 +2688,7 @@ ${sectionsHtml}
                   <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                     {sortedSections.map((section) => {
                       const isExpanded = expandedSections.has(section.id);
-                      const isSectionSelected = selectedSectionId === section.id && !selectedBlockId;
+                      const isSectionSelected = selectedSectionId === section.id && selectedBlockIds.size === 0;
                       const blockCount = section.blocks.length;
                       const sortedBlocks = [...section.blocks].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -2651,7 +2754,7 @@ ${sectionsHtml}
                                             <div ref={blockRef} style={blockStyle}>
                                               <LayerBlockItem
                                                 block={block}
-                                                isSelected={block.id === selectedBlockId}
+                                                isSelected={selectedBlockIds.has(block.id)}
                                                 onSelect={() => selectBlock(block.id, false)}
                                                 onDelete={() => deleteBlock(block.id, section.id)}
                                                 dragHandleProps={{ ...blockListeners, ...blockAttributes }}
@@ -2802,6 +2905,7 @@ ${sectionsHtml}
             onCanvasClick={drawMode ? undefined : handleCanvasClick}
             cursorOverride={drawMode ? "crosshair" : undefined}
             showGrid={builderStore.showGrid}
+            onMarqueeEnd={drawMode ? undefined : handleMarqueeEnd}
           >
             <div style={{ position: "relative" }}>
               {visibleSections.map((section) => {
@@ -2829,7 +2933,7 @@ ${sectionsHtml}
                         : theme.backgroundColor
                     }
                     isSelected={
-                      selectedSectionId === section.id && !selectedBlockId
+                      selectedSectionId === section.id && selectedBlockIds.size === 0
                     }
                     onSelect={selectSection}
                   >
@@ -2848,13 +2952,14 @@ ${sectionsHtml}
                             w={ms.w ?? DEFAULT_BLOCK_W}
                             h={ms.h ?? 0}
                             rotation={ms.rotation}
-                            isSelected={block.id === selectedBlockId}
+                            isSelected={selectedBlockIds.has(block.id)}
                             isLocked={block.isLocked}
                             isHidden={!block.isVisible}
                             canvasScale={transform.scale}
                             onSelect={selectBlock}
                             onMove={moveBlock}
                             onResize={resizeBlock}
+                            onDragStart={handleBlockDragStart}
                             sortOrder={block.sortOrder}
                             onContextMenu={handleBlockContextMenu}
                           >
@@ -3031,7 +3136,7 @@ ${sectionsHtml}
                           styles: { ...def.defaultStyles, x: 40, y: maxY + 16, w: DEFAULT_BLOCK_W, h: DEFAULT_BLOCK_H },
                         });
                         portfolioStore.addBlockToSection(selectedSectionId, newBlock);
-                        setSelectedBlockId(newBlock.id);
+                        setSelectedBlockIds(new Set([newBlock.id]));
                         setRightPanel("properties");
                       }
                     } catch { /* ignore */ }
@@ -3189,7 +3294,7 @@ ${sectionsHtml}
                     >
                       {visibleBlocks.map((block) => {
                         const bs = block.styles as BlockStyles;
-                        const isSelectedBlock = block.id === selectedBlockId;
+                        const isSelectedBlock = selectedBlockIds.has(block.id);
                         return (
                           <div
                             key={block.id}
@@ -3266,6 +3371,28 @@ ${sectionsHtml}
             <ThemeEditor portfolioId={portfolio.id} theme={portfolio.theme} />
           ) : rightPanel === "seo" ? (
             <SeoEditor portfolioId={portfolio.id} portfolio={portfolio} />
+          ) : selectedBlockIds.size > 1 ? (
+            <div className="flex flex-col items-center justify-center gap-3 p-6 text-center" style={{ color: "var(--b-text-3)" }}>
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "var(--b-surface)", border: "1px solid var(--b-border)" }}
+              >
+                <MousePointer2 className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
+              </div>
+              <p className="text-[13px] font-semibold" style={{ color: "var(--b-text-2)" }}>
+                {selectedBlockIds.size} blocks selected
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--b-text-4)" }}>
+                Drag any selected block to move them all together. Click a single block to edit its properties.
+              </p>
+              <button
+                className="mt-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-colors"
+                style={{ backgroundColor: "var(--b-surface)", border: "1px solid var(--b-border)", color: "var(--b-text-3)" }}
+                onClick={() => setSelectedBlockIds(new Set())}
+              >
+                Clear selection
+              </button>
+            </div>
           ) : selectedBlock && selectedSectionId ? (
             <BlockPropertiesPanel
               block={{
