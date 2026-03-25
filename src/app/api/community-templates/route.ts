@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import {
   successResponse,
   errorResponse,
@@ -20,6 +21,51 @@ const createSchema = z.object({
     .max(5)
     .default([]),
 });
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category");
+    const isDarkParam = searchParams.get("isDark");
+    const tag = searchParams.get("tag");
+    const sort = searchParams.get("sort") ?? "most_used";
+    const search = searchParams.get("search") ?? "";
+    const limit = Math.min(Number(searchParams.get("limit") ?? 12), 24);
+    const cursor = searchParams.get("cursor") ?? undefined;
+
+    const cleanSearch = search.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
+
+    const where: Prisma.CommunityTemplateWhereInput = {};
+    if (category) where.category = category as Prisma.EnumCommunityTemplateCategoryFilter;
+    if (isDarkParam !== null) where.isDark = isDarkParam === "true";
+    if (tag) where.tags = { has: tag };
+    if (cleanSearch.length >= 2) {
+      where.OR = [
+        { name: { contains: cleanSearch, mode: "insensitive" } },
+        { description: { contains: cleanSearch, mode: "insensitive" } },
+      ];
+    }
+
+    const templates = await db.communityTemplate.findMany({
+      where,
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: sort === "newest" ? { createdAt: "desc" } : { useCount: "desc" },
+      include: { user: { select: { username: true, name: true } } },
+    });
+
+    const hasNext = templates.length > limit;
+    const items = hasNext ? templates.slice(0, limit) : templates;
+    const lastItem = items[items.length - 1];
+    const nextCursor = hasNext && lastItem ? lastItem.id : null;
+
+    return successResponse({ templates: items, nextCursor });
+  } catch (error) {
+    console.error("[community-templates GET]", error);
+    return internalErrorResponse();
+  }
+}
 
 export async function POST(req: Request) {
   try {
