@@ -415,6 +415,9 @@ export default async function HomePage() {
             </div>
 
             <nav className="flex items-center gap-6 text-[12px] font-medium text-stone-400 dark:text-stone-500">
+              <Link href="/community" className="transition-colors hover:text-stone-700 dark:hover:text-stone-300">
+                Community
+              </Link>
               <Link href="/docs" className="transition-colors hover:text-stone-700 dark:hover:text-stone-300">
                 Documentation
               </Link>
