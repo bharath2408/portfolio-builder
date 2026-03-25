@@ -9,8 +9,8 @@ import {
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 import { AdvancedColorInput } from "@/components/builder/color-picker";
-import { ImageUpload } from "@/components/common/image-upload";
 import { Tooltip } from "@/components/builder/tooltip";
+import { ImageUpload } from "@/components/common/image-upload";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type { BlockWithStyles, BlockStyles } from "@/types";

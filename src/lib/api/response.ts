@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { auth } from "@/lib/auth";
 import type { ApiResponse, ApiError } from "@/types";
 
 // ─── Success Responses ────────────────────────────────────────────
@@ -126,7 +127,6 @@ export function withErrorHandler(handler: RouteHandler): RouteHandler {
 
 // ─── Auth Helper ──────────────────────────────────────────────────
 
-import { auth } from "@/lib/auth";
 
 export async function getAuthenticatedUser() {
   const session = await auth();

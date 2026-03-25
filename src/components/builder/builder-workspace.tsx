@@ -1,6 +1,20 @@
 "use client";
 
 import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   AlertCircle,
   ArrowLeft,
   Check,
@@ -67,6 +81,7 @@ import {
 } from "@/components/builder/canvas-engine";
 import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { CommandPalette } from "@/components/builder/command-palette";
+import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
 import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
 import { OnboardingTour } from "@/components/builder/onboarding-tour";
 import { ThemeEditor } from "@/components/builder/theme-editor";
@@ -83,7 +98,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
 import {
   BLOCK_REGISTRY,
   BLOCK_CATEGORIES,
@@ -96,7 +110,6 @@ import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
-
 import type {
   PortfolioWithRelations,
   SectionWithBlocks,
@@ -107,20 +120,6 @@ import type {
   SectionStyles,
   PortfolioStatus,
 } from "@/types";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 // ─── Constants ───────────────────────────────────────────────────
 

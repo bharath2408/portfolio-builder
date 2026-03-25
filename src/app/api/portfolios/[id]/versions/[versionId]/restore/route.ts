@@ -1,7 +1,8 @@
+import type { ThemeMode } from "@prisma/client";
+
 import { successResponse, unauthorizedResponse, notFoundResponse, internalErrorResponse } from "@/lib/api/response";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import type { ThemeMode } from "@prisma/client";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string; versionId: string }> }) {
   try {

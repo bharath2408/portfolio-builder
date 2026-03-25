@@ -1,8 +1,8 @@
-import { db } from "@/lib/db";
 import {
   successResponse, createdResponse, notFoundResponse,
   withErrorHandler, requireAuth,
 } from "@/lib/api/response";
+import { db } from "@/lib/db";
 
 // GET /api/portfolios/:id/sections/:sectionId/blocks
 export const GET = withErrorHandler(async (_req, ctx) => {

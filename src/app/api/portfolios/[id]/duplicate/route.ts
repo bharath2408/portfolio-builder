@@ -1,3 +1,4 @@
+import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 import {
   createdResponse,
   unauthorizedResponse,
@@ -7,7 +8,6 @@ import {
 } from "@/lib/api/response";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 
 export async function POST(
   _request: Request,

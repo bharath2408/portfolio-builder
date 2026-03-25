@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { MotionBlockWrapper } from "@/components/portfolio/motion-block-wrapper";
 import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";

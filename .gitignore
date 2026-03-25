@@ -36,6 +36,7 @@ prisma/*.db-journal
 # test
 coverage/
 .playwright-mcp/
+.superpowers/
 
 # worktrees
 .worktrees/

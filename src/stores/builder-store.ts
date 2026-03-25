@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-import type { PortfolioWithRelations } from "@/types";
 import { usePortfolioStore } from "@/stores/portfolio-store";
+import type { PortfolioWithRelations } from "@/types";
 
 interface BuilderState {
   // Editor state

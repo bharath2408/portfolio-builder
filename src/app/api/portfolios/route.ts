@@ -1,3 +1,4 @@
+import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
 import {
   successResponse,
   createdResponse,
@@ -8,9 +9,8 @@ import {
 } from "@/lib/api/response";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createPortfolioSchema } from "@/lib/validations/portfolio";
 import { importPortfolioSchema } from "@/lib/validations/import";
-import { MAX_PORTFOLIOS_PER_USER } from "@/config/constants";
+import { createPortfolioSchema } from "@/lib/validations/portfolio";
 
 // GET /api/portfolios — list user's portfolios
 export async function GET() {

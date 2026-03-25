@@ -4,6 +4,7 @@ import {
   ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
   Mail, MapPin, Phone, Quote as QuoteIcon,
 } from "lucide-react";
+
 import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
 import type { BlockWithStyles, ThemeTokens } from "@/types";

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
-import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 // Use Node runtime since Prisma needs it
 export const runtime = "nodejs";

@@ -28,19 +28,19 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 
+import { ImageUpload } from "@/components/common/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { APP_URL } from "@/config/constants";
+import { apiPatch, apiPost, apiGet, apiDelete } from "@/lib/api";
+import { cn, getInitials } from "@/lib/utils";
 import {
   updateProfileSchema,
   changePasswordSchema,
   type UpdateProfileInput,
   type ChangePasswordInput,
 } from "@/lib/validations/auth";
-import { apiPatch, apiPost, apiGet, apiDelete } from "@/lib/api";
-import { APP_URL } from "@/config/constants";
-import { cn, getInitials } from "@/lib/utils";
-import { ImageUpload } from "@/components/common/image-upload";
 
 interface UserProfile {
   id: string;

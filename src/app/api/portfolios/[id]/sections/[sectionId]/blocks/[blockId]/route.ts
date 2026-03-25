@@ -1,8 +1,8 @@
-import { db } from "@/lib/db";
 import {
   successResponse, notFoundResponse, noContentResponse,
   withErrorHandler, requireAuth,
 } from "@/lib/api/response";
+import { db } from "@/lib/db";
 
 // PATCH /api/portfolios/:id/sections/:sectionId/blocks/:blockId
 export const PATCH = withErrorHandler(async (req, ctx) => {

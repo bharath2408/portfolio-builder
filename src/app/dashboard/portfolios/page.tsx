@@ -16,9 +16,9 @@ import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { APP_URL } from "@/config/constants";
 import { usePortfolios, usePortfolioMutations } from "@/hooks";
 import { formatRelativeTime } from "@/lib/utils";
-import { APP_URL } from "@/config/constants";
 
 export default function PortfoliosPage() {
   const { data: session } = useSession();
