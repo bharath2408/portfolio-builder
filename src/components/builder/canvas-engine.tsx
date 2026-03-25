@@ -91,6 +91,7 @@ export function CanvasEngine({
   const panStart = useRef({ x: 0, y: 0 });
   const transformStart = useRef({ x: 0, y: 0 });
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
+  const marqueeRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const [marqueeRect, setMarqueeRect] = useState<{
     x: number; y: number; w: number; h: number;
   } | null>(null);
@@ -181,7 +182,9 @@ export function CanvasEngine({
         const sx = e.clientX - rect.left;
         const sy = e.clientY - rect.top;
         marqueeStart.current = { x: sx, y: sy };
+        marqueeRectRef.current = { x: sx, y: sy, w: 0, h: 0 };
         setMarqueeRect({ x: sx, y: sy, w: 0, h: 0 });
+        container.setPointerCapture(e.pointerId);
       }
     },
     [isSpaceHeld, onMarqueeEnd],
@@ -205,12 +208,14 @@ export function CanvasEngine({
         const rect = container.getBoundingClientRect();
         const ex = e.clientX - rect.left;
         const ey = e.clientY - rect.top;
-        setMarqueeRect({
+        const newRect = {
           x: Math.min(marqueeStart.current.x, ex),
           y: Math.min(marqueeStart.current.y, ey),
           w: Math.abs(ex - marqueeStart.current.x),
           h: Math.abs(ey - marqueeStart.current.y),
-        });
+        };
+        marqueeRectRef.current = newRect;
+        setMarqueeRect(newRect);
       }
     },
     [isPanning, onTransformChange],
@@ -218,23 +223,19 @@ export function CanvasEngine({
 
   const handlePointerUp = useCallback(() => {
     setIsPanning(false);
-    if (marqueeStart.current && onMarqueeEnd) {
-      setMarqueeRect((currentRect) => {
-        if (currentRect && (currentRect.w > 4 || currentRect.h > 4)) {
-          const t = transformRef.current;
-          // marqueeRect is screen-space, min-corner normalized — convert to canvas coords
-          const canvasX1 = (currentRect.x - t.x) / t.scale;
-          const canvasY1 = (currentRect.y - t.y) / t.scale;
-          const canvasX2 = canvasX1 + currentRect.w / t.scale;
-          const canvasY2 = canvasY1 + currentRect.h / t.scale;
-          onMarqueeEnd(canvasX1, canvasY1, canvasX2, canvasY2);
-        }
-        return null; // clear marquee rect
-      });
-    } else {
-      setMarqueeRect(null);
+    const currentRect = marqueeRectRef.current;
+    if (marqueeStart.current && onMarqueeEnd && currentRect && (currentRect.w > 4 || currentRect.h > 4)) {
+      const t = transformRef.current;
+      // marqueeRect is screen-space, min-corner normalized — convert to canvas coords
+      const canvasX1 = (currentRect.x - t.x) / t.scale;
+      const canvasY1 = (currentRect.y - t.y) / t.scale;
+      const canvasX2 = canvasX1 + currentRect.w / t.scale;
+      const canvasY2 = canvasY1 + currentRect.h / t.scale;
+      onMarqueeEnd(canvasX1, canvasY1, canvasX2, canvasY2);
     }
     marqueeStart.current = null;
+    marqueeRectRef.current = null;
+    setMarqueeRect(null);
   }, [onMarqueeEnd]);
 
   // ── Space key for pan mode ──────────────────────────────────────
@@ -292,7 +293,7 @@ export function CanvasEngine({
       )}
 
       {/* Rubber-band marquee overlay */}
-      {marqueeRect && (marqueeRect.w > 2 || marqueeRect.h > 2) && (
+      {marqueeRect && (marqueeRect.w > 4 || marqueeRect.h > 4) && (
         <div
           className="pointer-events-none absolute z-[60]"
           style={{
