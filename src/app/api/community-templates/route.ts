@@ -1,7 +1,12 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import {
+  successResponse,
+  forbiddenResponse,
+  validationErrorResponse,
+  internalErrorResponse,
+  requireAuth,
+} from "@/lib/api/response";
 
 const createSchema = z.object({
   portfolioId: z.string().cuid(),
@@ -16,49 +21,48 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user = await requireAuth();
+
+    const body = await req.json();
+    const parsed = createSchema.safeParse(body);
+    if (!parsed.success) {
+      return validationErrorResponse(parsed.error);
+    }
+
+    const { portfolioId, name, description, category, isDark, tags } = parsed.data;
+
+    const portfolio = await db.portfolio.findFirst({
+      where: { id: portfolioId, userId: user.id },
+      select: { status: true, ogImageUrl: true },
+    });
+
+    if (!portfolio) {
+      return forbiddenResponse("Portfolio not found or access denied");
+    }
+
+    if (portfolio.status !== "PUBLISHED") {
+      return forbiddenResponse("Portfolio must be published before sharing as a template");
+    }
+
+    const template = await db.communityTemplate.upsert({
+      where: { portfolioId },
+      create: {
+        portfolioId,
+        userId: user.id,
+        name,
+        description,
+        category,
+        isDark,
+        tags,
+        thumbnail: portfolio.ogImageUrl ?? null,
+      },
+      update: { name, description, category, isDark, tags, thumbnail: portfolio.ogImageUrl ?? null },
+    });
+
+    return successResponse(template);
+  } catch (error) {
+    console.error("[community-templates POST]", error);
+    return internalErrorResponse();
   }
-
-  const body = await req.json();
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const { portfolioId, name, description, category, isDark, tags } = parsed.data;
-
-  const portfolio = await db.portfolio.findFirst({
-    where: { id: portfolioId, userId: session.user.id },
-    select: { status: true, ogImageUrl: true },
-  });
-
-  if (!portfolio) {
-    return NextResponse.json({ error: "Portfolio not found" }, { status: 403 });
-  }
-
-  if (portfolio.status !== "PUBLISHED") {
-    return NextResponse.json(
-      { error: "Portfolio must be published first" },
-      { status: 400 }
-    );
-  }
-
-  const template = await db.communityTemplate.upsert({
-    where: { portfolioId },
-    create: {
-      portfolioId,
-      userId: session.user.id,
-      name,
-      description,
-      category,
-      isDark,
-      tags,
-      thumbnail: portfolio.ogImageUrl ?? null,
-    },
-    update: { name, description, category, isDark, tags, thumbnail: portfolio.ogImageUrl ?? null },
-  });
-
-  return NextResponse.json(template, { status: 200 });
 }
