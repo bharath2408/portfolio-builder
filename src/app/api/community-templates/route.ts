@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import {
   successResponse,
+  errorResponse,
   forbiddenResponse,
   validationErrorResponse,
   internalErrorResponse,
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     if (portfolio.status !== "PUBLISHED") {
-      return forbiddenResponse("Portfolio must be published before sharing as a template");
+      return errorResponse("BAD_REQUEST", "Portfolio must be published before sharing as a template", 400);
     }
 
     const template = await db.communityTemplate.upsert({
