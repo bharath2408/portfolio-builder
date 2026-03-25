@@ -33,7 +33,7 @@ interface CanvasElementProps {
   onDoubleClick?: (id: string) => void;
   onContextMenu?: (id: string, x: number, y: number) => void;
   children: React.ReactNode;
-  onDragStart?: () => void;
+  onDragStart?: (id: string) => void;
   onDragEnd?: () => void;
 }
 
@@ -169,7 +169,7 @@ export const CanvasElement = memo(function CanvasElement({
       onSelect(id, e.shiftKey);
 
       setIsDragging(true);
-      onDragStart?.();
+      onDragStart?.(id);
       dragStart.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
