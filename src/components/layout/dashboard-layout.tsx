@@ -14,6 +14,7 @@ import {
   Search,
   Bell,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,6 +33,7 @@ const navigation = [
     items: [
       { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { name: "Portfolios", href: "/dashboard/portfolios", icon: FolderKanban },
+      { name: "Community", href: "/dashboard/community", icon: Users },
     ],
   },
   {
@@ -46,6 +48,7 @@ const breadcrumbMap: Record<string, string> = {
   "/dashboard": "Overview",
   "/dashboard/portfolios": "Portfolios",
   "/dashboard/portfolios/new": "New Portfolio",
+  "/dashboard/community": "Community",
   "/dashboard/settings": "Settings",
 };
 

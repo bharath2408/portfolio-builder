@@ -35,6 +35,7 @@ model User {
   accounts   Account[]
   sessions   Session[]
   portfolios Portfolio[]
+  communityTemplates CommunityTemplate[]
 
   @@index([email])
   @@index([username])
@@ -113,6 +114,7 @@ model Portfolio {
   views       PortfolioView[]
   submissions ContactSubmission[]
   versions    PortfolioVersion[]
+  communityTemplate CommunityTemplate?
 
   @@unique([userId, slug])
   @@index([userId])
@@ -284,4 +286,36 @@ model PortfolioView {
   @@index([portfolioId])
   @@index([portfolioId, viewedAt])
   @@map("portfolio_views")
+}
+
+// ─── Community Templates ───────────────────────────────────────────
+
+enum CommunityTemplateCategory {
+  DEVELOPER
+  DESIGNER
+  WRITER
+  OTHER
+}
+
+model CommunityTemplate {
+  id          String                    @id @default(cuid())
+  portfolioId String                    @unique
+  userId      String
+  name        String
+  description String
+  category    CommunityTemplateCategory
+  isDark      Boolean                   @default(true)
+  tags        String[]
+  thumbnail   String?
+  useCount    Int                       @default(0)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([useCount])
+  @@map("community_templates")
 }

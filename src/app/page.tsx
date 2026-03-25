@@ -23,8 +23,34 @@ import Link from "next/link";
 
 import { LandingHeader } from "@/components/common/landing-header";
 import { APP_NAME } from "@/config/constants";
+import { db } from "@/lib/db";
+import { CommunityShowcase } from "./_components/community-showcase";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const rawTemplates = await db.communityTemplate.findMany({
+    take: 8,
+    orderBy: { useCount: "desc" },
+    include: {
+      user: { select: { username: true, name: true } },
+      portfolio: { select: { slug: true } },
+    },
+  });
+
+  const featuredTemplates = rawTemplates.map((t) => ({
+    id: t.id,
+    portfolioId: t.portfolioId,
+    userId: t.userId,
+    name: t.name,
+    description: t.description,
+    category: t.category as "DEVELOPER" | "DESIGNER" | "WRITER" | "OTHER",
+    isDark: t.isDark,
+    tags: t.tags,
+    thumbnail: t.thumbnail,
+    useCount: t.useCount,
+    createdAt: t.createdAt.toISOString(),
+    user: t.user,
+    portfolio: t.portfolio,
+  }));
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fafaf9] font-sans dark:bg-[#09090b]">
       {/* ── Ambient background ──────────────────────────────────── */}
@@ -272,6 +298,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── Community Showcase ──────────────────────────────────── */}
+      <CommunityShowcase templates={featuredTemplates} />
 
       {/* ── How It Works ─────────────────────────────────────────── */}
       <section id="how-it-works" className="border-y border-stone-200/60 bg-stone-100/50 dark:border-white/[0.04] dark:bg-white/[0.015]">
