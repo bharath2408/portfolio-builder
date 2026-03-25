@@ -21,6 +21,7 @@ export default async function CommunityPage() {
     orderBy: { useCount: "desc" },
     include: {
       user: { select: { username: true, name: true } },
+      portfolio: { select: { slug: true } },
     },
   });
 
@@ -43,6 +44,7 @@ export default async function CommunityPage() {
     useCount: t.useCount,
     createdAt: t.createdAt.toISOString(),
     user: t.user,
+    portfolio: t.portfolio,
   }));
 
   return (

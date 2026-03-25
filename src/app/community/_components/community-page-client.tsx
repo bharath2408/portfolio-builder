@@ -1,10 +1,13 @@
 "use client";
 
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { TemplateGrid } from "@/components/community/template-grid";
 import { useCommunityTemplate, type CommunityTemplate } from "@/lib/api/community-templates";
+import { useToast } from "@/hooks/use-toast";
+import { ApiClientError } from "@/lib/api/client";
 
 interface CommunityPageClientProps {
   initialTemplates: CommunityTemplate[];
@@ -17,18 +20,38 @@ export function CommunityPageClient({
 }: CommunityPageClientProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { toast } = useToast();
 
-  const handleUse = async (id: string) => {
-    if (status === "loading") return;
+  const handleUse = useCallback(
+    async (id: string) => {
+      if (status === "loading") return;
 
-    if (!session?.user) {
-      router.push(`/login?callbackUrl=/community/use/${id}`);
-      return;
-    }
+      if (!session?.user) {
+        router.push(`/login?callbackUrl=/community/use/${id}`);
+        return;
+      }
 
-    const result = await useCommunityTemplate(id);
-    router.push(`/dashboard/portfolios/${result.portfolioId}/edit`);
-  };
+      try {
+        const result = await useCommunityTemplate(id);
+        router.push(`/dashboard/portfolios/${result.portfolioId}/edit`);
+      } catch (err) {
+        if (err instanceof ApiClientError && err.status === 409) {
+          toast({
+            title: "Portfolio limit reached",
+            description: err.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Something went wrong",
+            description: "Could not clone the template. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    [router, session, status, toast],
+  );
 
   return (
     <TemplateGrid

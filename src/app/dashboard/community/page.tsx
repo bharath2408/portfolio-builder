@@ -20,7 +20,10 @@ export default async function DashboardCommunityPage() {
   const rows = await db.communityTemplate.findMany({
     take: PAGE_LIMIT + 1,
     orderBy: { useCount: "desc" },
-    include: { user: { select: { username: true, name: true } } },
+    include: {
+      user: { select: { username: true, name: true } },
+      portfolio: { select: { slug: true } },
+    },
   });
 
   const hasNext = rows.length > PAGE_LIMIT;
@@ -42,6 +45,7 @@ export default async function DashboardCommunityPage() {
     useCount: t.useCount,
     createdAt: t.createdAt.toISOString(),
     user: t.user,
+    portfolio: t.portfolio,
   }));
 
   return (

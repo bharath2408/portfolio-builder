@@ -113,9 +113,10 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
   const catLabel = CATEGORY_LABELS[template.category] ?? template.category;
   const showImage = !!template.thumbnail && !imgError;
 
-  const previewUrl = template.portfolioId
-    ? `/p/${template.portfolioId}`
-    : null;
+  const previewUrl =
+    template.user?.username && template.portfolio?.slug
+      ? `/portfolio/${template.user.username}/${template.portfolio.slug}`
+      : null;
 
   return (
     <article
@@ -186,6 +187,13 @@ export function TemplateCard({ template, onUse, showPreview = true, loading = fa
         <h3 className="line-clamp-1 text-[14px] font-semibold leading-snug text-foreground">
           {template.name}
         </h3>
+
+        {/* Description */}
+        {template.description && (
+          <p className="line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">
+            {template.description}
+          </p>
+        )}
 
         {/* Author */}
         <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">

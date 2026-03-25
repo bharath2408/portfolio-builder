@@ -30,7 +30,10 @@ export default async function HomePage() {
   const rawTemplates = await db.communityTemplate.findMany({
     take: 8,
     orderBy: { useCount: "desc" },
-    include: { user: { select: { username: true, name: true } } },
+    include: {
+      user: { select: { username: true, name: true } },
+      portfolio: { select: { slug: true } },
+    },
   });
 
   const featuredTemplates = rawTemplates.map((t) => ({
@@ -46,6 +49,7 @@ export default async function HomePage() {
     useCount: t.useCount,
     createdAt: t.createdAt.toISOString(),
     user: t.user,
+    portfolio: t.portfolio,
   }));
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fafaf9] font-sans dark:bg-[#09090b]">

@@ -316,5 +316,6 @@ model CommunityTemplate {
 
   @@index([userId])
   @@index([category])
+  @@index([useCount])
   @@map("community_templates")
 }

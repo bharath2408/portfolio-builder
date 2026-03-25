@@ -16,6 +16,7 @@ export interface CommunityTemplate {
   useCount: number;
   createdAt: string;
   user: { username: string | null; name: string | null };
+  portfolio: { slug: string } | null;
 }
 
 export function getAuthorName(user: { username: string | null; name: string | null }): string {

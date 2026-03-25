@@ -73,6 +73,7 @@ function FilterPill({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "rounded-full border px-3 py-1 text-[12px] font-medium transition-all duration-150",
@@ -255,6 +256,7 @@ export function TemplateGrid({
           />
           {search && (
             <button
+              type="button"
               onClick={() => setSearch("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
@@ -302,6 +304,7 @@ export function TemplateGrid({
           <div className="flex items-center gap-1.5">
             <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
             <button
+              type="button"
               onClick={() => setSort(sort === "most_used" ? "newest" : "most_used")}
               className={cn(
                 "rounded-full border px-3 py-1 text-[12px] font-medium transition-all duration-150",
@@ -333,6 +336,7 @@ export function TemplateGrid({
             </p>
           </div>
           <button
+            type="button"
             onClick={() => {
               setSearch("");
               setCategory("ALL");
@@ -365,6 +369,7 @@ export function TemplateGrid({
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : (
             <button
+              type="button"
               onClick={loadMore}
               className={cn(
                 "rounded-lg border border-border/80 px-5 py-2 text-[13px] font-medium",

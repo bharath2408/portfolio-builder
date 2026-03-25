@@ -127,7 +127,7 @@ export default async function CommunityUseRedirectPage({ params }: PageProps) {
     // can handle the redirect response correctly.
     if (
       error instanceof Error &&
-      error.message === "NEXT_REDIRECT"
+      (error as any).digest?.startsWith("NEXT_REDIRECT")
     ) {
       throw error;
     }

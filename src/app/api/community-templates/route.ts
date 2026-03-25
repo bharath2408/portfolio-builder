@@ -27,8 +27,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const isDarkParam = searchParams.get("isDark");
-    const tag = searchParams.get("tag");
-    const sort = searchParams.get("sort") ?? "most_used";
+    const rawTag = searchParams.get("tag");
+    const tag = rawTag && /^[a-z0-9-]{1,20}$/.test(rawTag) ? rawTag : null;
+    const rawSort = searchParams.get("sort");
+    const sort: "most_used" | "newest" =
+      rawSort === "most_used" || rawSort === "newest" ? rawSort : "most_used";
     const search = searchParams.get("search") ?? "";
     const limit = Math.min(Number(searchParams.get("limit") ?? 12), 24) || 12;
     const cursor = searchParams.get("cursor") ?? undefined;
@@ -54,7 +57,10 @@ export async function GET(req: Request) {
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       orderBy: sort === "newest" ? { createdAt: "desc" } : { useCount: "desc" },
-      include: { user: { select: { username: true, name: true } } },
+      include: {
+        user: { select: { username: true, name: true } },
+        portfolio: { select: { slug: true } },
+      },
     });
 
     const hasNext = templates.length > limit;
