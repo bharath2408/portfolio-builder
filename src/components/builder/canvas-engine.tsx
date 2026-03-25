@@ -92,6 +92,7 @@ export function CanvasEngine({
   const transformStart = useRef({ x: 0, y: 0 });
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
   const marqueeRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const justFinishedMarquee = useRef(false);
   const [marqueeRect, setMarqueeRect] = useState<{
     x: number; y: number; w: number; h: number;
   } | null>(null);
@@ -232,6 +233,8 @@ export function CanvasEngine({
       const canvasX2 = canvasX1 + currentRect.w / t.scale;
       const canvasY2 = canvasY1 + currentRect.h / t.scale;
       onMarqueeEnd(canvasX1, canvasY1, canvasX2, canvasY2);
+      // Suppress the click event that fires after pointerup — it would clear the selection
+      justFinishedMarquee.current = true;
     }
     marqueeStart.current = null;
     marqueeRectRef.current = null;
@@ -261,6 +264,12 @@ export function CanvasEngine({
   // ── Click on empty canvas ─────────────────────────────────────
 
   const handleCanvasClick = (e: ReactMouseEvent) => {
+    // After a marquee drag, pointerup fires first (setting selection),
+    // then click fires on the same element — skip it to preserve selection.
+    if (justFinishedMarquee.current) {
+      justFinishedMarquee.current = false;
+      return;
+    }
     if (
       e.target === e.currentTarget ||
       (e.target as HTMLElement).dataset.canvas
