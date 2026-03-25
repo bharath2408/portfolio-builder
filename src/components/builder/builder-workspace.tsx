@@ -1054,6 +1054,8 @@ export function BuilderWorkspace({
       let hitSectionId: string | null = null;
       for (const section of portfolio.sections) {
         if (!section.isVisible) continue;
+        // Restrict marquee to a single section — moveBlock assumes selectedSectionId
+        if (hitSectionId && section.id !== hitSectionId) continue;
         for (const block of section.blocks) {
           if (!block.isVisible) continue;
           const bs = block.styles as BlockStyles;
