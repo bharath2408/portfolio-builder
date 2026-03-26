@@ -384,6 +384,24 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultContent: { color: "#a1a1aa", thickness: 2, direction: "horizontal" },
     defaultStyles: { w: 200, h: 2, backgroundColor: "#a1a1aa" },
   },
+
+  // ── Grouping ────────────────────────────────────────────────────
+  group: {
+    type: "group",
+    label: "Group",
+    icon: "Group",
+    category: "layout",
+    description: "Container that groups blocks together",
+    defaultContent: {},
+    defaultStyles: {
+      x: 0,
+      y: 0,
+      w: 400,
+      h: 300,
+      backgroundColor: "transparent",
+      overflow: "visible",
+    },
+  },
 };
 
 // ─── Grouped for the add-block panel ──────────────────────────────

@@ -78,6 +78,7 @@ export const BLOCK_TYPES = {
   RECTANGLE: "rectangle",
   CIRCLE: "circle",
   LINE: "line",
+  GROUP: "group",
 } as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];
