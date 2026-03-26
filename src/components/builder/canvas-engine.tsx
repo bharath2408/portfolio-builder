@@ -194,8 +194,43 @@ export function CanvasEngine({
         panStart.current = { x: e.clientX, y: e.clientY };
         const t = transformRef.current;
         transformStart.current = { x: t.x, y: t.y };
+      } else if (e.button === 0 && selectedFrameId && frames && onFrameMove) {
+        // Hit-test: is the pointer inside the selected frame?
+        const container = containerRef.current;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const t = transformRef.current;
+        const canvasX = (e.clientX - rect.left - t.x) / t.scale;
+        const canvasY = (e.clientY - rect.top - t.y) / t.scale;
+        const frame = frames.find((f) => f.id === selectedFrameId);
+        if (
+          frame &&
+          canvasX >= frame.x &&
+          canvasX <= frame.x + frame.w &&
+          canvasY >= frame.y - 32 &&
+          canvasY <= frame.y + frame.h
+        ) {
+          e.preventDefault();
+          container.setPointerCapture(e.pointerId);
+          frameDrag.current = {
+            id: frame.id,
+            startMouseX: e.clientX,
+            startMouseY: e.clientY,
+            startFrameX: frame.x,
+            startFrameY: frame.y,
+          };
+          return;
+        }
+        // Not on the selected frame — fall through to marquee
+        if (onMarqueeEnd) {
+          const sx = e.clientX - rect.left;
+          const sy = e.clientY - rect.top;
+          marqueeStart.current = { x: sx, y: sy };
+          marqueeRectRef.current = { x: sx, y: sy, w: 0, h: 0 };
+          setMarqueeRect({ x: sx, y: sy, w: 0, h: 0 });
+          container.setPointerCapture(e.pointerId);
+        }
       } else if (e.button === 0 && onMarqueeEnd) {
-        // Start rubber-band marquee (only when onMarqueeEnd is provided — not in draw mode)
         const container = containerRef.current;
         if (!container) return;
         const rect = container.getBoundingClientRect();
@@ -207,7 +242,7 @@ export function CanvasEngine({
         container.setPointerCapture(e.pointerId);
       }
     },
-    [isSpaceHeld, onMarqueeEnd],
+    [isSpaceHeld, onMarqueeEnd, selectedFrameId, frames, onFrameMove],
   );
 
   const handlePointerMove = useCallback(
@@ -220,6 +255,17 @@ export function CanvasEngine({
           x: transformStart.current.x + dx,
           y: transformStart.current.y + dy,
         });
+        return;
+      }
+      if (frameDrag.current && onFrameMove) {
+        const t = transformRef.current;
+        const dx = (e.clientX - frameDrag.current.startMouseX) / t.scale;
+        const dy = (e.clientY - frameDrag.current.startMouseY) / t.scale;
+        onFrameMove(
+          frameDrag.current.id,
+          Math.round(frameDrag.current.startFrameX + dx),
+          Math.round(frameDrag.current.startFrameY + dy),
+        );
         return;
       }
       if (marqueeStart.current) {
@@ -238,27 +284,30 @@ export function CanvasEngine({
         setMarqueeRect(newRect);
       }
     },
-    [isPanning, onTransformChange],
+    [isPanning, onTransformChange, onFrameMove],
   );
 
   const handlePointerUp = useCallback(() => {
     setIsPanning(false);
+    if (frameDrag.current) {
+      frameDrag.current = null;
+      onFrameDragEnd?.();
+      return;
+    }
     const currentRect = marqueeRectRef.current;
     if (marqueeStart.current && onMarqueeEnd && currentRect && (currentRect.w > 4 || currentRect.h > 4)) {
       const t = transformRef.current;
-      // marqueeRect is screen-space, min-corner normalized — convert to canvas coords
       const canvasX1 = (currentRect.x - t.x) / t.scale;
       const canvasY1 = (currentRect.y - t.y) / t.scale;
       const canvasX2 = canvasX1 + currentRect.w / t.scale;
       const canvasY2 = canvasY1 + currentRect.h / t.scale;
       onMarqueeEnd(canvasX1, canvasY1, canvasX2, canvasY2);
-      // Suppress the click event that fires after pointerup — it would clear the selection
       justFinishedMarquee.current = true;
     }
     marqueeStart.current = null;
     marqueeRectRef.current = null;
     setMarqueeRect(null);
-  }, [onMarqueeEnd]);
+  }, [onMarqueeEnd, onFrameDragEnd]);
 
   // ── Space key for pan mode ──────────────────────────────────────
 
@@ -302,7 +351,13 @@ export function CanvasEngine({
       ref={containerRef}
       className={`builder-canvas relative h-full w-full overflow-hidden ${className ?? ""}`}
       style={{
-        cursor: isPanning ? "grabbing" : isSpaceHeld ? "grab" : cursorOverride ?? "default",
+        cursor: isPanning
+          ? "grabbing"
+          : isSpaceHeld
+            ? "grab"
+            : frameDrag.current
+              ? "grabbing"
+              : cursorOverride ?? "default",
         touchAction: "none",
       }}
       onPointerDown={handlePointerDown}
