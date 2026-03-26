@@ -174,6 +174,9 @@ const LayerBlockItem = memo(function LayerBlockItem({
   children,
   isExpanded,
   onToggleExpand,
+  isChildSelected,
+  onChildSelect,
+  onChildDelete,
 }: {
   block: BlockWithStyles;
   isSelected: boolean;
