@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Eye,
   Globe,
+  Mail,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -197,6 +198,15 @@ export default function PortfoliosPage() {
                   >
                     <BarChart3 className="h-3.5 w-3.5" />
                     Analytics
+                  </Link>
+
+                  <Link
+                    href={`/dashboard/portfolios/${portfolio.id}/submissions`}
+                    className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    title="Form Submissions"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Inbox
                   </Link>
 
                   <button

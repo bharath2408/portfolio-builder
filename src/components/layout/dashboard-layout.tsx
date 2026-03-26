@@ -12,7 +12,6 @@ import {
   Sun,
   Moon,
   Search,
-  Bell,
   ChevronRight,
   Users,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 import { HelpDrawer } from "@/components/common/help-drawer";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/config/constants";
 import { apiPatch } from "@/lib/api";
@@ -270,10 +270,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* Notifications */}
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground">
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-teal-500" />
-            </button>
+            <NotificationBell />
 
             {/* Theme toggle */}
             <button
