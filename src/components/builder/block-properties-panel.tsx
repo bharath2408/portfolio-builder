@@ -674,12 +674,12 @@ export function BlockPropertiesPanel({
           </PropGrid>
         </Section>
 
-        {/* ── Effects ──────────────────────────────────────────── */}
-        <Section title="Effects" icon={<Sparkles className="h-3 w-3" />} defaultOpen={false}>
+        {/* ── Animation ────────────────────────────────────────── */}
+        <Section title="Animation" icon={<Sparkles className="h-3 w-3" />} defaultOpen={false}>
           <PropGrid>
             {/* Entrance Animation */}
             <div>
-              <SubLabel hint="How the block appears when scrolled into view">Entrance Animation</SubLabel>
+              <SubLabel hint="How the block appears when scrolled into view">Entrance</SubLabel>
               <SelectInput
                 value={styles.animation}
                 onChange={(v) => updateStyle("animation", v)}
@@ -778,7 +778,12 @@ export function BlockPropertiesPanel({
                 )}
               </>
             )}
+          </PropGrid>
+        </Section>
 
+        {/* ── Interaction ────────────────────────────────────────── */}
+        <Section title="Interaction" icon={<Eye className="h-3 w-3" />} defaultOpen={false}>
+          <PropGrid>
             {/* Hover Effect */}
             <div>
               <SubLabel hint="Interactive effect when visitors hover over this block">Hover Effect</SubLabel>
@@ -795,6 +800,19 @@ export function BlockPropertiesPanel({
                 ]}
               />
             </div>
+
+            {/* Cursor */}
+            <PropRow label="Cursor">
+              <SelectInput
+                value={styles.cursor}
+                onChange={(v) => updateStyle("cursor", v)}
+                options={[
+                  { label: "Default", value: "default" },
+                  { label: "Pointer", value: "pointer" },
+                ]}
+              />
+            </PropRow>
+
             {/* Magnetic Cursor */}
             <div>
               <SubLabel hint="Element subtly pulls toward the cursor when nearby (desktop only)">Magnetic Cursor</SubLabel>
