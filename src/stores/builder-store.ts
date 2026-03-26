@@ -26,10 +26,12 @@ interface BuilderState {
   snapToGrid: boolean;
   showGrid: boolean;
   showRulers: boolean;
+  showMinimap: boolean;
   setGridSize: (size: number) => void;
   setSnapToGrid: (snap: boolean) => void;
   setShowGrid: (show: boolean) => void;
   setShowRulers: (show: boolean) => void;
+  setShowMinimap: (show: boolean) => void;
 
   // Clipboard
   clipboard: BlockClipboard | null;
@@ -86,6 +88,7 @@ interface EditorPrefs {
   gridSize: number;
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
+  showMinimap: boolean;
 }
 
 const defaultPrefs: EditorPrefs = {
@@ -95,6 +98,7 @@ const defaultPrefs: EditorPrefs = {
   gridSize: 20,
   leftPanelOpen: true,
   rightPanelOpen: true,
+  showMinimap: true,
 };
 
 function loadPrefsFromLocal(): EditorPrefs {
@@ -149,6 +153,7 @@ const initialState = {
   snapToGrid: savedPrefs.snapToGrid,
   showGrid: savedPrefs.showGrid,
   showRulers: savedPrefs.showRulers,
+  showMinimap: savedPrefs.showMinimap,
   undoStack: [] as BuilderSnapshot[],
   redoStack: [] as BuilderSnapshot[],
 };
@@ -201,6 +206,7 @@ export const useBuilderStore = create<BuilderState>()(
       setSnapToGrid: (snap) => { set({ snapToGrid: snap }, false, "setSnapToGrid"); syncPrefsToDb({ snapToGrid: snap }); },
       setShowGrid: (show) => { set({ showGrid: show }, false, "setShowGrid"); syncPrefsToDb({ showGrid: show }); },
       setShowRulers: (show) => { set({ showRulers: show }, false, "setShowRulers"); syncPrefsToDb({ showRulers: show }); },
+      setShowMinimap: (show) => { set({ showMinimap: show }, false, "setShowMinimap"); syncPrefsToDb({ showMinimap: show }); },
 
       copyBlock: (block) => set({ clipboard: block }, false, "copyBlock"),
 
@@ -295,6 +301,7 @@ export const useBuilderStore = create<BuilderState>()(
             set({
               showGrid: merged.showGrid,
               showRulers: merged.showRulers,
+              showMinimap: merged.showMinimap,
               snapToGrid: merged.snapToGrid,
               gridSize: merged.gridSize,
               leftPanelOpen: merged.leftPanelOpen,

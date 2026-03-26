@@ -764,9 +764,12 @@ export function BuilderWorkspace({
   const [leftTab, setLeftTab] = useState<"layers" | "elements">("layers");
 
   // ── Panel visibility ────────────────────────────────────────────
-  const [showLeftPanel, setShowLeftPanel] = useState(true);
-  const [showRightPanel, setShowRightPanel] = useState(true);
-  const [showMinimap, setShowMinimap] = useState(true);
+  const showLeftPanel = builderStore.leftPanelOpen;
+  const setShowLeftPanel = (v: boolean) => { if (v !== builderStore.leftPanelOpen) builderStore.toggleLeftPanel(); };
+  const showRightPanel = builderStore.rightPanelOpen;
+  const setShowRightPanel = (v: boolean) => { if (v !== builderStore.rightPanelOpen) builderStore.toggleRightPanel(); };
+  const showMinimap = builderStore.showMinimap;
+  const setShowMinimap = (v: boolean) => builderStore.setShowMinimap(v);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -1746,8 +1749,8 @@ export function BuilderWorkspace({
       case "back-to-dashboard": router.push("/dashboard/portfolios"); break;
       case "undo": builderStore.undo(); break;
       case "redo": builderStore.redo(); break;
-      case "toggle-left-panel": setShowLeftPanel((v) => !v); break;
-      case "toggle-right-panel": setShowRightPanel((v) => !v); break;
+      case "toggle-left-panel": builderStore.toggleLeftPanel(); break;
+      case "toggle-right-panel": builderStore.toggleRightPanel(); break;
       case "zoom-in": zoomIn(); break;
       case "zoom-out": zoomOut(); break;
       case "reset-zoom": resetZoom(); break;
@@ -2137,13 +2140,13 @@ ${sectionsHtml}
       // Ctrl+\  → Toggle left panel
       if (mod && e.key === "\\") {
         e.preventDefault();
-        setShowLeftPanel((v) => !v);
+        builderStore.toggleLeftPanel();
         return;
       }
       // Ctrl+/  → Toggle right panel
       if (mod && e.key === "/") {
         e.preventDefault();
-        setShowRightPanel((v) => !v);
+        builderStore.toggleRightPanel();
         return;
       }
       // Ctrl+0  → Reset zoom
