@@ -237,11 +237,13 @@ model ContactSubmission {
   name        String
   email       String
   message     String   @db.Text
+  isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
   @@index([portfolioId])
+  @@index([portfolioId, isRead])
   @@map("contact_submissions")
 }
 
