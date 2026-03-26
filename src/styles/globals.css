@@ -107,8 +107,8 @@
   --b-text-2: #a1a1aa;
   --b-text-3: #71717a;
   --b-text-4: #52525b;
-  --b-grid-sm: rgba(255, 255, 255, 0.025);
-  --b-grid-lg: rgba(255, 255, 255, 0.06);
+  --b-grid-sm: rgba(255, 255, 255, 0.06);
+  --b-grid-lg: rgba(255, 255, 255, 0.12);
   --b-canvas-glow-1: rgba(6, 182, 212, 0.025);
   --b-canvas-glow-2: rgba(139, 92, 246, 0.015);
   --b-vignette: rgba(0, 0, 0, 0.35);
@@ -148,8 +148,8 @@
   --b-text-2: #44403c;
   --b-text-3: #78716c;
   --b-text-4: #a8a29e;
-  --b-grid-sm: rgba(0, 0, 0, 0.03);
-  --b-grid-lg: rgba(0, 0, 0, 0.06);
+  --b-grid-sm: rgba(0, 0, 0, 0.06);
+  --b-grid-lg: rgba(0, 0, 0, 0.12);
   --b-canvas-glow-1: rgba(13, 148, 136, 0.03);
   --b-canvas-glow-2: rgba(139, 92, 246, 0.02);
   --b-vignette: rgba(0, 0, 0, 0.03);
