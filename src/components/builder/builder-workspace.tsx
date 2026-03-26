@@ -1389,6 +1389,7 @@ export function BuilderWorkspace({
               mobileStyles: b.mobileStyles ?? {},
               isVisible: b.isVisible,
               isLocked: b.isLocked,
+              parentId: b.parentId ?? null,
             })),
           })),
         },
