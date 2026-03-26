@@ -54,9 +54,9 @@ const CanvasGrid = memo(function CanvasGrid({
 
   const bgImage =
     scale < 0.3
-      ? `radial-gradient(circle, var(--b-grid-lg) 1px, transparent 1px)`
-      : `radial-gradient(circle, var(--b-grid-sm) 0.5px, transparent 0.5px),
-         radial-gradient(circle, var(--b-grid-lg) 1px, transparent 1px)`;
+      ? `radial-gradient(circle, var(--b-grid-lg) 1.5px, transparent 1.5px)`
+      : `radial-gradient(circle, var(--b-grid-sm) 1px, transparent 1px),
+         radial-gradient(circle, var(--b-grid-lg) 1.5px, transparent 1.5px)`;
 
   const bgSize =
     scale < 0.3
