@@ -171,7 +171,7 @@ const LayerBlockItem = memo(function LayerBlockItem({
   onDelete,
   dragHandleProps,
   depth = 0,
-  children,
+  groupChildren,
   isExpanded,
   onToggleExpand,
   isChildSelected,
@@ -184,7 +184,7 @@ const LayerBlockItem = memo(function LayerBlockItem({
   onDelete: () => void;
   dragHandleProps?: Record<string, unknown>;
   depth?: number;
-  children?: BlockWithStyles[];
+  groupChildren?: BlockWithStyles[];
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   isChildSelected?: (id: string) => boolean;
@@ -247,9 +247,9 @@ const LayerBlockItem = memo(function LayerBlockItem({
           <Trash2 className="h-2.5 w-2.5" />
         </button>
       </div>
-      {isGroup && isExpanded && children && children.length > 0 && (
+      {isGroup && isExpanded && groupChildren && groupChildren.length > 0 && (
         <div className="border-l ml-3" style={{ borderColor: "var(--b-border)" }}>
-          {children
+          {groupChildren
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((child) => (
               <LayerBlockItem
@@ -1774,7 +1774,7 @@ export function BuilderWorkspace({
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -2977,7 +2977,7 @@ ${sectionsHtml}
                                                   onSelect={() => selectBlock(block.id, false)}
                                                   onDelete={() => deleteBlock(block.id, section.id)}
                                                   dragHandleProps={{ ...blockListeners, ...blockAttributes }}
-                                                  children={groupChildren}
+                                                  groupChildren={groupChildren}
                                                   isExpanded={expandedGroups.has(block.id)}
                                                   onToggleExpand={() => setExpandedGroups((prev) => {
                                                     const next = new Set(prev);
