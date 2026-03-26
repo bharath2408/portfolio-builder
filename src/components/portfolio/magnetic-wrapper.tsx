@@ -67,7 +67,7 @@ export function MagneticWrapper({
   }
 
   return (
-    <motion.div ref={ref} style={{ x: springX, y: springY }}>
+    <motion.div ref={ref} style={{ x: springX, y: springY, width: "inherit", height: "inherit" }}>
       {children}
     </motion.div>
   );
