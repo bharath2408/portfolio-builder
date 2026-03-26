@@ -1082,6 +1082,18 @@ export function BuilderWorkspace({
     [portfolio.sections],
   );
 
+  const moveFrame = useCallback(
+    (sectionId: string, newX: number, newY: number) => {
+      const section = portfolio.sections.find((s) => s.id === sectionId);
+      if (!section) return;
+      const ss = section.styles as SectionStyles;
+      portfolioStore.updateSection(sectionId, {
+        styles: { ...ss, frameX: newX, frameY: newY },
+      });
+    },
+    [portfolio.sections, portfolioStore],
+  );
+
   const resizeBlock = useCallback(
     (
       blockId: string,
@@ -1965,6 +1977,22 @@ ${sectionsHtml}
 
   const deviceWidths: Record<string, number | undefined> = { desktop: undefined, tablet: 768, mobile: 375 };
   const previewWidth = deviceWidths[builderStore.devicePreview];
+
+  const canvasFrames = visibleSections.map((section) => {
+    const ss = section.styles as SectionStyles;
+    return {
+      id: section.id,
+      x: ss.frameX ?? 0,
+      y:
+        ss.frameY ??
+        portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80),
+      w: previewWidth ?? ss.frameWidth ?? DEFAULT_FRAME_WIDTH,
+      h: ss.frameHeight ?? DEFAULT_FRAME_HEIGHT,
+    };
+  });
+
+  const selectedFrameId =
+    selectedSectionId && selectedBlockIds.size === 0 ? selectedSectionId : null;
 
   return (
     <div
@@ -2917,6 +2945,10 @@ ${sectionsHtml}
             cursorOverride={drawMode ? "crosshair" : undefined}
             showGrid={builderStore.showGrid}
             onMarqueeEnd={drawMode ? undefined : handleMarqueeEnd}
+            frames={drawMode ? undefined : canvasFrames}
+            selectedFrameId={drawMode ? null : selectedFrameId}
+            onFrameMove={drawMode ? undefined : moveFrame}
+            onFrameDragEnd={drawMode ? undefined : handleBlockDragOrResizeEnd}
           >
             <div style={{ position: "relative" }}>
               {visibleSections.map((section) => {
