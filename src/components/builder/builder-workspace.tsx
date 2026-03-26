@@ -79,6 +79,7 @@ import {
   ZoomControls,
   type CanvasTransform,
 } from "@/components/builder/canvas-engine";
+import { HorizontalRuler, VerticalRuler, RulerCorner } from "@/components/builder/canvas-rulers";
 import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { CommandPalette } from "@/components/builder/command-palette";
 import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
@@ -2459,6 +2460,16 @@ ${sectionsHtml}
                 Show Grid
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
+                checked={builderStore.showRulers}
+                onCheckedChange={(v) => builderStore.setShowRulers(!!v)}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                Show Rulers
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
                 checked={builderStore.snapToGrid}
                 onCheckedChange={(v) => builderStore.setSnapToGrid(!!v)}
                 className="text-[12px]"
@@ -3131,6 +3142,15 @@ ${sectionsHtml}
           onPointerMove={drawMode && drawStart ? handleDrawMouseMove : undefined}
           onPointerUp={drawMode && drawStart ? handleDrawMouseUp : undefined}
         >
+          {/* Rulers */}
+          {builderStore.showRulers && (
+            <>
+              <RulerCorner />
+              <HorizontalRuler transform={transform} width={drawContainerRef.current?.clientWidth ?? 1200} />
+              <VerticalRuler transform={transform} height={drawContainerRef.current?.clientHeight ?? 800} />
+            </>
+          )}
+
           <SmartGuides guides={guides} transform={transform} />
 
           {/* Draw preview rectangle */}

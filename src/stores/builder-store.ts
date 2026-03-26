@@ -25,9 +25,11 @@ interface BuilderState {
   gridSize: number;
   snapToGrid: boolean;
   showGrid: boolean;
+  showRulers: boolean;
   setGridSize: (size: number) => void;
   setSnapToGrid: (snap: boolean) => void;
   setShowGrid: (show: boolean) => void;
+  setShowRulers: (show: boolean) => void;
 
   // Clipboard
   clipboard: BlockClipboard | null;
@@ -86,6 +88,7 @@ const initialState = {
   gridSize: 20,
   snapToGrid: true,
   showGrid: true,
+  showRulers: false,
   undoStack: [] as BuilderSnapshot[],
   redoStack: [] as BuilderSnapshot[],
 };
@@ -139,6 +142,7 @@ export const useBuilderStore = create<BuilderState>()(
       setGridSize: (size) => set({ gridSize: size }, false, "setGridSize"),
       setSnapToGrid: (snap) => set({ snapToGrid: snap }, false, "setSnapToGrid"),
       setShowGrid: (show) => set({ showGrid: show }, false, "setShowGrid"),
+      setShowRulers: (show) => set({ showRulers: show }, false, "setShowRulers"),
 
       copyBlock: (block) => set({ clipboard: block }, false, "copyBlock"),
 
