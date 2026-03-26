@@ -41,49 +41,82 @@ export default function PortfoliosPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[24px] font-bold tracking-tight text-foreground">
-            Portfolios
-          </h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Manage, edit, and publish your portfolio websites
-          </p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-indigo-500/5 via-card to-teal-500/5 px-8 py-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/[0.04] blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-teal-500/[0.04] blur-3xl" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-start gap-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 shadow-lg shadow-indigo-500/5">
+              <Globe className="h-6 w-6 text-indigo-400" />
+            </div>
+            <div className="space-y-1.5">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Portfolios
+              </h1>
+              <p className="max-w-md text-[14px] leading-relaxed text-muted-foreground">
+                Manage, edit, and publish your portfolio websites. Each portfolio is a unique site.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/portfolios/new">
+            <button className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-b from-teal-400 to-teal-600 px-5 text-[13px] font-semibold text-white shadow-lg shadow-teal-500/20 transition-all hover:shadow-teal-500/30 active:scale-[0.97]">
+              <Plus className="h-4 w-4" />
+              New Portfolio
+            </button>
+          </Link>
         </div>
-        <Link href="/dashboard/portfolios/new">
-          <button className="flex h-9 items-center gap-2 rounded-lg bg-gradient-to-b from-teal-400 to-teal-600 px-4 text-[13px] font-semibold text-white shadow-lg shadow-teal-500/20 transition-all hover:shadow-teal-500/30">
-            <Plus className="h-4 w-4" />
-            New Portfolio
-          </button>
-        </Link>
       </div>
 
       {/* Content */}
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton
+            <div
               key={i}
-              className="h-[88px] rounded-xl"
-            />
+              className="relative overflow-hidden rounded-xl border border-border/40 bg-card"
+            >
+              <div className="flex items-center gap-4 p-5">
+                <div className="h-3 w-3 animate-pulse rounded-full bg-muted/60" style={{ animationDelay: `${i * 150}ms` }} />
+                <div className="flex-1 space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-48 animate-pulse rounded bg-muted/50" style={{ animationDelay: `${i * 100}ms` }} />
+                    <div className="h-5 w-20 animate-pulse rounded-full bg-muted/40" style={{ animationDelay: `${i * 200}ms` }} />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-3.5 w-16 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 120}ms` }} />
+                    <div className="h-3.5 w-20 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 180}ms` }} />
+                    <div className="h-3.5 w-14 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 220}ms` }} />
+                  </div>
+                </div>
+              </div>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.03) 37%, transparent 63%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.8s ease-in-out infinite",
+                  animationDelay: `${i * 200}ms`,
+                }}
+              />
+            </div>
           ))}
         </div>
       ) : portfolios.length === 0 ? (
         /* Empty State */
-        <div className="flex flex-col items-center gap-5 rounded-2xl border bg-card py-20">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted ring-1 ring-border">
-            <Globe className="h-6 w-6 text-muted-foreground" />
+        <div className="flex flex-col items-center gap-6 rounded-2xl border border-dashed border-border/40 bg-muted/20 py-24">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm">
+            <Globe className="h-7 w-7 text-muted-foreground/60" />
           </div>
-          <div className="text-center">
-            <p className="text-[15px] font-semibold text-foreground">
+          <div className="space-y-1.5 text-center">
+            <p className="text-[16px] font-semibold text-foreground">
               No portfolios yet
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Create your first portfolio to get started
+            <p className="mx-auto max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+              Create your first portfolio to start building your online presence.
             </p>
           </div>
           <Link href="/dashboard/portfolios/new">
-            <button className="flex h-9 items-center gap-2 rounded-lg bg-gradient-to-b from-teal-400 to-teal-600 px-5 text-[13px] font-semibold text-white shadow-lg shadow-teal-500/20">
+            <button className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-b from-teal-400 to-teal-600 px-6 text-[13px] font-semibold text-white shadow-lg shadow-teal-500/20 transition-all hover:shadow-teal-500/30 active:scale-[0.97]">
               <Plus className="h-4 w-4" />
               Create Portfolio
             </button>
@@ -91,13 +124,13 @@ export default function PortfoliosPage() {
         </div>
       ) : (
         /* Portfolio List */
-        <div className="space-y-2">
+        <div className="space-y-3">
           {portfolios.map((portfolio) => (
             <div
               key={portfolio.id}
-              className="group relative rounded-xl border bg-card transition-all hover:border-primary/20 hover:shadow-sm"
+              className="group relative rounded-xl border border-border/40 bg-card transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5"
             >
-              <div className="flex items-center gap-4 p-4">
+              <div className="flex items-center gap-4 p-5">
                 {/* Status indicator */}
                 <div className="flex-shrink-0">
                   <div
