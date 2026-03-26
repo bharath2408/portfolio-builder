@@ -1570,27 +1570,45 @@ export function BuilderWorkspace({
     setSaving(false);
   }, [portfolio.sections, portfolio.id, builderStore]);
 
+  // ── Smart Save: save on idle (10s), blur, Ctrl+S, drag end ──
+  // scheduleAutoSave = lightweight: just backup to IndexedDB + reset idle timer
+  // Actual server save happens on: idle timeout, page blur, Ctrl+S, drag/resize end
+
   const scheduleAutoSave = useCallback(() => {
     // Immediately backup to IndexedDB (survives tab close / crash)
     saveBackup(portfolio);
+    builderStore.setDirty(true);
 
+    // Reset idle timer — save after 10s of inactivity
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       batchSave();
-    }, 2000);
-  }, [batchSave, portfolio]);
+    }, 10000);
+  }, [batchSave, portfolio, builderStore]);
 
   const handleBlockDragOrResizeEnd = useCallback(() => {
     builderStore.setDirty(true);
-    scheduleAutoSave();
-  }, [builderStore, scheduleAutoSave]);
+    saveBackup(portfolio);
+    batchSave();
+  }, [builderStore, batchSave, portfolio]);
 
-  // Cleanup auto-save timer on unmount
+  // Cleanup idle timer on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, []);
+
+  // Save on page blur / tab switch
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && builderStore.isDirty) {
+        batchSave();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [batchSave, builderStore.isDirty]);
 
   // ── Save to IndexedDB on tab close (last chance before crash) ──
   useEffect(() => {
