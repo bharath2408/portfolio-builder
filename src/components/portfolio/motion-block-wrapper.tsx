@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 import type { BlockStyles } from "@/types";
+
 import { MagneticWrapper } from "./magnetic-wrapper";
 
 // ─── Helpers ────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 interface MagneticWrapperProps {
   children: React.ReactNode;
@@ -21,9 +21,8 @@ export function MagneticWrapper({
   const y = useMotionValue(0);
   const springX = useSpring(x, springConfig);
   const springY = useSpring(y, springConfig);
-  const [isTouch, setIsTouch] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
-  );
+  const isTouch =
+    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => {
     // Disable on touch devices
@@ -60,7 +59,7 @@ export function MagneticWrapper({
       window.removeEventListener("mousemove", handleMouseMove);
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [strength, radius, x, y]);
+  }, [strength, radius, x, y, isTouch]);
 
   // Touch device — render without magnetic effect
   if (isTouch) {
