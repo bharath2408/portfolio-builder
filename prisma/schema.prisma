@@ -154,38 +154,27 @@ model Section {
 model Block {
   id        String  @id @default(cuid())
   sectionId String
-  type      String  // "heading" | "text" | "image" | "button" | etc.
+  parentId  String?
+  type      String
   sortOrder Int     @default(0)
   isVisible Boolean @default(true)
   isLocked  Boolean @default(false)
 
-  // Block-specific content data (JSON) — varies by type
-  // Heading → { text, level }
-  // Text → { html }
-  // Image → { src, alt }
-  // Button → { text, url, variant }
-  // SkillBar → { name, level, icon }
-  // ProjectCard → { title, description, image, techStack, liveUrl, repoUrl }
-  // etc.
-  content   Json    @default("{}")
-
-  // Granular visual styling (JSON) — like Figma's design panel
-  // { width, maxWidth, padding, margin, fontSize, fontWeight, fontFamily,
-  //   textAlign, textColor, backgroundColor, backgroundGradient,
-  //   borderWidth, borderColor, borderRadius, borderStyle,
-  //   boxShadow, opacity, display, gap, alignItems, justifyContent,
-  //   hideOnMobile, hideOnDesktop, animation }
-  styles       Json    @default("{}")
-  tabletStyles Json    @default("{}")  // Sparse overrides for tablet (768–1024px)
-  mobileStyles Json    @default("{}")  // Sparse overrides for mobile (<768px)
+  content      Json @default("{}")
+  styles       Json @default("{}")
+  tabletStyles Json @default("{}")
+  mobileStyles Json @default("{}")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  section  Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  parent   Block?  @relation("BlockChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children Block[] @relation("BlockChildren")
 
   @@index([sectionId])
   @@index([sectionId, sortOrder])
+  @@index([parentId])
   @@map("blocks")
 }
 
