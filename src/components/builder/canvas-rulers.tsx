@@ -80,7 +80,7 @@ export const HorizontalRuler = memo(function HorizontalRuler({
 
   return (
     <div
-      className="absolute left-0 top-0 z-[51]"
+      className="absolute left-0 top-0 z-[5]"
       style={{
         height: RULER_SIZE,
         width,
@@ -157,7 +157,7 @@ export const VerticalRuler = memo(function VerticalRuler({
 
   return (
     <div
-      className="absolute left-0 top-0 z-[51]"
+      className="absolute left-0 top-0 z-[5]"
       style={{
         width: RULER_SIZE,
         height,
@@ -179,7 +179,7 @@ export const VerticalRuler = memo(function VerticalRuler({
 export const RulerCorner = memo(function RulerCorner() {
   return (
     <div
-      className="absolute left-0 top-0 z-[52]"
+      className="absolute left-0 top-0 z-[6]"
       style={{
         width: RULER_SIZE,
         height: RULER_SIZE,
