@@ -25,6 +25,7 @@ interface BatchBlock {
   mobileStyles?: Record<string, unknown>;
   isVisible?: boolean;
   isLocked?: boolean;
+  parentId?: string | null;
 }
 
 interface BatchSection {
@@ -97,6 +98,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
             mobileStyles: (block.mobileStyles ?? {}) as Prisma.InputJsonValue,
             isVisible: block.isVisible ?? true,
             isLocked: block.isLocked ?? false,
+            parentId: block.parentId ?? null,
           },
           create: {
             id: block.id,
@@ -109,6 +111,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
             mobileStyles: (block.mobileStyles ?? {}) as Prisma.InputJsonValue,
             isVisible: block.isVisible ?? true,
             isLocked: block.isLocked ?? false,
+            parentId: block.parentId ?? null,
           },
         }),
       );
