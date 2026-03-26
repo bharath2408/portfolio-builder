@@ -1248,6 +1248,114 @@ export function BuilderWorkspace({
     }
   };
 
+  // ── Group / Ungroup ──────────────────────────────────────────
+
+  const groupSelectedBlocks = () => {
+    if (selectedBlockIds.size < 2 || !selectedSectionId) return;
+    const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+    if (!section) return;
+    const blocks = section.blocks.filter((b) => selectedBlockIds.has(b.id));
+    if (blocks.length < 2) return;
+
+    // Ensure all selected blocks are in the same section and are top-level
+    if (blocks.some((b) => b.parentId)) return;
+
+    builderStore.pushSnapshot("group-blocks");
+
+    // Compute bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const b of blocks) {
+      const bs = b.styles as BlockStyles;
+      const bx = bs.x ?? 0;
+      const by = bs.y ?? 0;
+      const bw = bs.w ?? DEFAULT_BLOCK_W;
+      const bh = bs.h ?? 0;
+      if (bx < minX) minX = bx;
+      if (by < minY) minY = by;
+      if (bx + bw > maxX) maxX = bx + bw;
+      if (by + bh > maxY) maxY = by + bh;
+    }
+
+    const groupId = crypto.randomUUID();
+    const groupBlock: BlockWithStyles = {
+      id: groupId,
+      sectionId: selectedSectionId,
+      type: "group",
+      sortOrder: Math.max(...section.blocks.map((b) => b.sortOrder), 0) + 1,
+      isVisible: true,
+      isLocked: false,
+      content: {},
+      styles: {
+        x: minX,
+        y: minY,
+        w: maxX - minX,
+        h: maxY - minY,
+        backgroundColor: "transparent",
+        overflow: "visible",
+      } as BlockStyles,
+      tabletStyles: {},
+      mobileStyles: {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as unknown as BlockWithStyles;
+
+    portfolioStore.addBlockToSection(selectedSectionId, groupBlock);
+
+    // Update children: set parentId and make positions relative to group
+    for (const b of blocks) {
+      const bs = b.styles as BlockStyles;
+      portfolioStore.updateBlockInSection(selectedSectionId, b.id, {
+        parentId: groupId,
+        styles: { ...bs, x: (bs.x ?? 0) - minX, y: (bs.y ?? 0) - minY },
+      } as Partial<BlockWithStyles>);
+    }
+
+    setSelectedBlockIds(new Set([groupId]));
+    setExpandedGroups((prev) => new Set([...prev, groupId]));
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  };
+
+  const ungroupBlock = () => {
+    if (selectedBlockIds.size !== 1 || !selectedSectionId) return;
+    const groupId = [...selectedBlockIds][0]!;
+    const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+    if (!section) return;
+    const group = section.blocks.find((b) => b.id === groupId);
+    if (!group || group.type !== "group") return;
+
+    builderStore.pushSnapshot("ungroup-blocks");
+
+    const gs = group.styles as BlockStyles;
+    const gx = gs.x ?? 0;
+    const gy = gs.y ?? 0;
+    const children = section.blocks.filter((b) => b.parentId === groupId);
+    const childIds = new Set<string>();
+
+    // Move children back to top level
+    for (const child of children) {
+      const cs = child.styles as BlockStyles;
+      portfolioStore.updateBlockInSection(selectedSectionId, child.id, {
+        parentId: null,
+        styles: { ...cs, x: (cs.x ?? 0) + gx, y: (cs.y ?? 0) + gy },
+      } as Partial<BlockWithStyles>);
+      childIds.add(child.id);
+    }
+
+    // Remove group block
+    portfolioStore.removeBlockFromSection(selectedSectionId, groupId);
+    apiDelete(`/portfolios/${portfolio.id}/sections/${selectedSectionId}/blocks/${groupId}`).catch(() => {});
+
+    setSelectedBlockIds(childIds);
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.delete(groupId);
+      return next;
+    });
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+  };
+
   // ── Section CRUD ──────────────────────────────────────────────
 
   const addSection = async () => {
@@ -1949,6 +2057,19 @@ ${sectionsHtml}
         setRightPanel("properties");
         builderStore.setDirty(true);
         scheduleAutoSave();
+        return;
+      }
+
+      // Ctrl+Shift+G → Ungroup (check before Ctrl+G)
+      if (mod && e.key === "g" && e.shiftKey) {
+        e.preventDefault();
+        ungroupBlock();
+        return;
+      }
+      // Ctrl+G → Group selected blocks
+      if (mod && e.key === "g" && !e.shiftKey) {
+        e.preventDefault();
+        groupSelectedBlocks();
         return;
       }
 
@@ -3341,6 +3462,9 @@ ${sectionsHtml}
                     { label: blk?.isLocked ? "Unlock" : "Lock", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
                     { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
                     { label: "---" },
+                    ...(selectedBlockIds.size >= 2 ? [{ label: "Group Selection", shortcut: "Ctrl+G", action: act(() => groupSelectedBlocks()), icon: "⊞" }] : []),
+                    ...(blk?.type === "group" ? [{ label: "Ungroup", shortcut: "Ctrl+Shift+G", action: act(() => ungroupBlock()), icon: "⊟" }] : []),
+                    ...((selectedBlockIds.size >= 2 || blk?.type === "group") ? [{ label: "---" }] : []),
                     { label: "Delete", shortcut: "⌫", action: act(() => deleteBlock(bid, sid)), danger: true, icon: "🗑" },
                   ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
                 })().map((item, i) =>
