@@ -1978,18 +1978,22 @@ ${sectionsHtml}
   const deviceWidths: Record<string, number | undefined> = { desktop: undefined, tablet: 768, mobile: 375 };
   const previewWidth = deviceWidths[builderStore.devicePreview];
 
-  const canvasFrames = visibleSections.map((section) => {
-    const ss = section.styles as SectionStyles;
-    return {
-      id: section.id,
-      x: ss.frameX ?? 0,
-      y:
-        ss.frameY ??
-        portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80),
-      w: previewWidth ?? ss.frameWidth ?? DEFAULT_FRAME_WIDTH,
-      h: ss.frameHeight ?? DEFAULT_FRAME_HEIGHT,
-    };
-  });
+  const canvasFrames = useMemo(
+    () =>
+      visibleSections.map((section) => {
+        const ss = section.styles as SectionStyles;
+        return {
+          id: section.id,
+          x: ss.frameX ?? 0,
+          y:
+            ss.frameY ??
+            portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80),
+          w: previewWidth ?? ss.frameWidth ?? DEFAULT_FRAME_WIDTH,
+          h: ss.frameHeight ?? DEFAULT_FRAME_HEIGHT,
+        };
+      }),
+    [visibleSections, portfolio.sections, previewWidth],
+  );
 
   const selectedFrameId =
     selectedSectionId && selectedBlockIds.size === 0 ? selectedSectionId : null;
