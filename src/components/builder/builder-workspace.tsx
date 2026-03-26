@@ -3461,14 +3461,18 @@ ${sectionsHtml}
 
                   // ── Frame context menu ──
                   if (ctxMenu.type === "frame") {
+                    const blockCount = sec?.blocks.length ?? 0;
+                    const hasClipboard = !!builderStore.clipboard;
                     return [
                       { label: "Select Frame", action: act(() => { setSelectedSectionId(sid); setSelectedBlockIds(new Set()); }), icon: "◻" },
+                      { label: "Select All Elements", action: act(() => { if (sec) { setSelectedSectionId(sid); setSelectedBlockIds(new Set(sec.blocks.filter((b) => !b.parentId).map((b) => b.id))); } }), icon: "⊞", shortcut: "Ctrl+A" },
+                      { label: "---" },
+                      ...(hasClipboard ? [{ label: "Paste", shortcut: "Ctrl+V", action: act(() => { const clip = builderStore.clipboard; if (!clip) return; const newBlock = { id: crypto.randomUUID(), sectionId: sid, type: clip.type, sortOrder: blockCount, isVisible: true, isLocked: false, content: structuredClone(clip.content), styles: { ...structuredClone(clip.styles), x: 60, y: 60 }, tabletStyles: structuredClone(clip.tabletStyles ?? {}), mobileStyles: structuredClone(clip.mobileStyles ?? {}), createdAt: new Date(), updatedAt: new Date() } as unknown as BlockWithStyles; builderStore.pushSnapshot("paste"); portfolioStore.addBlockToSection(sid, newBlock); setSelectedBlockIds(new Set([newBlock.id])); setSelectedSectionId(sid); builderStore.setDirty(true); scheduleAutoSave(); }), icon: "📋" }] : []),
                       { label: "---" },
                       { label: sec?.isVisible ? "Hide Frame" : "Show Frame", action: act(() => { if (sec) portfolioStore.updateSection(sid, { isVisible: !sec.isVisible }); builderStore.setDirty(true); scheduleAutoSave(); }), icon: sec?.isVisible ? "👁" : "🚫" },
                       { label: sec?.isLocked ? "Unlock Frame" : "Lock Frame", action: act(() => { if (sec) portfolioStore.updateSection(sid, { isLocked: !sec.isLocked }); builderStore.setDirty(true); scheduleAutoSave(); }), icon: sec?.isLocked ? "🔓" : "🔒" },
                       { label: "---" },
                       { label: "Rename Frame", action: act(() => { const name = prompt("Frame name:", sec?.name); if (name && sec) { portfolioStore.updateSection(sid, { name }); builderStore.setDirty(true); scheduleAutoSave(); } }), icon: "✏" },
-                      { label: "Duplicate Frame", action: act(() => { /* TODO: implement frame duplicate */ }), icon: "⧉" },
                       { label: "---" },
                       { label: "Delete Frame", action: act(() => deleteSection(sid)), danger: true, icon: "🗑" },
                     ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
@@ -3480,9 +3484,11 @@ ${sectionsHtml}
                   const maxOrd = sec ? Math.max(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
                   const minOrd = sec ? Math.min(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
                   const reorder = (order: number) => act(() => { portfolioStore.updateBlockInSection(sid, bid, { sortOrder: order } as Partial<BlockWithStyles>); builderStore.setDirty(true); });
+                  const doCopy = () => { if (blk) builderStore.copyBlock({ type: blk.type, content: structuredClone(blk.content as Record<string, unknown>), styles: structuredClone(blk.styles as Record<string, unknown>), tabletStyles: structuredClone((blk.tabletStyles ?? {}) as Record<string, unknown>), mobileStyles: structuredClone((blk.mobileStyles ?? {}) as Record<string, unknown>) }); };
 
                   return [
-                    { label: "Copy", shortcut: "Ctrl+C", action: act(() => { if (blk) builderStore.copyBlock({ type: blk.type, content: structuredClone(blk.content as Record<string, unknown>), styles: structuredClone(blk.styles as Record<string, unknown>), tabletStyles: structuredClone((blk.tabletStyles ?? {}) as Record<string, unknown>), mobileStyles: structuredClone((blk.mobileStyles ?? {}) as Record<string, unknown>) }); }), icon: "📋" },
+                    { label: "Cut", shortcut: "Ctrl+X", action: act(() => { doCopy(); deleteBlock(bid, sid); }), icon: "✂" },
+                    { label: "Copy", shortcut: "Ctrl+C", action: act(() => doCopy()), icon: "📋" },
                     { label: "Duplicate", shortcut: "Ctrl+D", action: act(() => { if (blk) duplicateBlock(blk, sid); }), icon: "⧉" },
                     { label: "---" },
                     { label: "Bring to Front", shortcut: "]", action: reorder(maxOrd + 1), icon: "⇈" },
@@ -3493,7 +3499,7 @@ ${sectionsHtml}
                     ...(selectedBlockIds.size >= 2 ? [{ label: "Group Selection", shortcut: "Ctrl+G", action: act(() => groupSelectedBlocks()), icon: "⊞" }] : []),
                     ...(blk?.type === "group" ? [{ label: "Ungroup", shortcut: "Ctrl+Shift+G", action: act(() => ungroupBlock()), icon: "⊟" }] : []),
                     ...((selectedBlockIds.size >= 2 || blk?.type === "group") ? [{ label: "---" }] : []),
-                    { label: blk?.isLocked ? "Unlock" : "Lock", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
+                    { label: blk?.isLocked ? "Unlock" : "Lock", shortcut: blk?.isLocked ? "" : "", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
                     { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
                     { label: "---" },
                     { label: "Delete", shortcut: "⌫", action: act(() => deleteBlock(bid, sid)), danger: true, icon: "🗑" },
