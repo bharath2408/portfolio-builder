@@ -26,6 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
       where: {
         userId: user.id,
         status: "PUBLISHED",
+        deletedAt: null,
       },
       orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
       include: {

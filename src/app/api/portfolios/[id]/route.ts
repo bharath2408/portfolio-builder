@@ -10,7 +10,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
   const { id } = await ctx.params;
 
   const portfolio = await db.portfolio.findFirst({
-    where: { id, userId: user.id },
+    where: { id, userId: user.id, deletedAt: null },
     include: {
       sections: {
         orderBy: { sortOrder: "asc" },
@@ -33,7 +33,7 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
   const body = await req.json();
 
   const portfolio = await db.portfolio.findFirst({
-    where: { id, userId: user.id },
+    where: { id, userId: user.id, deletedAt: null },
   });
   if (!portfolio) return notFoundResponse("Portfolio");
 
@@ -75,6 +75,6 @@ export const DELETE = withErrorHandler(async (_req, ctx) => {
   });
   if (!portfolio) return notFoundResponse("Portfolio");
 
-  await db.portfolio.delete({ where: { id } });
+  await db.portfolio.update({ where: { id }, data: { deletedAt: new Date() } });
   return noContentResponse();
 });

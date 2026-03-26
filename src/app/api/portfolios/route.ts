@@ -19,7 +19,7 @@ export async function GET() {
     if (!session?.user?.id) return unauthorizedResponse();
 
     const portfolios = await db.portfolio.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, deletedAt: null },
       select: {
         id: true,
         title: true,

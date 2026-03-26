@@ -104,6 +104,7 @@ model Portfolio {
   seoDescription String?
   ogImageUrl     String?
   accessPassword String?
+  deletedAt      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -119,6 +120,7 @@ model Portfolio {
   @@unique([userId, slug])
   @@index([userId])
   @@index([slug])
+  @@index([deletedAt])
   @@map("portfolios")
 }
 
