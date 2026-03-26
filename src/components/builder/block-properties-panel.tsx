@@ -795,6 +795,31 @@ export function BlockPropertiesPanel({
                 ]}
               />
             </div>
+            {/* Magnetic Cursor */}
+            <div>
+              <SubLabel hint="Element subtly pulls toward the cursor when nearby (desktop only)">Magnetic Cursor</SubLabel>
+              <label className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[11px] transition-colors" style={{ color: "var(--b-text-2)", backgroundColor: styles.magneticHover ? "var(--b-accent-soft)" : "transparent" }}>
+                <input
+                  type="checkbox"
+                  checked={styles.magneticHover ?? false}
+                  onChange={(e) => updateStyle("magneticHover", e.target.checked)}
+                  className="rounded"
+                />
+                Enable magnetic pull
+              </label>
+            </div>
+            {styles.magneticHover && (
+              <>
+                <div>
+                  <SubLabel hint="How strongly the element pulls toward cursor (0.1 = subtle, 0.5 = strong)">Strength</SubLabel>
+                  <NumInput value={styles.magneticStrength} onChange={(v) => updateStyle("magneticStrength", v)} placeholder="0.2" />
+                </div>
+                <div>
+                  <SubLabel hint="Detection radius in pixels around the element">Radius (px)</SubLabel>
+                  <NumInput value={styles.magneticRadius} onChange={(v) => updateStyle("magneticRadius", v)} placeholder="100" />
+                </div>
+              </>
+            )}
           </PropGrid>
         </Section>
 
