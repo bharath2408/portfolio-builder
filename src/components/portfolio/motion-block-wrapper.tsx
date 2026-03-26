@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 import type { BlockStyles } from "@/types";
+import { MagneticWrapper } from "./magnetic-wrapper";
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -120,6 +121,7 @@ export function MotionBlockWrapper({ styles, children, className, style, stagger
   const hasAnimation = animation !== "none";
   const hasHover = hoverEffect !== "none";
   const hasParallax = scrollTrigger === "parallax";
+  const hasMagnetic = styles.magneticHover === true;
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -195,7 +197,7 @@ export function MotionBlockWrapper({ styles, children, className, style, stagger
   }, [hasAnimation, hasParallax, animation, duration, delay, easing, parallaxSpeed]);
 
   // ── No effects: plain div ──────────────────────────
-  if (!hasAnimation && !hasHover && !hasParallax) {
+  if (!hasAnimation && !hasHover && !hasParallax && !hasMagnetic) {
     return (
       <div className={className} style={style}>
         {children}
@@ -203,23 +205,34 @@ export function MotionBlockWrapper({ styles, children, className, style, stagger
     );
   }
 
-  // ── Build hover wrapper (Framer Motion) ────────────
-  const content = hasHover ? (
-    <motion.div
-      style={{ perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
-      whileHover={getHoverProps(hoverEffect)}
-      transition={{ duration: 0.25 }}
-    >
-      {children}
-    </motion.div>
-  ) : (
-    children
-  );
+  // ── Build content layers (magnetic wraps hover wraps children) ──
+  let content: React.ReactNode = children;
+
+  if (hasHover) {
+    content = (
+      <motion.div
+        style={{ perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
+        whileHover={getHoverProps(hoverEffect)}
+        transition={{ duration: 0.25 }}
+      >
+        {content}
+      </motion.div>
+    );
+  }
+
+  if (hasMagnetic) {
+    content = (
+      <MagneticWrapper
+        strength={styles.magneticStrength}
+        radius={styles.magneticRadius}
+      >
+        {content}
+      </MagneticWrapper>
+    );
+  }
 
   // ── Scroll-triggered (GSAP on ref div) ─────────────
   if (hasAnimation || hasParallax) {
-    // Start invisible — GSAP will reveal on scroll.
-    // Inline visibility:hidden prevents flash before GSAP sets initial state.
     const hiddenStyle: React.CSSProperties = {
       ...style,
       visibility: "hidden",
@@ -239,15 +252,10 @@ export function MotionBlockWrapper({ styles, children, className, style, stagger
     );
   }
 
-  // ── Hover only: Framer Motion ──────────────────────
+  // ── No scroll animation — magnetic and/or hover only ──
   return (
-    <motion.div
-      className={className}
-      style={{ ...style, perspective: hoverEffect === "tilt-3d" ? 800 : undefined }}
-      whileHover={getHoverProps(hoverEffect)}
-      transition={{ duration: 0.25 }}
-    >
-      {children}
-    </motion.div>
+    <div className={className} style={style}>
+      {content}
+    </div>
   );
 }
