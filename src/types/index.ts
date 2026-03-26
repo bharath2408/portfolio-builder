@@ -195,6 +195,9 @@ export interface BlockStyles {
   scrollTrigger?: "none"|"reveal"|"parallax";
   parallaxSpeed?: number;
   hoverEffect?: "none"|"lift"|"tilt-3d"|"glow"|"grow"|"shake";
+  magneticHover?: boolean;
+  magneticStrength?: number;
+  magneticRadius?: number;
   hideOnMobile?: boolean;
   hideOnDesktop?: boolean;
   hoverScale?: number;
