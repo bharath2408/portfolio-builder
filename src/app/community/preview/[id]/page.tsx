@@ -29,6 +29,7 @@ export default async function CommunityTemplatePreviewPage({ params }: Props) {
           seoDescription: true,
           ogImageUrl: true,
           accessPassword: true,
+          deletedAt: true,
           createdAt: true,
           updatedAt: true,
           userId: true,
