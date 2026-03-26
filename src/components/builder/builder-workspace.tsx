@@ -819,15 +819,25 @@ export function BuilderWorkspace({
   const drawContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Context menu ──────────────────────────────────────────────
-  const [ctxMenu, setCtxMenu] = useState<{ blockId: string; sectionId: string; x: number; y: number } | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<{
+    type: "block" | "frame";
+    blockId?: string;
+    sectionId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const handleBlockContextMenu = (blockId: string, x: number, y: number) => {
     for (const s of portfolio.sections) {
       if (s.blocks.some((b) => b.id === blockId)) {
-        setCtxMenu({ blockId, sectionId: s.id, x, y });
+        setCtxMenu({ type: "block", blockId, sectionId: s.id, x, y });
         return;
       }
     }
+  };
+
+  const handleFrameContextMenu = (sectionId: string, x: number, y: number) => {
+    setCtxMenu({ type: "frame", sectionId, x, y });
   };
 
   const closeCtxMenu = () => setCtxMenu(null);
@@ -3171,6 +3181,7 @@ ${sectionsHtml}
                       selectedSectionId === section.id && selectedBlockIds.size === 0
                     }
                     onSelect={selectSection}
+                    onContextMenu={handleFrameContextMenu}
                   >
                     {[...section.blocks]
                       .filter((b) => b.isVisible && !b.parentId)
@@ -3432,11 +3443,9 @@ ${sectionsHtml}
           {/* ── Context Menu ──────────────────────────────────────── */}
           {ctxMenu && (
             <>
-              {/* Backdrop to close */}
               <div className="fixed inset-0 z-[200]" onClick={closeCtxMenu} onContextMenu={(e) => { e.preventDefault(); closeCtxMenu(); }} />
-              {/* Menu */}
               <div
-                className="fixed z-[201] min-w-[180px] overflow-hidden rounded-lg py-1"
+                className="fixed z-[201] min-w-[200px] overflow-hidden rounded-lg py-1"
                 style={{
                   left: ctxMenu.x,
                   top: ctxMenu.y,
@@ -3446,28 +3455,47 @@ ${sectionsHtml}
                 }}
               >
                 {(() => {
-                  const { sectionId: sid, blockId: bid } = ctxMenu;
+                  const { sectionId: sid } = ctxMenu;
                   const sec = portfolio.sections.find((s) => s.id === sid);
+                  const act = (fn: () => void) => () => { setCtxMenu(null); fn(); };
+
+                  // ── Frame context menu ──
+                  if (ctxMenu.type === "frame") {
+                    return [
+                      { label: "Select Frame", action: act(() => { setSelectedSectionId(sid); setSelectedBlockIds(new Set()); }), icon: "◻" },
+                      { label: "---" },
+                      { label: sec?.isVisible ? "Hide Frame" : "Show Frame", action: act(() => { if (sec) portfolioStore.updateSection(sid, { isVisible: !sec.isVisible }); builderStore.setDirty(true); scheduleAutoSave(); }), icon: sec?.isVisible ? "👁" : "🚫" },
+                      { label: sec?.isLocked ? "Unlock Frame" : "Lock Frame", action: act(() => { if (sec) portfolioStore.updateSection(sid, { isLocked: !sec.isLocked }); builderStore.setDirty(true); scheduleAutoSave(); }), icon: sec?.isLocked ? "🔓" : "🔒" },
+                      { label: "---" },
+                      { label: "Rename Frame", action: act(() => { const name = prompt("Frame name:", sec?.name); if (name && sec) { portfolioStore.updateSection(sid, { name }); builderStore.setDirty(true); scheduleAutoSave(); } }), icon: "✏" },
+                      { label: "Duplicate Frame", action: act(() => { /* TODO: implement frame duplicate */ }), icon: "⧉" },
+                      { label: "---" },
+                      { label: "Delete Frame", action: act(() => deleteSection(sid)), danger: true, icon: "🗑" },
+                    ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
+                  }
+
+                  // ── Block context menu ──
+                  const bid = ctxMenu.blockId!;
                   const blk = sec?.blocks.find((b) => b.id === bid);
                   const maxOrd = sec ? Math.max(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
                   const minOrd = sec ? Math.min(...sec.blocks.map((b) => b.sortOrder), 0) : 0;
-
-                  const act = (fn: () => void) => () => { setCtxMenu(null); fn(); };
                   const reorder = (order: number) => act(() => { portfolioStore.updateBlockInSection(sid, bid, { sortOrder: order } as Partial<BlockWithStyles>); builderStore.setDirty(true); });
 
                   return [
+                    { label: "Copy", shortcut: "Ctrl+C", action: act(() => { if (blk) builderStore.copyBlock({ type: blk.type, content: structuredClone(blk.content as Record<string, unknown>), styles: structuredClone(blk.styles as Record<string, unknown>), tabletStyles: structuredClone((blk.tabletStyles ?? {}) as Record<string, unknown>), mobileStyles: structuredClone((blk.mobileStyles ?? {}) as Record<string, unknown>) }); }), icon: "📋" },
+                    { label: "Duplicate", shortcut: "Ctrl+D", action: act(() => { if (blk) duplicateBlock(blk, sid); }), icon: "⧉" },
+                    { label: "---" },
                     { label: "Bring to Front", shortcut: "]", action: reorder(maxOrd + 1), icon: "⇈" },
                     { label: "Bring Forward", shortcut: "↑", action: reorder((blk?.sortOrder ?? 0) + 1), icon: "↑" },
                     { label: "Send Backward", shortcut: "↓", action: reorder(Math.max(0, (blk?.sortOrder ?? 0) - 1)), icon: "↓" },
                     { label: "Send to Back", shortcut: "[", action: reorder(minOrd - 1), icon: "⇊" },
                     { label: "---" },
-                    { label: "Duplicate", shortcut: "Ctrl+D", action: act(() => { if (blk) duplicateBlock(blk, sid); }), icon: "⧉" },
-                    { label: blk?.isLocked ? "Unlock" : "Lock", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
-                    { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
-                    { label: "---" },
                     ...(selectedBlockIds.size >= 2 ? [{ label: "Group Selection", shortcut: "Ctrl+G", action: act(() => groupSelectedBlocks()), icon: "⊞" }] : []),
                     ...(blk?.type === "group" ? [{ label: "Ungroup", shortcut: "Ctrl+Shift+G", action: act(() => ungroupBlock()), icon: "⊟" }] : []),
                     ...((selectedBlockIds.size >= 2 || blk?.type === "group") ? [{ label: "---" }] : []),
+                    { label: blk?.isLocked ? "Unlock" : "Lock", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
+                    { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
+                    { label: "---" },
                     { label: "Delete", shortcut: "⌫", action: act(() => deleteBlock(bid, sid)), danger: true, icon: "🗑" },
                   ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
                 })().map((item, i) =>

@@ -461,6 +461,7 @@ export interface FrameProps {
   backgroundColor?: string;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  onContextMenu?: (id: string, x: number, y: number) => void;
   children: React.ReactNode;
 }
 
@@ -474,6 +475,7 @@ export const CanvasFrame = memo(function CanvasFrame({
   backgroundColor,
   isSelected,
   onSelect,
+  onContextMenu: onCtxMenu,
   children,
 }: FrameProps) {
   return (
@@ -534,6 +536,13 @@ export const CanvasFrame = memo(function CanvasFrame({
           if (e.target === e.currentTarget) {
             e.stopPropagation();
             onSelect(id);
+          }
+        }}
+        onContextMenu={(e) => {
+          if (onCtxMenu) {
+            e.preventDefault();
+            e.stopPropagation();
+            onCtxMenu(id, e.clientX, e.clientY);
           }
         }}
       >
