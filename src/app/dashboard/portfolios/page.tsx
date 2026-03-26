@@ -258,9 +258,9 @@ export default function PortfoliosPage() {
         open={!!confirmDeleteId}
         onClose={() => setConfirmDeleteId(null)}
         onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
-        title="Delete portfolio?"
-        description="This will permanently delete the portfolio and all its sections, blocks, and themes. This action cannot be undone."
-        confirmText="Delete"
+        title="Move to trash?"
+        description="This portfolio will be moved to trash. You can restore it within 30 days."
+        confirmText="Move to Trash"
         variant="danger"
         loading={!!deletingId}
       />

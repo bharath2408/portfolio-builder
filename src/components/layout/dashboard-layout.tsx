@@ -13,6 +13,7 @@ import {
   Moon,
   Search,
   ChevronRight,
+  Trash2,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -34,6 +35,7 @@ const navigation = [
       { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { name: "Portfolios", href: "/dashboard/portfolios", icon: FolderKanban },
       { name: "Community", href: "/dashboard/community", icon: Users },
+      { name: "Trash", href: "/dashboard/trash", icon: Trash2 },
     ],
   },
   {
@@ -49,6 +51,7 @@ const breadcrumbMap: Record<string, string> = {
   "/dashboard/portfolios": "Portfolios",
   "/dashboard/portfolios/new": "New Portfolio",
   "/dashboard/community": "Community",
+  "/dashboard/trash": "Trash",
   "/dashboard/settings": "Settings",
 };
 
