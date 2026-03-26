@@ -23,6 +23,14 @@ export interface CanvasEngineProps {
   cursorOverride?: string;
   showGrid?: boolean;
   onMarqueeEnd?: (x1: number, y1: number, x2: number, y2: number) => void;
+  /** Frame rects for hit-testing during frame drag */
+  frames?: Array<{ id: string; x: number; y: number; w: number; h: number }>;
+  /** Currently selected frame ID (only set when no blocks are selected) */
+  selectedFrameId?: string | null;
+  /** Called on each pointer move during frame drag with new canvas-space position */
+  onFrameMove?: (id: string, newX: number, newY: number) => void;
+  /** Called when frame drag ends — triggers auto-save */
+  onFrameDragEnd?: () => void;
 }
 
 const MIN_ZOOM = 0.1;
@@ -84,6 +92,10 @@ export function CanvasEngine({
   cursorOverride,
   showGrid = true,
   onMarqueeEnd,
+  frames,
+  selectedFrameId,
+  onFrameMove,
+  onFrameDragEnd,
 }: CanvasEngineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -93,6 +105,13 @@ export function CanvasEngine({
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
   const marqueeRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const justFinishedMarquee = useRef(false);
+  const frameDrag = useRef<{
+    id: string;
+    startMouseX: number;
+    startMouseY: number;
+    startFrameX: number;
+    startFrameY: number;
+  } | null>(null);
   const [marqueeRect, setMarqueeRect] = useState<{
     x: number; y: number; w: number; h: number;
   } | null>(null);
