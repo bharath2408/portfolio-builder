@@ -253,6 +253,8 @@ export type BlockWithStyles = Block & {
   styles: BlockStyles;
   tabletStyles: Partial<BlockStyles>;
   mobileStyles: Partial<BlockStyles>;
+  parentId?: string | null;
+  children?: BlockWithStyles[];
 };
 
 export type SectionWithBlocks = Section & {
