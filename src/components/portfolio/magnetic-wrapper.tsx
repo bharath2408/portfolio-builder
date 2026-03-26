@@ -21,14 +21,13 @@ export function MagneticWrapper({
   const y = useMotionValue(0);
   const springX = useSpring(x, springConfig);
   const springY = useSpring(y, springConfig);
-  const [isTouch, setIsTouch] = useState(false);
+  const [isTouch, setIsTouch] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+  );
 
   useEffect(() => {
     // Disable on touch devices
-    if (window.matchMedia("(pointer: coarse)").matches) {
-      setIsTouch(true);
-      return;
-    }
+    if (isTouch) return;
 
     let rafId: number | null = null;
 

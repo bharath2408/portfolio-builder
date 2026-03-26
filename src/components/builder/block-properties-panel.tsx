@@ -812,11 +812,11 @@ export function BlockPropertiesPanel({
               <>
                 <div>
                   <SubLabel hint="How strongly the element pulls toward cursor (0.1 = subtle, 0.5 = strong)">Strength</SubLabel>
-                  <NumInput value={styles.magneticStrength} onChange={(v) => updateStyle("magneticStrength", v)} placeholder="0.2" />
+                  <NumInput value={styles.magneticStrength} onChange={(v) => updateStyle("magneticStrength", Math.min(0.5, Math.max(0.1, v)))} placeholder="0.2" />
                 </div>
                 <div>
                   <SubLabel hint="Detection radius in pixels around the element">Radius (px)</SubLabel>
-                  <NumInput value={styles.magneticRadius} onChange={(v) => updateStyle("magneticRadius", v)} placeholder="100" />
+                  <NumInput value={styles.magneticRadius} onChange={(v) => updateStyle("magneticRadius", Math.min(300, Math.max(50, Math.round(v))))} placeholder="100" />
                 </div>
               </>
             )}
