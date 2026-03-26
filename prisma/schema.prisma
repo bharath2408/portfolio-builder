@@ -27,6 +27,7 @@ model User {
   username      String?   @unique
   bio           String?
   theme              String    @default("light") // "light" | "dark"
+  editorPreferences  Json      @default("{}") // { showGrid, showRulers, snapToGrid, showMinimap, studioTheme, ... }
   emailNotifications Boolean   @default(true)
   onboardingDone     Boolean   @default(false)
   createdAt          DateTime  @default(now())

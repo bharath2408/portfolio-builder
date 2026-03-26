@@ -1622,6 +1622,11 @@ export function BuilderWorkspace({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [portfolio, builderStore.isDirty]);
 
+  // ── Load editor preferences from DB (new device) ──
+  useEffect(() => {
+    builderStore.loadPrefsFromDb();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Crash Recovery: check for unsynced IndexedDB backup on mount ──
   useEffect(() => {
     (async () => {

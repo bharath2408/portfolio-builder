@@ -55,6 +55,7 @@ interface BuilderState {
   redo: () => BuilderSnapshot | null;
   clearHistory: () => void;
 
+  loadPrefsFromDb: () => Promise<void>;
   reset: () => void;
 }
 
@@ -74,21 +75,80 @@ interface BuilderSnapshot {
 
 const MAX_UNDO_STACK = 50;
 
+// ── Persisted editor preferences (localStorage + DB sync) ────────
+
+const PREFS_KEY = "foliocraft:editor-prefs";
+
+interface EditorPrefs {
+  showGrid: boolean;
+  showRulers: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  leftPanelOpen: boolean;
+  rightPanelOpen: boolean;
+}
+
+const defaultPrefs: EditorPrefs = {
+  showGrid: true,
+  showRulers: false,
+  snapToGrid: true,
+  gridSize: 20,
+  leftPanelOpen: true,
+  rightPanelOpen: true,
+};
+
+function loadPrefsFromLocal(): EditorPrefs {
+  if (typeof window === "undefined") return defaultPrefs;
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw) return { ...defaultPrefs, ...JSON.parse(raw) };
+  } catch {}
+  return defaultPrefs;
+}
+
+function savePrefsToLocal(prefs: Partial<EditorPrefs>) {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = loadPrefsFromLocal();
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ ...existing, ...prefs }));
+  } catch {}
+}
+
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function syncPrefsToDb(prefs: Partial<EditorPrefs>) {
+  savePrefsToLocal(prefs);
+  // Debounce DB sync — save after 3s of no changes
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(async () => {
+    try {
+      const full = loadPrefsFromLocal();
+      await fetch("/api/user/editor-preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(full),
+      });
+    } catch {}
+  }, 3000);
+}
+
+const savedPrefs = loadPrefsFromLocal();
+
 const initialState = {
   activeSectionId: null,
   isPreviewMode: false,
   isDirty: false,
   isSaving: false,
   lastSavedAt: null,
-  leftPanelOpen: true,
-  rightPanelOpen: true,
+  leftPanelOpen: savedPrefs.leftPanelOpen,
+  rightPanelOpen: savedPrefs.rightPanelOpen,
   activeRightTab: "style" as const,
   devicePreview: "desktop" as const,
   clipboard: null as BlockClipboard | null,
-  gridSize: 20,
-  snapToGrid: true,
-  showGrid: true,
-  showRulers: false,
+  gridSize: savedPrefs.gridSize,
+  snapToGrid: savedPrefs.snapToGrid,
+  showGrid: savedPrefs.showGrid,
+  showRulers: savedPrefs.showRulers,
   undoStack: [] as BuilderSnapshot[],
   redoStack: [] as BuilderSnapshot[],
 };
@@ -119,19 +179,17 @@ export const useBuilderStore = create<BuilderState>()(
           "markSaved",
         ),
 
-      toggleLeftPanel: () =>
-        set(
-          (state) => ({ leftPanelOpen: !state.leftPanelOpen }),
-          false,
-          "toggleLeftPanel",
-        ),
+      toggleLeftPanel: () => {
+        const next = !get().leftPanelOpen;
+        set({ leftPanelOpen: next }, false, "toggleLeftPanel");
+        syncPrefsToDb({ leftPanelOpen: next });
+      },
 
-      toggleRightPanel: () =>
-        set(
-          (state) => ({ rightPanelOpen: !state.rightPanelOpen }),
-          false,
-          "toggleRightPanel",
-        ),
+      toggleRightPanel: () => {
+        const next = !get().rightPanelOpen;
+        set({ rightPanelOpen: next }, false, "toggleRightPanel");
+        syncPrefsToDb({ rightPanelOpen: next });
+      },
 
       setActiveRightTab: (tab) =>
         set({ activeRightTab: tab }, false, "setActiveRightTab"),
@@ -139,10 +197,10 @@ export const useBuilderStore = create<BuilderState>()(
       setDevicePreview: (device) =>
         set({ devicePreview: device }, false, "setDevicePreview"),
 
-      setGridSize: (size) => set({ gridSize: size }, false, "setGridSize"),
-      setSnapToGrid: (snap) => set({ snapToGrid: snap }, false, "setSnapToGrid"),
-      setShowGrid: (show) => set({ showGrid: show }, false, "setShowGrid"),
-      setShowRulers: (show) => set({ showRulers: show }, false, "setShowRulers"),
+      setGridSize: (size) => { set({ gridSize: size }, false, "setGridSize"); syncPrefsToDb({ gridSize: size }); },
+      setSnapToGrid: (snap) => { set({ snapToGrid: snap }, false, "setSnapToGrid"); syncPrefsToDb({ snapToGrid: snap }); },
+      setShowGrid: (show) => { set({ showGrid: show }, false, "setShowGrid"); syncPrefsToDb({ showGrid: show }); },
+      setShowRulers: (show) => { set({ showRulers: show }, false, "setShowRulers"); syncPrefsToDb({ showRulers: show }); },
 
       copyBlock: (block) => set({ clipboard: block }, false, "copyBlock"),
 
@@ -221,6 +279,30 @@ export const useBuilderStore = create<BuilderState>()(
 
       clearHistory: () =>
         set({ undoStack: [], redoStack: [] }, false, "clearHistory"),
+
+      loadPrefsFromDb: async () => {
+        // Only fetch from DB if localStorage is empty (new device/browser)
+        const local = localStorage.getItem(PREFS_KEY);
+        if (local) return; // Already have local prefs
+        try {
+          const res = await fetch("/api/user/editor-preferences");
+          if (!res.ok) return;
+          const json = await res.json();
+          const prefs = json.data ?? json;
+          if (prefs && typeof prefs === "object" && Object.keys(prefs).length > 0) {
+            const merged = { ...defaultPrefs, ...prefs } as EditorPrefs;
+            savePrefsToLocal(merged);
+            set({
+              showGrid: merged.showGrid,
+              showRulers: merged.showRulers,
+              snapToGrid: merged.snapToGrid,
+              gridSize: merged.gridSize,
+              leftPanelOpen: merged.leftPanelOpen,
+              rightPanelOpen: merged.rightPanelOpen,
+            }, false, "loadPrefsFromDb");
+          }
+        } catch {}
+      },
 
       reset: () => set(initialState, false, "reset"),
     }),
