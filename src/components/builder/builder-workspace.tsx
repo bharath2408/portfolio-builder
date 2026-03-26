@@ -170,12 +170,23 @@ const LayerBlockItem = memo(function LayerBlockItem({
   onSelect,
   onDelete,
   dragHandleProps,
+  depth = 0,
+  children,
+  isExpanded,
+  onToggleExpand,
 }: {
   block: BlockWithStyles;
   isSelected: boolean;
   onSelect: () => void;
   onDelete: () => void;
   dragHandleProps?: Record<string, unknown>;
+  depth?: number;
+  children?: BlockWithStyles[];
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  isChildSelected?: (id: string) => boolean;
+  onChildSelect?: (id: string) => void;
+  onChildDelete?: (id: string) => void;
 }) {
   const def = BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY];
   const label = def?.label ?? block.type;
@@ -185,38 +196,71 @@ const LayerBlockItem = memo(function LayerBlockItem({
     (content.name as string) ??
     (content.title as string) ??
     "";
+  const isGroup = block.type === "group";
 
   return (
-    <div
-      className="builder-layer-item group flex cursor-pointer items-center gap-1.5 px-2.5 py-[5px]"
-      style={{
-        backgroundColor: isSelected ? "var(--b-accent-soft)" : "transparent",
-        color: isSelected ? "var(--b-accent)" : "var(--b-text-2)",
-        opacity: block.isVisible ? 1 : 0.35,
-        borderLeft: isSelected ? "2px solid var(--b-accent)" : "2px solid transparent",
-      }}
-      onClick={onSelect}
-    >
-      <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" {...(dragHandleProps ?? {})} />
-      <span
-        className="w-12 flex-shrink-0 truncate text-[9px] font-bold uppercase tracking-wider"
-        style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-4)" }}
+    <>
+      <div
+        className="builder-layer-item group flex cursor-pointer items-center gap-1.5 py-[5px]"
+        style={{
+          paddingLeft: 10 + depth * 16,
+          paddingRight: 10,
+          backgroundColor: isSelected ? "var(--b-accent-soft)" : "transparent",
+          color: isSelected ? "var(--b-accent)" : "var(--b-text-2)",
+          opacity: block.isVisible ? 1 : 0.35,
+          borderLeft: isSelected ? "2px solid var(--b-accent)" : "2px solid transparent",
+        }}
+        onClick={onSelect}
       >
-        {label}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: "var(--b-text-3)" }}>
-        {preview}
-      </span>
-      {block.isLocked && <Lock className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
-      {!block.isVisible && <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100"
-        style={{ color: "var(--b-danger)" }}
-      >
-        <Trash2 className="h-2.5 w-2.5" />
-      </button>
-    </div>
+        {isGroup && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
+            className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+            style={{ color: "var(--b-text-4)" }}
+          >
+            <ChevronRight
+              className="h-2.5 w-2.5 transition-transform duration-150"
+              style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}
+            />
+          </button>
+        )}
+        <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" {...(dragHandleProps ?? {})} />
+        <span
+          className="w-12 flex-shrink-0 truncate text-[9px] font-bold uppercase tracking-wider"
+          style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-4)" }}
+        >
+          {label}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: "var(--b-text-3)" }}>
+          {preview}
+        </span>
+        {block.isLocked && <Lock className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
+        {!block.isVisible && <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100"
+          style={{ color: "var(--b-danger)" }}
+        >
+          <Trash2 className="h-2.5 w-2.5" />
+        </button>
+      </div>
+      {isGroup && isExpanded && children && children.length > 0 && (
+        <div className="border-l ml-3" style={{ borderColor: "var(--b-border)" }}>
+          {children
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((child) => (
+              <LayerBlockItem
+                key={child.id}
+                block={child}
+                isSelected={isChildSelected?.(child.id) ?? false}
+                onSelect={() => onChildSelect?.(child.id)}
+                onDelete={() => onChildDelete?.(child.id)}
+                depth={depth + 1}
+              />
+            ))}
+        </div>
+      )}
+    </>
   );
 });
 
@@ -738,6 +782,7 @@ export function BuilderWorkspace({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(portfolio.sections.map((s) => s.id)),
   );
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showAddSection, setShowAddSection] = useState(false);
   const [addSectionName, setAddSectionName] = useState("");
   const [showFrameTemplateDialog, setShowFrameTemplateDialog] = useState(false);
@@ -2734,7 +2779,9 @@ ${sectionsHtml}
                       const isExpanded = expandedSections.has(section.id);
                       const isSectionSelected = selectedSectionId === section.id && selectedBlockIds.size === 0;
                       const blockCount = section.blocks.length;
-                      const sortedBlocks = [...section.blocks].sort((a, b) => a.sortOrder - b.sortOrder);
+                      const sortedBlocks = [...section.blocks]
+                        .filter((b) => !b.parentId)
+                        .sort((a, b) => a.sortOrder - b.sortOrder);
 
                       return (
                         <SortableItem id={section.id} key={section.id}>
@@ -2792,21 +2839,37 @@ ${sectionsHtml}
                                           No elements — switch to Elements tab to add
                                         </p>
                                       )}
-                                      {sortedBlocks.map((block) => (
-                                        <SortableItem id={block.id} key={block.id}>
-                                          {({ style: blockStyle, ref: blockRef, listeners: blockListeners, attributes: blockAttributes }) => (
-                                            <div ref={blockRef} style={blockStyle}>
-                                              <LayerBlockItem
-                                                block={block}
-                                                isSelected={selectedBlockIds.has(block.id)}
-                                                onSelect={() => selectBlock(block.id, false)}
-                                                onDelete={() => deleteBlock(block.id, section.id)}
-                                                dragHandleProps={{ ...blockListeners, ...blockAttributes }}
-                                              />
-                                            </div>
-                                          )}
-                                        </SortableItem>
-                                      ))}
+                                      {sortedBlocks.map((block) => {
+                                        const groupChildren = block.type === "group"
+                                          ? section.blocks.filter((c) => c.parentId === block.id)
+                                          : undefined;
+                                        return (
+                                          <SortableItem id={block.id} key={block.id}>
+                                            {({ style: blockStyle, ref: blockRef, listeners: blockListeners, attributes: blockAttributes }) => (
+                                              <div ref={blockRef} style={blockStyle}>
+                                                <LayerBlockItem
+                                                  block={block}
+                                                  isSelected={selectedBlockIds.has(block.id)}
+                                                  onSelect={() => selectBlock(block.id, false)}
+                                                  onDelete={() => deleteBlock(block.id, section.id)}
+                                                  dragHandleProps={{ ...blockListeners, ...blockAttributes }}
+                                                  children={groupChildren}
+                                                  isExpanded={expandedGroups.has(block.id)}
+                                                  onToggleExpand={() => setExpandedGroups((prev) => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(block.id)) next.delete(block.id);
+                                                    else next.add(block.id);
+                                                    return next;
+                                                  })}
+                                                  isChildSelected={(id) => selectedBlockIds.has(id)}
+                                                  onChildSelect={(id) => selectBlock(id, false)}
+                                                  onChildDelete={(id) => deleteBlock(id, section.id)}
+                                                />
+                                              </div>
+                                            )}
+                                          </SortableItem>
+                                        );
+                                      })}
                                     </div>
                                   </SortableContext>
                                 </DndContext>
