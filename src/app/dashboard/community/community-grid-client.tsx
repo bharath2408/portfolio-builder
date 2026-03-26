@@ -60,9 +60,26 @@ function MyTemplatesTab({ onUse }: { onUse: (id: string) => Promise<void> }) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-64 animate-pulse rounded-xl border border-border/60 bg-card" />
+          <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/50">
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.04) 37%, transparent 63%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.8s ease-in-out infinite",
+                  animationDelay: `${i * 200}ms`,
+                }}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-3 p-4">
+              <div className="h-5 w-20 animate-pulse rounded-full bg-muted/60" style={{ animationDelay: `${i * 100}ms` }} />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted/40" style={{ animationDelay: `${i * 150}ms` }} />
+              <div className="h-3.5 w-1/2 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 200}ms` }} />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -70,14 +87,14 @@ function MyTemplatesTab({ onUse }: { onUse: (id: string) => Promise<void> }) {
 
   if (templates.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/60 py-16 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted">
-          <User className="h-5 w-5 text-muted-foreground" />
+      <div className="flex flex-col items-center gap-5 rounded-2xl border border-dashed border-border/40 bg-muted/20 py-20 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm">
+          <User className="h-6 w-6 text-muted-foreground/60" />
         </div>
-        <div>
-          <p className="text-[14px] font-medium text-foreground">No templates shared yet</p>
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            Share a published portfolio as a community template to see it here.
+        <div className="space-y-1.5">
+          <p className="text-[15px] font-semibold text-foreground">No templates shared yet</p>
+          <p className="mx-auto max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+            Publish a portfolio and share it as a community template to see it here.
           </p>
         </div>
       </div>

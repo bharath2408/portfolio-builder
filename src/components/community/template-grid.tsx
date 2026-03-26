@@ -40,21 +40,30 @@ const PAGE_LIMIT = 12;
 
 function SkeletonCard() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
-      <Skeleton className="aspect-[16/9] w-full rounded-none" />
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card">
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/50">
+        <div
+          className="absolute inset-0 animate-pulse"
+          style={{
+            background: "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.04) 37%, transparent 63%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.8s ease-in-out infinite",
+          }}
+        />
+      </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-20 rounded-full" />
-          <Skeleton className="h-3 w-12 rounded" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-3.5 w-10 rounded" />
         </div>
-        <Skeleton className="h-4 w-3/4 rounded" />
-        <Skeleton className="h-3 w-1/2 rounded" />
-        <div className="flex gap-1.5">
-          <Skeleton className="h-4 w-14 rounded-md" />
-          <Skeleton className="h-4 w-10 rounded-md" />
+        <Skeleton className="h-4 w-4/5 rounded" />
+        <Skeleton className="h-3.5 w-3/5 rounded" />
+        <div className="flex gap-1.5 pt-1">
+          <Skeleton className="h-5 w-16 rounded-md" />
+          <Skeleton className="h-5 w-12 rounded-md" />
         </div>
       </div>
-      <div className="flex gap-2 border-t border-border/60 px-4 py-3">
+      <div className="flex gap-2 border-t border-border/40 px-4 py-3">
         <Skeleton className="h-9 flex-1 rounded-lg" />
         <Skeleton className="h-9 w-24 rounded-lg" />
       </div>
@@ -240,35 +249,35 @@ export function TemplateGrid({
   return (
     <div className="flex flex-col gap-5">
       {/* ── Filter Bar ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4">
+      <div className="space-y-3">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
           <input
             type="text"
-            placeholder="Search templates…"
+            placeholder="Search by name, tag, or author..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              "w-full rounded-lg border border-input bg-background py-2 pl-9 pr-8 text-[13px]",
-              "placeholder:text-muted-foreground",
-              "focus:outline-none focus:ring-1 focus:ring-primary/50",
-              "transition-all duration-150",
+              "w-full rounded-xl border border-border/40 bg-card py-3 pl-11 pr-10 text-[13px]",
+              "placeholder:text-muted-foreground/50",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40",
+              "transition-all duration-200",
             )}
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Clear search"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {/* Row: category + theme + sort */}
+        {/* Filters row */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Category pills */}
           <div className="flex flex-wrap gap-1.5">
@@ -283,8 +292,7 @@ export function TemplateGrid({
             ))}
           </div>
 
-          {/* Divider */}
-          <div className="mx-1 hidden h-4 w-px bg-border/60 sm:block" />
+          <div className="mx-1 hidden h-4 w-px bg-border/40 sm:block" />
 
           {/* Theme toggle */}
           <div className="flex items-center gap-1.5">
@@ -299,42 +307,39 @@ export function TemplateGrid({
             ))}
           </div>
 
-          {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Sort toggle */}
-          <div className="flex items-center gap-1.5">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-            <button
-              type="button"
-              onClick={() => setSort(sort === "most_used" ? "newest" : "most_used")}
-              className={cn(
-                "rounded-full border px-3 py-1 text-[12px] font-medium transition-all duration-150",
-                "border-border/60 text-muted-foreground hover:border-border hover:text-foreground",
-              )}
-            >
-              {sort === "most_used" ? "Most Used" : "Newest"}
-            </button>
-          </div>
+          {/* Sort */}
+          <button
+            type="button"
+            onClick={() => setSort(sort === "most_used" ? "newest" : "most_used")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all duration-150",
+              "border-border/40 text-muted-foreground hover:border-border hover:text-foreground hover:bg-muted/40",
+            )}
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            {sort === "most_used" ? "Most Used" : "Newest"}
+          </button>
         </div>
       </div>
 
       {/* ── Grid ───────────────────────────────────────────────── */}
       {fetching ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
       ) : isEmpty ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/60 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted">
-            <Search className="h-5 w-5 text-muted-foreground" />
+        <div className="flex flex-col items-center gap-5 rounded-2xl border border-dashed border-border/40 bg-muted/20 py-20 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm">
+            <Search className="h-6 w-6 text-muted-foreground/60" />
           </div>
-          <div>
-            <p className="text-[14px] font-medium text-foreground">No templates found</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Try adjusting your filters or search query
+          <div className="space-y-1.5">
+            <p className="text-[15px] font-semibold text-foreground">No templates found</p>
+            <p className="mx-auto max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+              We couldn&apos;t find anything matching your filters. Try broadening your search.
             </p>
           </div>
           <button
@@ -345,13 +350,13 @@ export function TemplateGrid({
               setThemeFilter("all");
               setSort("most_used");
             }}
-            className="rounded-lg border border-border/80 px-4 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            className="rounded-lg border border-border/60 bg-card px-5 py-2 text-[12px] font-semibold text-foreground shadow-sm transition-all duration-150 hover:border-primary/40 hover:shadow-md active:scale-[0.97]"
           >
-            Reset filters
+            Clear all filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
             <TemplateCard
               key={template.id}

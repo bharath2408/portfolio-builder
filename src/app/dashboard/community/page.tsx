@@ -50,19 +50,24 @@ export default async function DashboardCommunityPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* ── Page header ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10">
-          <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-        </div>
-        <div>
-          <h1 className="font-display text-[22px] font-bold tracking-tight text-foreground">
-            Community Templates
-          </h1>
-          <p className="text-[13px] text-muted-foreground">
-            Browse portfolios shared by the community and use them as a starting point.
-          </p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-teal-500/5 via-card to-cyan-500/5 px-8 py-8">
+        {/* Decorative background elements */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-teal-500/[0.04] blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-cyan-500/[0.04] blur-3xl" />
+        <div className="relative flex items-start gap-5">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/10 shadow-lg shadow-teal-500/5">
+            <Users className="h-6 w-6 text-teal-500" />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Community Templates
+            </h1>
+            <p className="max-w-lg text-[14px] leading-relaxed text-muted-foreground">
+              Discover portfolios crafted by the community. Use any template as your starting point and make it yours.
+            </p>
+          </div>
         </div>
       </div>
 
