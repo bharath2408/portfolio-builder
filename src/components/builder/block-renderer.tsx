@@ -780,6 +780,21 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       );
     }
 
+    // ── GROUP ──
+    case "group": {
+      return (
+        <div
+          style={{
+            ...inlineStyles,
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            overflow: inlineStyles.overflow ?? "visible",
+          }}
+        />
+      );
+    }
+
     // ── FALLBACK ──
     default:
       return (

@@ -3049,7 +3049,7 @@ ${sectionsHtml}
                     onSelect={selectSection}
                   >
                     {[...section.blocks]
-                      .filter((b) => b.isVisible)
+                      .filter((b) => b.isVisible && !b.parentId)
                       .sort((a, b) => a.sortOrder - b.sortOrder)
                       .map((block) => {
                         const ms = mergeDeviceStyles(block.styles, block.tabletStyles as Partial<BlockStyles>, block.mobileStyles as Partial<BlockStyles>, builderStore.devicePreview);
@@ -3080,6 +3080,42 @@ ${sectionsHtml}
                               theme={theme}
                               isEditing
                             />
+                            {block.type === "group" &&
+                              section.blocks
+                                .filter((c) => c.parentId === block.id && c.isVisible)
+                                .sort((a, b) => a.sortOrder - b.sortOrder)
+                                .map((child) => {
+                                  const cms = mergeDeviceStyles(child.styles, child.tabletStyles as Partial<BlockStyles>, child.mobileStyles as Partial<BlockStyles>, builderStore.devicePreview);
+                                  const mergedChild = { ...child, styles: cms } as BlockWithStyles;
+                                  return (
+                                    <CanvasElement
+                                      key={child.id}
+                                      id={child.id}
+                                      x={cms.x ?? 0}
+                                      y={cms.y ?? 0}
+                                      w={cms.w ?? DEFAULT_BLOCK_W}
+                                      h={cms.h ?? 0}
+                                      rotation={cms.rotation}
+                                      isSelected={selectedBlockIds.has(child.id)}
+                                      isLocked={child.isLocked}
+                                      isHidden={!child.isVisible}
+                                      canvasScale={transform.scale}
+                                      onSelect={selectBlock}
+                                      onMove={moveBlock}
+                                      onResize={resizeBlock}
+                                      onDragStart={handleBlockDragStart}
+                                      onDragEnd={handleBlockDragOrResizeEnd}
+                                      sortOrder={child.sortOrder}
+                                      onContextMenu={handleBlockContextMenu}
+                                    >
+                                      <BlockRenderer
+                                        block={mergedChild}
+                                        theme={theme}
+                                        isEditing
+                                      />
+                                    </CanvasElement>
+                                  );
+                                })}
                           </CanvasElement>
                         );
                       })}
