@@ -55,6 +55,7 @@ Select a section (click its background or click it in the layers panel) to see i
 - **Max Width** — maximum content width (default: 1100px)
 - **Padding** — inner spacing on all four sides
 - **Background Color** — section background color, defaults to theme background
+- **Background Pattern** — optional repeating pattern overlay for subtle texture and depth (dots, lines, grid, diagonal, cross-hatch, and more). Patterns respect the section's color scheme
 
 ### Section Actions
 
@@ -66,9 +67,14 @@ In the layers panel, each section has action buttons:
 - **Lock toggle** — prevent all edits to the section and its blocks
 - **Delete** — remove the section and all blocks inside it
 
+On the canvas, sections (frames) support direct manipulation:
+
+- **Frame drag** — click a section frame to select it, then drag to reposition it on the canvas
+- **Frame resize** — when selected, 8 resize handles appear on the frame's edges and corners, letting you resize the section precisely
+
 ## Blocks
 
-Blocks are the individual content elements that make up your portfolio. There are 28 block types organized into 7 categories.
+Blocks are the individual content elements that make up your portfolio. There are 30+ block types organized into 8 categories.
 
 ### Typography Blocks
 
@@ -318,6 +324,29 @@ Decorative line element. Properties:
 - **Thickness** — line width
 - **Length** — line length
 - **Orientation** — horizontal or vertical
+
+#### Shape
+Pre-built SVG decorative elements from the Shapes library. Properties:
+- **Preset** — choose from dividers, blobs, geometric shapes, and more
+- **Fill Color** — shape fill color
+- **Stroke Color** — outline color
+- **Width / Height** — dimensions
+
+#### Custom SVG
+Import your own SVG code for unique graphics. Properties:
+- **SVG Code** — paste raw SVG markup
+- **Fill Color** — override the SVG's fill color
+- **Width / Height** — dimensions
+
+### Grouping Blocks
+
+#### Group
+A container that holds multiple blocks as a single unit. Properties:
+- **Children** — the blocks inside the group
+- Select multiple blocks and press `Ctrl/Cmd + G` to create a group
+- Press `Ctrl/Cmd + Shift + G` to ungroup and release the child blocks
+- Groups can be moved, resized, duplicated, and styled as one unit
+- Nested groups are supported — you can group blocks that are already inside a group
 
 ## Adding Blocks
 

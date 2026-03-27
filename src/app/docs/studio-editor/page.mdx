@@ -14,6 +14,8 @@ The top bar gives you access to all global actions:
 - **Back arrow** — return to the portfolios list
 - **File menu** — opens a dropdown with:
   - **Save** (`Ctrl/Cmd + S`) — manually save all changes
+  - **Save as .folio** — export your portfolio as a portable `.folio` file that can be shared, backed up, or transferred between accounts
+  - **Import .folio** — import a previously exported `.folio` file to restore or transfer a portfolio
   - **Export as JSON** — download your portfolio data
   - **Export as HTML** — download a standalone HTML file
   - **Version History** — open the version panel to preview or restore snapshots
@@ -27,15 +29,15 @@ The top bar gives you access to all global actions:
 - **Save button** — save all pending changes
 - **Publish / Update & Publish** — make your portfolio live or update the live version
 
-### Left Panel — Layers & Elements
+### Left Panel — Layers, Elements & Shapes
 
-The left panel has two tabs toggled at the top:
+The left panel has three tabs toggled at the top:
 
 #### Layers Tab
 Shows a hierarchical tree of your portfolio structure:
 
 - **Sections** appear as top-level items with expand/collapse arrows
-- **Blocks** are nested inside their parent sections
+- **Blocks** are nested inside their parent sections, with **groups** shown as collapsible sub-trees
 - Each item shows its name, type icon, and quick-action buttons:
   - **Eye icon** — toggle visibility (hidden blocks are skipped in rendering)
   - **Lock icon** — lock/unlock to prevent accidental edits
@@ -44,7 +46,7 @@ Shows a hierarchical tree of your portfolio structure:
 - The currently selected item is highlighted with a teal accent
 
 #### Elements Tab
-Browse the full library of 25+ block types organized into categories:
+Browse the full library of 30+ block types organized into categories:
 
 - **Typography** — Heading, Text, Quote, List, Code Block
 - **Media** — Image, Avatar, Icon
@@ -52,22 +54,55 @@ Browse the full library of 25+ block types organized into categories:
 - **Data Display** — Badge, Badge Group, Skill Bar, Skill Grid, Progress Ring, Stat
 - **Composite** — Project Card, Experience, Testimonial, Contact Info, Contact Form, Columns, Card, Embed
 - **Layout** — Divider, Spacer
-- **Shapes** — Rectangle, Circle, Line
+- **Shapes** — Rectangle, Circle, Line, Shape (pre-built SVG presets), Custom SVG
+- **Grouping** — Group (container for multiple blocks)
 
 Click any element to add it to the currently selected section, or drag it directly onto the canvas.
+
+#### Shapes Tab
+Browse a curated library of pre-built SVG decorative elements organized into categories:
+
+- **Dividers** — wave separators, curved lines, zigzag borders
+- **Blobs** — organic, fluid shapes for backgrounds and accents
+- **Geometric** — triangles, hexagons, abstract patterns, and polygons
+
+Click any shape to insert it as a block, then resize and recolor it from the properties panel. You can also import your own SVGs using the **Custom SVG** block type.
 
 ### Center — The Canvas
 
 The main editing surface where your portfolio takes shape:
 
-- **Click** a block to select it — a blue selection border appears with resize handles
+- **Click** a block to select it — a blue selection border appears with 8 resize handles
 - **Drag** a selected block to reposition it (in absolute-layout sections)
-- **Resize** by dragging the corner or edge handles
+- **Resize** by dragging any of the 8 handles (corners and edge midpoints) on the selection border
 - **Double-click** text blocks to edit text inline
-- **Right-click** a block to open a context menu with options: duplicate, delete, visibility, lock
-- **Zoom** — scroll to zoom in/out, or use the zoom controls at the bottom of the canvas
+- **Rubber-band marquee selection** — drag on empty canvas space to draw a selection rectangle and select multiple blocks at once
+- **Block grouping** — select multiple blocks and press `Ctrl/Cmd + G` to group them into a single unit. Press `Ctrl/Cmd + Shift + G` to ungroup
+- **Frame drag** — click a section frame to select it, then drag to reposition it on the canvas
+- **Frame resize** — when a section frame is selected, 8 resize handles appear on its edges and corners for precise sizing
+- **Smart alignment guides** — when dragging blocks, snap lines appear automatically when a block edge comes within 5px of another block's edge or center, helping you align elements precisely
+- **Canvas rulers** — toggle horizontal and vertical rulers via **View > Show Rulers** to measure exact positions and sizes
+- **Right-click** a block to open a context menu (see below)
+- **Zoom** — scroll to zoom in/out (`Ctrl/Cmd + Scroll`), or use the zoom controls at the bottom of the canvas
 - **Pan** — hold `Space` and drag, or use the scroll wheel
 - **Fit to screen** — click the fit button in the zoom controls to auto-zoom to show all content
+
+#### Context Menus
+
+**Block context menu** (right-click a block):
+- Cut, Copy, Duplicate
+- Copy Styles / Paste Styles — transfer visual styling between blocks
+- Reorder (bring forward, send backward)
+- Group / Ungroup — combine selected blocks or break apart a group
+- Lock / Hide
+- Delete
+
+**Frame context menu** (right-click a section frame):
+- Select / Select All (select all blocks in the frame)
+- Paste
+- Hide / Lock
+- Rename
+- Delete
 
 Each section appears as a frame on the canvas. Sections can use different layouts:
 - **Absolute** — blocks are freely positioned with X/Y coordinates (Figma-like)
@@ -143,11 +178,17 @@ Each block type has its own content fields:
 - **Margin** — outer spacing with individual controls for top, right, bottom, left
 - All values are in pixels
 
-#### Effects Section
+#### Animation Section
 - **Entrance Animation** — 12 presets for how the block appears when scrolled into view: Fade Up, Fade In, Slide Left, Slide Right, Scale, Blur In, Bounce In, Flip X, Flip Y, Rotate In, Zoom In, Typewriter
 - **Animation Duration / Delay / Easing** — fine-tune timing and acceleration curves (spring, bounce, ease-in/out)
-- **Scroll Trigger** — None (immediate), Reveal (on scroll into view), or Parallax (depth effect with configurable speed)
+- **Scroll Effect** — None (immediate), Reveal (on scroll into view), or Parallax (depth effect with configurable speed)
+- **Parallax Speed** — control the depth factor for parallax scroll effects
+- **Text Animation** — animate text blocks character-by-character or word-by-word for dynamic typographic effects
+
+#### Interaction Section
 - **Hover Effect** — 5 presets: Lift, Tilt 3D, Glow, Grow, Shake
+- **Cursor** — customize the cursor style when hovering over the block (default, pointer, crosshair, etc.)
+- **Magnetic Cursor** — when enabled, the block subtly follows the cursor as it moves nearby, creating a magnetic pull effect. Configure **strength** (how strongly the block is attracted) and **radius** (how far from the block the effect activates)
 
 #### Responsive Section
 - **Hide on Mobile** — checkbox, hides this block on screens smaller than `md` breakpoint
@@ -173,10 +214,18 @@ Custom CSS overrides all other style settings.
 | `Ctrl/Cmd + S` | Save all changes |
 | `Ctrl/Cmd + Z` | Undo last action |
 | `Ctrl/Cmd + Shift + Z` | Redo last undone action |
+| `Ctrl/Cmd + X` | Cut selected block |
 | `Ctrl/Cmd + V` | Paste copied block (with content and styles) |
+| `Ctrl/Cmd + D` | Duplicate selected block |
+| `Ctrl/Cmd + Alt + C` | Copy styles from selected block |
+| `Ctrl/Cmd + Alt + V` | Paste styles onto selected block |
+| `Ctrl/Cmd + G` | Group selected blocks |
+| `Ctrl/Cmd + Shift + G` | Ungroup selected group |
 | `Delete` or `Backspace` | Delete selected block |
 | `Arrow Keys` | Move selected block by 1px |
 | `Shift + Arrow Keys` | Move selected block by 10px |
+| `Space + Drag` | Pan the canvas |
+| `Ctrl/Cmd + Scroll` | Zoom in/out |
 | `Ctrl/Cmd + K` | Open command palette |
 | `Escape` | Deselect current block |
 | `?` | Show keyboard shortcuts reference |
@@ -246,22 +295,28 @@ All pointer interactions (drag, resize, draw) work seamlessly across mouse, touc
 - Hover a section to see its action buttons (settings, delete)
 - Click the section background (not a block) to select the section itself
 
-### Smart Guides
-When dragging blocks in absolute-layout sections, smart alignment guides appear to help you align elements with each other.
+### Smart Alignment Guides
+When dragging blocks in absolute-layout sections, smart alignment guides appear as colored snap lines when a block edge comes within 5 pixels of another block's edge, center, or the section boundary. Guides appear for both horizontal and vertical axes, making it easy to create precise, grid-free layouts.
 
 ### Minimap
 
 When a frame is selected, a **minimap** appears showing a small-scale overview of the frame's content. The minimap highlights the currently selected block, making it easy to see where you are in large or complex sections.
 
-## Auto-Save
+## Smart Save
 
-The editor automatically batches and saves your changes as you work. The save indicator in the top bar shows the current state:
+The editor uses a multi-layer save strategy to ensure your work is never lost:
+
+- **IndexedDB backup** — every change is immediately backed up to your browser's local IndexedDB storage, providing instant recovery even if your connection drops
+- **Server save after idle** — changes are saved to the server after 10 seconds of inactivity, avoiding unnecessary network requests while you're actively editing
+- **Page blur save** — when you switch tabs or minimize the browser, all pending changes are saved automatically
+- **Manual save** — press `Ctrl/Cmd + S` or click the Save button at any time
+- **Drag end save** — after finishing a drag operation (moving or resizing a block), changes are saved immediately
+
+The save indicator in the top bar shows the current state:
 
 - **All saved** — no pending changes
 - **Saving...** — changes are being saved
-- **Unsaved changes** — changes are queued for auto-save
-
-You can always manually save with `Ctrl/Cmd + S` or the Save button.
+- **Unsaved changes** — changes are queued for save
 
 ## Theme Panel
 
