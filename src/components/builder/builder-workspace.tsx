@@ -85,11 +85,11 @@ import {
 } from "@/components/builder/canvas-engine";
 import { HorizontalRuler, VerticalRuler, RulerCorner } from "@/components/builder/canvas-rulers";
 import { AdvancedColorInput } from "@/components/builder/color-picker";
-import { SvgImportDialog } from "@/components/builder/svg-import-dialog";
 import { CommandPalette } from "@/components/builder/command-palette";
 import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
 import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
 import { OnboardingTour } from "@/components/builder/onboarding-tour";
+import { SvgImportDialog } from "@/components/builder/svg-import-dialog";
 import { ThemeEditor } from "@/components/builder/theme-editor";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { ImageUpload } from "@/components/common/image-upload";
@@ -110,7 +110,7 @@ import {
   BLOCK_CATEGORIES,
   getBlocksByCategory,
 } from "@/config/block-registry";
-import { SHAPE_PRESETS, SHAPE_CATEGORIES, getShapesByCategory } from "@/config/shape-presets";
+import { SHAPE_CATEGORIES, getShapesByCategory } from "@/config/shape-presets";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
 import { shareCommunityTemplate, type CommunityTemplateCategory } from "@/lib/api/community-templates";
 import { saveBackup, markBackupSynced, getUnsyncedBackup, clearBackup } from "@/lib/idb-backup";

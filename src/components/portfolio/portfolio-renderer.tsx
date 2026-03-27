@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { MotionBlockWrapper } from "@/components/portfolio/motion-block-wrapper";
-import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
 import { generatePatternStyles } from "@/config/background-patterns";
+import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
 import type {
   PortfolioWithRelations,
   SectionStyles,
