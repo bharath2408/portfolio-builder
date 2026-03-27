@@ -29,7 +29,6 @@ import {
   FolderUp,
   Globe,
   GripVertical,
-  Hexagon,
   ImageDown,
   Layers,
   Layout,
