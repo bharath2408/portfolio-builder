@@ -34,7 +34,7 @@ export const POST = withErrorHandler(async (req, ctx) => {
 
   const page = await db.page.create({
     data: {
-      portfolioId: id,
+      portfolioId: id as string,
       title: body.title ?? "New Page",
       slug: body.slug ?? `page-${count + 1}`,
       sortOrder: count,

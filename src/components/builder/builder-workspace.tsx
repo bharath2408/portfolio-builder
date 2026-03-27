@@ -3201,7 +3201,7 @@ ${sectionsHtml}
       </div>
 
       {/* ── PAGE SWITCHER BAR ────────────────────────────────────── */}
-      {portfolio.pages && portfolio.pages.length > 0 && (
+      {(
         <div
           className="flex flex-shrink-0 items-center gap-1 overflow-x-auto px-3 py-1.5 scrollbar-thin"
           style={{ borderBottom: "1px solid var(--b-border)", backgroundColor: "var(--b-panel)" }}
@@ -3216,7 +3216,7 @@ ${sectionsHtml}
           >
             Home
           </button>
-          {portfolio.pages.filter(p => !p.isDefault).map((page) => (
+          {(portfolio.pages ?? []).filter(p => !p.isDefault).map((page) => (
             <button
               key={page.id}
               onClick={() => setCurrentPageId(page.id)}
