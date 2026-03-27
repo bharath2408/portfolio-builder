@@ -1518,12 +1518,7 @@ export function BuilderWorkspace({
 
   const addSection = async () => {
     if (!addSectionName.trim()) return;
-    // Only consider sections on the current page for Y offset
-    const pageSections = portfolio.sections.filter((s) => {
-      if (!currentPageId) return !s.pageId;
-      return s.pageId === currentPageId;
-    });
-    const yOffset = pageSections.reduce((max, s) => {
+    const yOffset = portfolio.sections.reduce((max, s) => {
       const ss = s.styles as SectionStyles;
       return Math.max(
         max,
