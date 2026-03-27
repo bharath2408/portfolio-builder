@@ -18,10 +18,10 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const DOCS_LINKS = [
+  { title: "Studio Editor", href: "/docs/studio-editor", description: "Canvas, tools & shortcuts", icon: Zap, color: "from-violet-400 to-purple-500" },
+  { title: "Sections & Blocks", href: "/docs/sections-blocks", description: "30+ block types", icon: Sparkles, color: "from-amber-400 to-orange-500" },
+  { title: "Styling & Themes", href: "/docs/styling-themes", description: "Colors, fonts & effects", icon: MessageSquare, color: "from-pink-400 to-rose-500" },
   { title: "Introduction", href: "/docs", description: "What is Foliocraft", icon: BookOpen, color: "from-teal-400 to-emerald-500" },
-  { title: "Studio Editor", href: "/docs/studio-editor", description: "Visual editing canvas", icon: Zap, color: "from-violet-400 to-purple-500" },
-  { title: "Sections & Blocks", href: "/docs/sections-blocks", description: "25+ block types", icon: Sparkles, color: "from-amber-400 to-orange-500" },
-  { title: "Styling & Themes", href: "/docs/styling-themes", description: "Customize every detail", icon: MessageSquare, color: "from-pink-400 to-rose-500" },
 ];
 
 const ALL_DOCS = [
@@ -37,22 +37,44 @@ const ALL_DOCS = [
 const SHORTCUTS = [
   { keys: ["Ctrl", "S"], label: "Save" },
   { keys: ["Ctrl", "Z"], label: "Undo" },
+  { keys: ["Ctrl", "⇧", "Z"], label: "Redo" },
+  { keys: ["Ctrl", "C"], label: "Copy block" },
+  { keys: ["Ctrl", "X"], label: "Cut block" },
+  { keys: ["Ctrl", "V"], label: "Paste block" },
+  { keys: ["Ctrl", "D"], label: "Duplicate" },
+  { keys: ["Ctrl", "G"], label: "Group" },
+  { keys: ["Ctrl", "⇧", "G"], label: "Ungroup" },
+  { keys: ["Ctrl", "Alt", "C"], label: "Copy styles" },
+  { keys: ["Ctrl", "Alt", "V"], label: "Paste styles" },
   { keys: ["Ctrl", "K"], label: "Command Palette" },
-  { keys: ["?"], label: "All Shortcuts" },
   { keys: ["Ctrl", "P"], label: "Preview" },
+  { keys: ["Space"], label: "Pan canvas (hold)" },
+  { keys: ["?"], label: "All Shortcuts" },
   { keys: ["Esc"], label: "Deselect" },
 ];
 
 const CHANGELOG = [
   {
-    version: "v1.2",
-    date: "Latest",
+    version: "v2.0",
+    date: "March 2026",
     items: [
-      { text: "Version history with live preview", tag: "new" },
-      { text: "Command palette (Ctrl+K)", tag: "new" },
-      { text: "Onboarding tour for new users", tag: "new" },
-      { text: "Block property tooltips", tag: "improvement" },
-      { text: "Custom confirm dialogs", tag: "improvement" },
+      { text: "Smart alignment guides — snap to other block edges", tag: "new" },
+      { text: "Copy/paste styles (Ctrl+Alt+C/V)", tag: "new" },
+      { text: "Frame drag & resize on canvas", tag: "new" },
+      { text: "Block grouping (Ctrl+G / Ctrl+Shift+G)", tag: "new" },
+      { text: "Background patterns for sections", tag: "new" },
+      { text: "Shape presets — dividers, blobs, geometric", tag: "new" },
+      { text: "Icon picker with search & categories", tag: "new" },
+      { text: "SVG import with sanitization", tag: "new" },
+      { text: "Magnetic cursor hover effect", tag: "new" },
+      { text: "Canvas rulers toggle", tag: "new" },
+      { text: ".folio file export/import", tag: "new" },
+      { text: "PDF resume generator", tag: "new" },
+      { text: "Live notification bell for contact forms", tag: "new" },
+      { text: "Soft delete + Trash with 30-day recovery", tag: "new" },
+      { text: "Smart save — 10s idle, page blur, drag end", tag: "improvement" },
+      { text: "Undo/redo for all actions (move, resize, styles)", tag: "improvement" },
+      { text: "Editor preferences persist across sessions", tag: "improvement" },
     ],
   },
 ];
