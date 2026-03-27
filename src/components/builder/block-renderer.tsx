@@ -271,6 +271,23 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       );
     }
 
+    // ── ICON ──
+    case "icon": {
+      const iconName = (c.name as string) ?? "Sparkles";
+      const iconSize = (c.size as number) ?? 32;
+      const iconColor = resolveColor((c.color as string) ?? "primary", theme) ?? theme.primaryColor;
+      // Dynamically render a Lucide icon
+      const LucideAll = require("lucide-react") as Record<string, React.ComponentType<{ size?: number; color?: string; className?: string }>>;
+      const IconComp = LucideAll[iconName];
+      return (
+        <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {IconComp ? <IconComp size={iconSize} color={iconColor} /> : (
+            <span style={{ fontSize: 12, opacity: 0.4 }}>{iconName}</span>
+          )}
+        </div>
+      );
+    }
+
     // ── DIVIDER ──
     case "divider":
       return <hr style={{ ...inlineStyles, border: "none", borderTop: `${(c.thickness as number) ?? 1}px ${(c.style as string) ?? "solid"} ${theme.textColor}`, width: "100%" }} />;

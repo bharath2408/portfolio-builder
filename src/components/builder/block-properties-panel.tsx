@@ -9,6 +9,7 @@ import {
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 import { AdvancedColorInput } from "@/components/builder/color-picker";
+import { IconPicker } from "@/components/builder/icon-picker";
 import { Tooltip } from "@/components/builder/tooltip";
 import { ImageUpload } from "@/components/common/image-upload";
 import { BLOCK_REGISTRY } from "@/config/block-registry";
@@ -890,6 +891,48 @@ export function BlockPropertiesPanel({
 
 // ─── Button/Link Editor with Section Linking ────────────────────
 
+function IconContentEditor({
+  content, updateContent, field,
+}: {
+  content: Record<string, unknown>;
+  updateContent: (key: string, value: unknown) => void;
+  field: (label: string, key: string, opts?: { type?: "textarea" | "number" | "select"; placeholder?: string; options?: Array<{ label: string; value: string }> }) => ReactNode;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const iconName = (content.name as string) ?? "Sparkles";
+
+  return (
+    <div className="space-y-2.5">
+      <div>
+        <SubLabel>Icon</SubLabel>
+        <div className="flex items-center gap-2">
+          <span className="flex-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text)" }}>
+            {iconName}
+          </span>
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors"
+            style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+          >
+            Change Icon
+          </button>
+        </div>
+      </div>
+      {field("Size", "size", { type: "number", placeholder: "32" })}
+      <div>
+        <SubLabel>Color</SubLabel>
+        <AdvancedColorInput value={(content.color as string) ?? "primary"} onChange={(v) => updateContent("color", v)} placeholder="primary" />
+      </div>
+      <IconPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(name) => updateContent("name", name)}
+        currentIcon={iconName}
+      />
+    </div>
+  );
+}
+
 function ButtonContentEditor({
   content, updateContent, field, isLink,
 }: {
@@ -1094,6 +1137,8 @@ function ContentEditor({
           {field("Size", "size", { type: "select", options: [{ label: "Small", value: "sm" }, { label: "Medium", value: "md" }, { label: "Large", value: "lg" }, { label: "XL", value: "xl" }] })}
         </div>
       );
+    case "icon":
+      return <IconContentEditor content={content} updateContent={updateContent} field={field} />;
     case "skill_bar":
       return (
         <div className="space-y-2.5">
