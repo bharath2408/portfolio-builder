@@ -212,10 +212,10 @@ const LayerBlockItem = memo(function LayerBlockItem({
   return (
     <>
       <div
-        className="builder-layer-item group flex cursor-pointer items-center gap-1.5 py-[5px]"
+        className="builder-layer-item group flex cursor-pointer items-center gap-1 py-[5px] transition-colors duration-100"
         style={{
-          paddingLeft: 10 + depth * 16,
-          paddingRight: 10,
+          paddingLeft: 8 + depth * 14,
+          paddingRight: 8,
           backgroundColor: isSelected ? "var(--b-accent-soft)" : "transparent",
           color: isSelected ? "var(--b-accent)" : "var(--b-text-2)",
           opacity: block.isVisible ? 1 : 0.35,
@@ -226,7 +226,7 @@ const LayerBlockItem = memo(function LayerBlockItem({
         {isGroup && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand?.(); }}
-            className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+            className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded"
             style={{ color: "var(--b-text-4)" }}
           >
             <ChevronRight
@@ -235,15 +235,25 @@ const LayerBlockItem = memo(function LayerBlockItem({
             />
           </button>
         )}
-        <GripVertical className="h-2.5 w-2.5 flex-shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-30" {...(dragHandleProps ?? {})} />
-        <span
-          className="w-12 flex-shrink-0 truncate text-[9px] font-bold uppercase tracking-wider"
-          style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-4)" }}
-        >
-          {label}
+        <span className="flex h-4 w-4 flex-shrink-0 cursor-grab items-center justify-center opacity-0 transition-opacity group-hover:opacity-30" {...(dragHandleProps ?? {})}>
+          <GripVertical className="h-2.5 w-2.5" style={{ color: "var(--b-text-4)" }} />
         </span>
-        <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: "var(--b-text-3)" }}>
-          {preview}
+        <span
+          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
+          style={{
+            backgroundColor: isSelected ? "var(--b-accent-mid)" : "var(--b-surface)",
+            color: isSelected ? "var(--b-accent)" : "var(--b-text-4)",
+            fontSize: 9,
+            fontWeight: 700,
+          }}
+        >
+          {label.charAt(0)}
+        </span>
+        <span
+          className="min-w-0 flex-1 truncate text-[10px] font-medium"
+          style={{ color: isSelected ? "var(--b-accent)" : "var(--b-text-2)" }}
+        >
+          {preview || label}
         </span>
         {block.isLocked && <Lock className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
         {!block.isVisible && <EyeOff className="h-2.5 w-2.5 flex-shrink-0" style={{ color: "var(--b-text-4)" }} />}
@@ -256,7 +266,7 @@ const LayerBlockItem = memo(function LayerBlockItem({
         </button>
       </div>
       {isGroup && isExpanded && groupChildren && groupChildren.length > 0 && (
-        <div className="border-l ml-3" style={{ borderColor: "var(--b-border)" }}>
+        <div className="ml-4 border-l" style={{ borderColor: isSelected ? "var(--b-accent-mid)" : "var(--b-border)" }}>
           {groupChildren
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((child) => (
@@ -3119,29 +3129,41 @@ ${sectionsHtml}
                             <div ref={ref} style={style} className="group/sec">
                               {/* Section (frame) row */}
                               <div
-                                className="builder-layer-item flex cursor-pointer items-center gap-1.5 px-2 py-[7px]"
+                                className="builder-layer-item flex cursor-pointer items-center gap-1 px-2 py-[6px] transition-colors duration-100"
                                 style={{
                                   backgroundColor: isSectionSelected ? "var(--b-accent-soft)" : "transparent",
                                   color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-2)",
+                                  borderLeft: isSectionSelected ? "2px solid var(--b-accent)" : "2px solid transparent",
                                 }}
                                 onClick={() => selectSection(section.id)}
                               >
-                                <span className="flex h-4 w-4 flex-shrink-0 cursor-grab items-center justify-center" {...listeners} {...attributes}>
-                                  <GripVertical className="h-3 w-3 opacity-0 transition-opacity group-hover/sec:opacity-30" style={{ color: "var(--b-text-4)" }} />
+                                <span className="flex h-4 w-4 flex-shrink-0 cursor-grab items-center justify-center opacity-0 transition-opacity group-hover/sec:opacity-30" {...listeners} {...attributes}>
+                                  <GripVertical className="h-2.5 w-2.5" style={{ color: "var(--b-text-4)" }} />
                                 </span>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleSection(section.id); }}
-                                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
+                                  className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded"
                                   style={{ color: "var(--b-text-4)" }}
                                 >
                                   <ChevronRight
-                                    className="h-3 w-3 transition-transform duration-150"
+                                    className="h-2.5 w-2.5 transition-transform duration-150"
                                     style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)" }}
                                   />
                                 </button>
-                                <Layout className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-3)" }} />
-                                <span className="flex-1 truncate text-[11px] font-semibold">{section.name}</span>
-                                <span className="flex-shrink-0 text-[9px] font-medium" style={{ color: "var(--b-text-4)" }}>
+                                <span
+                                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded"
+                                  style={{
+                                    backgroundColor: isSectionSelected ? "var(--b-accent-mid)" : "var(--b-surface)",
+                                    border: `1px solid ${isSectionSelected ? "var(--b-accent)" : "var(--b-border)"}`,
+                                  }}
+                                >
+                                  <Layout className="h-3 w-3" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-4)" }} />
+                                </span>
+                                <span className="flex-1 truncate text-[10.5px] font-semibold">{section.name}</span>
+                                <span
+                                  className="flex h-4 min-w-[16px] flex-shrink-0 items-center justify-center rounded-full px-1 text-[8px] font-bold"
+                                  style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
+                                >
                                   {blockCount}
                                 </span>
                                 {!section.isVisible && (
@@ -3149,7 +3171,7 @@ ${sectionsHtml}
                                 )}
                                 <button
                                   onClick={(e) => { e.stopPropagation(); deleteSection(section.id); }}
-                                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/sec:opacity-40 hover:!opacity-100"
+                                  className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/sec:opacity-40 hover:!opacity-100"
                                   style={{ color: "var(--b-danger)" }}
                                 >
                                   <Trash2 className="h-2.5 w-2.5" />
