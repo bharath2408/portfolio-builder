@@ -833,7 +833,7 @@ export function BuilderWorkspace({
   const [sharingTemplate, setSharingTemplate] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
-  const [guides, _setGuides] = useState<GuideInfo[]>([]);
+  const [guides, setGuides] = useState<GuideInfo[]>([]);
 
   // ── Draw mode (Figma-style click-drag to create) ──────────────
   const [drawMode, setDrawMode] = useState<BlockType | null>(null);
@@ -1077,23 +1077,104 @@ export function BuilderWorkspace({
         toMove.push({ b: block, tx: newX, ty: newY });
       }
 
+      // ── Smart alignment guides ──────────────────────────
+      const SNAP_THRESHOLD = 5;
+      const ss = section.styles as SectionStyles;
+      const frameW = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+      const frameH = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+      const movingW = (block.styles as BlockStyles).w ?? DEFAULT_BLOCK_W;
+      const movingH = (block.styles as BlockStyles).h ?? 50;
+      let snappedX = toMove[0]?.tx ?? newX;
+      let snappedY = toMove[0]?.ty ?? newY;
+      const newGuides: GuideInfo[] = [];
+
+      // Collect edges of other blocks (not being moved)
+      const otherBlocks = section.blocks.filter(
+        (b) => b.isVisible && !selectedBlockIds.has(b.id) && !b.parentId
+      );
+      const edges = {
+        vLines: [0, frameW, frameW / 2] as number[], // frame left, right, center
+        hLines: [0, frameH, frameH / 2] as number[], // frame top, bottom, center
+      };
+      for (const ob of otherBlocks) {
+        const obs = ob.styles as BlockStyles;
+        const ox = obs.x ?? 0;
+        const oy = obs.y ?? 0;
+        const ow = obs.w ?? 200;
+        const oh = obs.h ?? 50;
+        edges.vLines.push(ox, ox + ow, ox + ow / 2); // left, right, center
+        edges.hLines.push(oy, oy + oh, oy + oh / 2); // top, bottom, center
+      }
+
+      // Check vertical alignment (x-axis snap)
+      const movingEdgesX = [snappedX, snappedX + movingW, snappedX + movingW / 2];
+      for (const mx of movingEdgesX) {
+        for (const vl of edges.vLines) {
+          if (Math.abs(mx - vl) < SNAP_THRESHOLD) {
+            const offset = vl - mx;
+            snappedX += offset;
+            newGuides.push({
+              type: "vertical",
+              position: vl,
+              start: Math.min(snappedY, 0) - 20,
+              end: Math.max(snappedY + movingH, frameH) + 20,
+            });
+            break;
+          }
+        }
+      }
+
+      // Check horizontal alignment (y-axis snap)
+      const movingEdgesY = [snappedY, snappedY + movingH, snappedY + movingH / 2];
+      for (const my of movingEdgesY) {
+        for (const hl of edges.hLines) {
+          if (Math.abs(my - hl) < SNAP_THRESHOLD) {
+            const offset = hl - my;
+            snappedY += offset;
+            newGuides.push({
+              type: "horizontal",
+              position: hl,
+              start: Math.min(snappedX, 0) - 20,
+              end: Math.max(snappedX + movingW, frameW) + 20,
+            });
+            break;
+          }
+        }
+      }
+
+      // Add frame-relative offset for guide rendering
+      const fx = ss.frameX ?? 0;
+      const fy = ss.frameY ?? portfolio.sections.indexOf(section) * (DEFAULT_FRAME_HEIGHT + 80);
+      setGuides(
+        newGuides.map((g) =>
+          g.type === "vertical"
+            ? { ...g, position: g.position + fx, start: g.start + fy, end: g.end + fy }
+            : { ...g, position: g.position + fy, start: g.start + fx, end: g.end + fx }
+        ),
+      );
+
+      // Apply snapped position (override grid snap when guide snapping)
+      const hasGuideSnap = newGuides.length > 0;
+      const snapDx = snappedX - (toMove[0]?.tx ?? newX);
+      const snapDy = snappedY - (toMove[0]?.ty ?? newY);
+
       for (const { b, tx, ty } of toMove) {
-        const sx = snap ? Math.round(tx / gs) * gs : tx;
-        const sy = snap ? Math.round(ty / gs) * gs : ty;
+        const finalX = hasGuideSnap ? tx + snapDx : (snap ? Math.round(tx / gs) * gs : tx);
+        const finalY = hasGuideSnap ? ty + snapDy : (snap ? Math.round(ty / gs) * gs : ty);
         if (device === "desktop") {
           portfolioStore.updateBlockInSection(selectedSectionId, b.id, {
-            styles: { ...(b.styles as BlockStyles), x: sx, y: sy },
+            styles: { ...(b.styles as BlockStyles), x: finalX, y: finalY },
           });
         } else {
           const field = device === "tablet" ? "tabletStyles" : "mobileStyles";
           const existing = (b[field] ?? {}) as Partial<BlockStyles>;
           portfolioStore.updateBlockInSection(selectedSectionId, b.id, {
-            [field]: { ...existing, x: sx, y: sy },
+            [field]: { ...existing, x: finalX, y: finalY },
           });
         }
       }
     },
-    [selectedSectionId, selectedBlockIds, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview],
+    [selectedSectionId, selectedBlockIds, portfolio.sections, portfolioStore, builderStore.gridSize, builderStore.snapToGrid, builderStore.devicePreview, setGuides],
   );
 
   const handleBlockDragStart = useCallback(
@@ -1642,6 +1723,7 @@ export function BuilderWorkspace({
 
   const handleBlockDragOrResizeEnd = useCallback(() => {
     resizeSnapshotPushed.current = false;
+    setGuides([]);
     builderStore.setDirty(true);
     saveBackup(portfolio);
     batchSave();
