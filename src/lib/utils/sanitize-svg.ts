@@ -141,8 +141,8 @@ export function sanitizeSvg(rawSvg: string): SanitizeResult {
   if (!widthAttr && !heightAttr && viewBox) {
     const parts = viewBox.split(/[\s,]+/);
     if (parts.length === 4) {
-      width = parseFloat(parts[2]) || 200;
-      height = parseFloat(parts[3]) || 200;
+      width = parseFloat(parts[2] ?? "200") || 200;
+      height = parseFloat(parts[3] ?? "200") || 200;
     }
   }
 

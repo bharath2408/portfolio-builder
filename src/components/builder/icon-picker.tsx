@@ -12,10 +12,13 @@ import {
 
 // ─── Get all valid Lucide icon names ────────────────────────────
 
-const ALL_ICON_NAMES: string[] = Object.keys(LucideIcons).filter(
+const _icons = LucideIcons as unknown as Record<string, unknown>;
+const ALL_ICON_NAMES: string[] = Object.keys(_icons).filter(
   (key) =>
-    typeof (LucideIcons as Record<string, unknown>)[key] === "object" &&
-    key[0] === key[0].toUpperCase() &&
+    key.length > 0 &&
+    typeof _icons[key] === "object" &&
+    _icons[key] !== null &&
+    key[0] === key[0]!.toUpperCase() &&
     key !== "default" &&
     key !== "createLucideIcon" &&
     key !== "icons" &&
@@ -167,7 +170,7 @@ export function IconPicker({ open, onClose, onSelect, currentIcon }: IconPickerP
           ) : (
             <div className="grid grid-cols-8 gap-1">
               {filteredIcons.slice(0, 200).map((name) => {
-                const IconComp = (LucideIcons as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[name];
+                const IconComp = (_icons[name] as React.ComponentType<{ size?: number; className?: string }>) ?? null;
                 if (!IconComp) return null;
                 const isSelected = selected === name;
                 return (

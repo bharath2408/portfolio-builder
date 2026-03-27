@@ -4210,9 +4210,9 @@ ${sectionsHtml}
                                 backgroundColor: "var(--b-surface)",
                                 border: isActive ? "1.5px solid var(--b-accent)" : "1px solid var(--b-border)",
                                 ...(p.id !== "none" ? {
-                                  backgroundImage: preview.backgroundImage,
-                                  backgroundSize: preview.backgroundSize,
-                                  backgroundPosition: preview.backgroundPosition,
+                                  backgroundImage: (preview as Record<string, string>).backgroundImage,
+                                  backgroundSize: (preview as Record<string, string>).backgroundSize,
+                                  backgroundPosition: (preview as Record<string, string>).backgroundPosition,
                                 } : {}),
                               }}
                             >
