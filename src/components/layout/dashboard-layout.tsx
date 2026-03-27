@@ -17,6 +17,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -303,10 +304,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             {/* User avatar */}
             {session?.user?.image ? (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name ?? "Profile"}
+                width={32}
+                height={32}
                 className="hidden h-8 w-8 rounded-full object-cover ring-1 ring-teal-500/15 lg:block"
+                unoptimized
               />
             ) : (
               <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[10px] font-bold text-teal-600 ring-1 ring-teal-500/15 dark:text-teal-400 lg:flex">

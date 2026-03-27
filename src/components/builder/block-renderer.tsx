@@ -241,7 +241,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       return (
         <figure style={{ ...inlineStyles, overflow: "hidden", maxWidth: "100%" }}>
           {(c.src as string) ? (
-            <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"], display: "block", maxWidth: "100%" }} />
+            <img src={c.src as string} alt={c.alt as string} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: ((c.objectFit as string) ?? "cover") as React.CSSProperties["objectFit"], display: "block", maxWidth: "100%" }} />
           ) : (
             <div style={{ aspectRatio: (c.aspectRatio as string) ?? "16/9", backgroundColor: resolveColor("surface", theme), display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ opacity: 0.3, fontSize: 14 }}>Image placeholder</span>
@@ -263,7 +263,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
             backgroundColor: resolveColor("surface", theme),
           }}>
             {(c.src as string) ? (
-              <img src={c.src as string} alt={c.alt as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={c.src as string} alt={c.alt as string} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz / 3, opacity: 0.3 }}>?</div>
             )}
@@ -481,7 +481,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
         <div style={{ ...inlineStyles, width: "100%", height: "100%", overflow: "hidden", borderColor: resolveColor(inlineStyles.borderColor as string, theme) ?? theme.surfaceColor }}>
           {(c.imageUrl as string) && (
             <div style={{ aspectRatio: "16/9", overflow: "hidden" }}>
-              <img src={c.imageUrl as string} alt={c.title as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={c.imageUrl as string} alt={c.title as string} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           )}
           <div style={{ padding: 20 }}>
@@ -530,7 +530,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           <QuoteIcon size={24} style={{ opacity: 0.2, marginBottom: 12 }} />
           <p style={{ fontSize: 16, lineHeight: 1.7, fontStyle: "italic" }}>{c.quote as string}</p>
           <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
-            {(c.avatar as string) && <img src={c.avatar as string} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} alt="" />}
+            {(c.avatar as string) && <img src={c.avatar as string} loading="lazy" decoding="async" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} alt="" />}
             <div>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{c.author as string}</div>
               {(c.role as string) && <div style={{ fontSize: 12, opacity: 0.5 }}>{c.role as string}</div>}
@@ -628,7 +628,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           position: "relative",
         }}>
           {fillType === "image" && imageSrc && (
-            <img src={imageSrc} alt="" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: radius }} />
+            <img src={imageSrc} alt="" loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: radius }} />
           )}
         </div>
       );
@@ -655,7 +655,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           position: "relative",
         }}>
           {fillType === "image" && imageSrc && (
-            <img src={imageSrc} alt="" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: "50%" }} />
+            <img src={imageSrc} alt="" loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit, display: "block", borderRadius: "50%" }} />
           )}
         </div>
       );
@@ -773,6 +773,8 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           <img
             src={`https://ghchart.rshah.org/14b8a6/${ghUser}`}
             alt={`${ghUser}'s GitHub contributions`}
+            loading="lazy"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 8 }}
           />
         </div>

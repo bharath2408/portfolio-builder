@@ -1,6 +1,7 @@
 "use client";
 
 import { Upload, X, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { useState, useRef } from "react";
 
 interface ImageUploadProps {
@@ -63,7 +64,7 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
         <div className="flex items-center gap-2">
           {value ? (
             <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-md">
-              <img src={value} alt="" className="h-full w-full object-cover" />
+              <Image src={value} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized />
               <button
                 onClick={() => onChange("")}
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100"
@@ -102,7 +103,7 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
     >
       {value ? (
         <div className="relative">
-          <img src={value} alt="" className="w-full rounded-lg" style={{ maxHeight: 200, objectFit: "cover" }} />
+          <Image src={value} alt="" width={400} height={200} className="w-full rounded-lg" style={{ maxHeight: 200, objectFit: "cover" }} unoptimized />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
             <button
               onClick={() => inputRef.current?.click()}

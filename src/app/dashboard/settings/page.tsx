@@ -28,6 +28,8 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 
+import Image from "next/image";
+
 import { ImageUpload } from "@/components/common/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -311,10 +313,13 @@ export default function SettingsPage() {
           <div className="flex items-center gap-4 border-b border-border/40 px-6 py-5">
             <div className="relative">
               {profileImage ? (
-                <img
+                <Image
                   src={profileImage}
                   alt="Profile"
+                  width={56}
+                  height={56}
                   className="h-14 w-14 rounded-full object-cover ring-2 ring-teal-500/15"
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-500/20 text-[18px] font-bold text-teal-600 ring-2 ring-teal-500/15 dark:text-teal-400">
