@@ -404,6 +404,64 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultStyles: { w: 200, h: 200 },
   },
 
+  faq: {
+    type: "faq",
+    label: "FAQ",
+    icon: "HelpCircle",
+    category: "composite",
+    description: "Accordion Q&A section",
+    defaultContent: {
+      items: [
+        { question: "What is this?", answer: "This is an example FAQ item." },
+        { question: "How does it work?", answer: "Click a question to expand the answer." },
+      ],
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+  feature_card: {
+    type: "feature_card",
+    label: "Feature Card",
+    icon: "Sparkles",
+    category: "composite",
+    description: "Icon + title + description card",
+    defaultContent: {
+      icon: "Zap",
+      title: "Feature Title",
+      description: "Describe this feature in a few words.",
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+  product_card: {
+    type: "product_card",
+    label: "Product Card",
+    icon: "ShoppingBag",
+    category: "composite",
+    description: "Product with price and buy link",
+    defaultContent: {
+      title: "Product Name",
+      price: "$49",
+      description: "A brief description of this product.",
+      image: "",
+      buyUrl: "#",
+      buyLabel: "Buy Now",
+    },
+    defaultStyles: { marginBottom: 16 },
+  },
+  cta_banner: {
+    type: "cta_banner",
+    label: "CTA Banner",
+    icon: "Megaphone",
+    category: "composite",
+    description: "Call-to-action banner with button",
+    defaultContent: {
+      heading: "Ready to get started?",
+      subtext: "Join thousands of users building with our platform.",
+      buttonText: "Get Started",
+      buttonUrl: "#",
+    },
+    defaultStyles: { marginBottom: 16, paddingTop: 40, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, borderRadius: 16 },
+  },
+
   // ── Grouping ────────────────────────────────────────────────────
   group: {
     type: "group",

@@ -81,6 +81,10 @@ export const BLOCK_TYPES = {
   SHAPE: "shape",
   CUSTOM_SVG: "custom_svg",
   GROUP: "group",
+  FAQ: "faq",
+  FEATURE_CARD: "feature_card",
+  PRODUCT_CARD: "product_card",
+  CTA_BANNER: "cta_banner",
 } as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];
@@ -117,6 +121,32 @@ export interface EmbedContent { url: string; height?: number; }
 export interface ShapeContent { svgId: string; color?: string; flipH?: boolean; flipV?: boolean; }
 export interface CustomSvgContent { svg: string; originalFilename?: string; viewBox?: string; }
 
+export interface FaqContent {
+  items: Array<{ question: string; answer: string }>;
+}
+
+export interface FeatureCardContent {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ProductCardContent {
+  title: string;
+  price: string;
+  description: string;
+  image: string;
+  buyUrl: string;
+  buyLabel: string;
+}
+
+export interface CtaBannerContent {
+  heading: string;
+  subtext: string;
+  buttonText: string;
+  buttonUrl: string;
+}
+
 export type BlockContentMap = {
   heading: HeadingContent;
   text: TextContent;
@@ -147,6 +177,10 @@ export type BlockContentMap = {
   embed: EmbedContent;
   shape: ShapeContent;
   custom_svg: CustomSvgContent;
+  faq: FaqContent;
+  feature_card: FeatureCardContent;
+  product_card: ProductCardContent;
+  cta_banner: CtaBannerContent;
 };
 
 // ─── Block Styles (Figma design panel) ────────────────────────────

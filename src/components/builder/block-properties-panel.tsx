@@ -2,7 +2,7 @@
 
 import {
   AlignCenter, AlignLeft, AlignRight, ChevronDown,
-  Code, Copy, Eye, EyeOff, Link2, Lock, Trash2, Unlock,
+  Code, Copy, Eye, EyeOff, Link2, Lock, Plus, Trash2, Unlock,
   Type, Paintbrush, Box, Layers, Move, Sparkles,
   Smartphone, Monitor, SquareDashedBottom,
 } from "lucide-react";
@@ -1322,6 +1322,94 @@ function ContentEditor({
         <div className="space-y-2.5">
           {field("HTML Code", "html", { type: "textarea" })}
           {field("Height", "height", { type: "number", placeholder: "300" })}
+        </div>
+      );
+    case "faq": {
+      const faqItems = (content.items as Array<{ question: string; answer: string }>) ?? [];
+      return (
+        <div className="space-y-2.5">
+          <SubLabel>Q&amp;A Items</SubLabel>
+          {faqItems.map((item, i) => (
+            <div key={i} className="space-y-1.5 rounded-md p-2" style={{ backgroundColor: "var(--b-surface)" }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-4)" }}>Item {i + 1}</span>
+                <button
+                  onClick={() => {
+                    const updated = faqItems.filter((_, idx) => idx !== i);
+                    updateContent("items", updated);
+                  }}
+                  className="flex h-5 w-5 items-center justify-center rounded text-[10px] transition-colors hover:bg-red-500/10"
+                  style={{ color: "var(--b-text-3)" }}
+                >
+                  <Trash2 size={10} />
+                </button>
+              </div>
+              <TextInput
+                value={item.question}
+                onChange={(v) => {
+                  const updated = faqItems.map((it, idx) => idx === i ? { question: v, answer: it.answer } : it);
+                  updateContent("items", updated);
+                }}
+                placeholder="Question"
+              />
+              <textarea
+                value={item.answer}
+                onChange={(e) => {
+                  const updated = faqItems.map((it, idx) => idx === i ? { question: it.question, answer: e.target.value } : it);
+                  updateContent("items", updated);
+                }}
+                rows={2}
+                placeholder="Answer"
+                className="w-full rounded-md border px-2.5 py-2 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+                style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)", resize: "vertical" }}
+              />
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const updated = [...faqItems, { question: "New question?", answer: "Answer here." }];
+              updateContent("items", updated);
+            }}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-1.5 text-[10px] font-medium transition-colors hover:border-[var(--b-accent)]"
+            style={{ borderColor: "var(--b-border)", color: "var(--b-text-3)" }}
+          >
+            <Plus size={10} /> Add Item
+          </button>
+        </div>
+      );
+    }
+    case "feature_card":
+      return (
+        <div className="space-y-2.5">
+          {field("Icon Name", "icon", { placeholder: "Zap" })}
+          {field("Title", "title")}
+          {field("Description", "description", { type: "textarea" })}
+        </div>
+      );
+    case "product_card":
+      return (
+        <div className="space-y-2.5">
+          {field("Title", "title")}
+          {field("Price", "price", { placeholder: "$49" })}
+          {field("Description", "description", { type: "textarea" })}
+          <div>
+            <SubLabel>Image</SubLabel>
+            <ImageUpload
+              value={(content.image as string) ?? ""}
+              onChange={(v) => updateContent("image", v)}
+            />
+          </div>
+          {field("Buy URL", "buyUrl", { placeholder: "https://..." })}
+          {field("Buy Label", "buyLabel", { placeholder: "Buy Now" })}
+        </div>
+      );
+    case "cta_banner":
+      return (
+        <div className="space-y-2.5">
+          {field("Heading", "heading")}
+          {field("Subtext", "subtext", { type: "textarea" })}
+          {field("Button Text", "buttonText")}
+          {field("Button URL", "buttonUrl", { placeholder: "https://..." })}
         </div>
       );
     default:

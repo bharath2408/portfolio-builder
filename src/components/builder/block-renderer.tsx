@@ -860,6 +860,92 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       );
     }
 
+    // ── FAQ ──
+    case "faq": {
+      const items = (c.items as Array<{ question: string; answer: string }>) ?? [];
+      return (
+        <div style={inlineStyles}>
+          {items.map((item, i) => (
+            <details key={i} className="border-b border-current/10 py-3" style={{ color: "inherit" }}>
+              <summary className="cursor-pointer font-semibold" style={{ fontSize: block.styles.fontSize ?? 16 }}>
+                {item.question}
+              </summary>
+              <p className="mt-2 opacity-70" style={{ fontSize: (block.styles.fontSize ?? 16) - 2 }}>
+                {item.answer}
+              </p>
+            </details>
+          ))}
+        </div>
+      );
+    }
+
+    // ── FEATURE CARD ──
+    case "feature_card": {
+      const iconName = (c.icon as string) ?? "Zap";
+      const title = (c.title as string) ?? "Feature";
+      const desc = (c.description as string) ?? "";
+      const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[iconName];
+      const iconColor = resolveColor("primary", theme) ?? theme.primaryColor;
+      return (
+        <div style={{ ...inlineStyles, textAlign: (block.styles.textAlign as React.CSSProperties["textAlign"]) ?? "left" }}>
+          <div style={{ display: "inline-flex", padding: 10, borderRadius: 12, backgroundColor: iconColor + "15", marginBottom: 12 }}>
+            {IconComp ? <IconComp size={24} className="" /> : <span>{iconName}</span>}
+          </div>
+          <h3 style={{ fontSize: block.styles.fontSize ?? 18, fontWeight: 700, marginBottom: 6, color: "inherit" }}>{title}</h3>
+          <p style={{ fontSize: (block.styles.fontSize ?? 18) - 4, opacity: 0.7, lineHeight: 1.6, color: "inherit" }}>{desc}</p>
+        </div>
+      );
+    }
+
+    // ── PRODUCT CARD ──
+    case "product_card": {
+      const title = (c.title as string) ?? "Product";
+      const price = (c.price as string) ?? "$0";
+      const desc = (c.description as string) ?? "";
+      const image = c.image as string;
+      const buyUrl = (c.buyUrl as string) ?? "#";
+      const buyLabel = (c.buyLabel as string) ?? "Buy Now";
+      const accentColor = resolveColor("primary", theme) ?? theme.primaryColor;
+      return (
+        <div style={{ ...inlineStyles, overflow: "hidden", borderRadius: block.styles.borderRadius ?? 12, border: `1px solid ${theme.mutedColor}30` }}>
+          {image && (
+            <div style={{ width: "100%", aspectRatio: "4/3", background: `url(${image}) center/cover`, backgroundColor: theme.surfaceColor }} />
+          )}
+          {!image && (
+            <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: theme.surfaceColor, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.3, fontSize: 14 }}>No image</div>
+          )}
+          <div style={{ padding: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <h3 style={{ fontSize: block.styles.fontSize ?? 16, fontWeight: 700, color: "inherit" }}>{title}</h3>
+              <span style={{ fontSize: block.styles.fontSize ?? 16, fontWeight: 800, color: accentColor }}>{price}</span>
+            </div>
+            <p style={{ fontSize: (block.styles.fontSize ?? 16) - 2, opacity: 0.7, lineHeight: 1.5, marginBottom: 12, color: "inherit" }}>{desc}</p>
+            <a href={buyUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "8px 20px", borderRadius: 8, backgroundColor: accentColor, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+              {buyLabel}
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // ── CTA BANNER ──
+    case "cta_banner": {
+      const heading = (c.heading as string) ?? "Ready to get started?";
+      const subtext = (c.subtext as string) ?? "";
+      const buttonText = (c.buttonText as string) ?? "Get Started";
+      const buttonUrl = (c.buttonUrl as string) ?? "#";
+      const accentColor = resolveColor("primary", theme) ?? theme.primaryColor;
+      return (
+        <div style={{ ...inlineStyles, textAlign: "center", borderRadius: block.styles.borderRadius ?? 16, backgroundColor: block.styles.backgroundColor ? resolveColor(block.styles.backgroundColor as string, theme) ?? block.styles.backgroundColor : theme.surfaceColor, padding: `${block.styles.paddingTop ?? 40}px ${block.styles.paddingRight ?? 32}px ${block.styles.paddingBottom ?? 40}px ${block.styles.paddingLeft ?? 32}px` }}>
+          <h2 style={{ fontSize: block.styles.fontSize ?? 28, fontWeight: 800, marginBottom: 8, color: "inherit" }}>{heading}</h2>
+          <p style={{ fontSize: (block.styles.fontSize ?? 28) - 10, opacity: 0.7, marginBottom: 20, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6, color: "inherit" }}>{subtext}</p>
+          <a href={buttonUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, backgroundColor: accentColor, color: "#fff", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
+            {buttonText}
+          </a>
+        </div>
+      );
+    }
+
     // ── FALLBACK ──
     default:
       return (
