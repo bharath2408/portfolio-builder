@@ -60,7 +60,7 @@ export default function ResumePage() {
     return extractResumeData(portfolio, {
       name: session?.user?.name,
       email: session?.user?.email,
-      bio: (session?.user as Record<string, unknown>)?.bio as string | null ?? null,
+      bio: (session?.user as unknown as Record<string, unknown>)?.bio as string | null ?? null,
     });
   }, [portfolio, session?.user]);
 
