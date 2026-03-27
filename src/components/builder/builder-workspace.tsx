@@ -1174,6 +1174,18 @@ export function BuilderWorkspace({
     [portfolio.sections, portfolioStore],
   );
 
+  const resizeFrame = useCallback(
+    (sectionId: string, newW: number, newH: number) => {
+      const section = portfolio.sections.find((s) => s.id === sectionId);
+      if (!section) return;
+      const ss = section.styles as SectionStyles;
+      portfolioStore.updateSection(sectionId, {
+        styles: { ...ss, frameWidth: newW, frameHeight: newH },
+      });
+    },
+    [portfolio.sections, portfolioStore],
+  );
+
   const resizeBlock = useCallback(
     (
       blockId: string,
@@ -3512,7 +3524,10 @@ ${sectionsHtml}
                     isSelected={
                       selectedSectionId === section.id && selectedBlockIds.size === 0
                     }
+                    canvasScale={transform.scale}
                     onSelect={selectSection}
+                    onResize={resizeFrame}
+                    onResizeEnd={handleBlockDragOrResizeEnd}
                     onContextMenu={handleFrameContextMenu}
                   >
                     {[...section.blocks]

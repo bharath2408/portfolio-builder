@@ -461,7 +461,10 @@ export interface FrameProps {
   backgroundColor?: string;
   patternStyle?: React.CSSProperties;
   isSelected: boolean;
+  canvasScale?: number;
   onSelect: (id: string) => void;
+  onResize?: (id: string, w: number, h: number) => void;
+  onResizeEnd?: () => void;
   onContextMenu?: (id: string, x: number, y: number) => void;
   children: React.ReactNode;
 }
@@ -476,10 +479,72 @@ export const CanvasFrame = memo(function CanvasFrame({
   backgroundColor,
   patternStyle,
   isSelected,
+  canvasScale = 1,
   onSelect,
+  onResize,
+  onResizeEnd,
   onContextMenu: onCtxMenu,
   children,
 }: FrameProps) {
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef<{
+    handle: HandlePosition;
+    startMouseX: number;
+    startMouseY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
+
+  const handleFrameResizeStart = useCallback(
+    (pos: HandlePosition, e: ReactPointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      setIsResizing(true);
+      resizeRef.current = {
+        handle: pos,
+        startMouseX: e.clientX,
+        startMouseY: e.clientY,
+        startW: width,
+        startH: height,
+      };
+    },
+    [width, height],
+  );
+
+  useEffect(() => {
+    if (!isResizing || !onResize) return;
+
+    const handleMove = (e: globalThis.PointerEvent) => {
+      const r = resizeRef.current;
+      if (!r) return;
+      const dx = (e.clientX - r.startMouseX) / canvasScale;
+      const dy = (e.clientY - r.startMouseY) / canvasScale;
+
+      let newW = r.startW;
+      let newH = r.startH;
+
+      if (r.handle.includes("right")) newW = Math.max(200, r.startW + dx);
+      if (r.handle.includes("left")) newW = Math.max(200, r.startW - dx);
+      if (r.handle.includes("bottom")) newH = Math.max(100, r.startH + dy);
+      if (r.handle.includes("top")) newH = Math.max(100, r.startH - dy);
+
+      onResize(id, Math.round(newW), Math.round(newH));
+    };
+
+    const handleUp = () => {
+      setIsResizing(false);
+      resizeRef.current = null;
+      onResizeEnd?.();
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [isResizing, id, canvasScale, onResize, onResizeEnd]);
   return (
     <div
       className="absolute"
@@ -558,6 +623,10 @@ export const CanvasFrame = memo(function CanvasFrame({
             onSelect(id);
           }}
         />
+        {/* Resize handles */}
+        {isSelected && onResize && HANDLES.map((pos) => (
+          <ResizeHandle key={pos} position={pos} onResizeStart={handleFrameResizeStart} />
+        ))}
         {/* Pattern overlay */}
         {patternStyle && Object.keys(patternStyle).length > 0 && (
           <div
