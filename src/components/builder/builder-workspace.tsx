@@ -3234,24 +3234,19 @@ ${sectionsHtml}
               )}
 
               {/* Elements list */}
-              <div className="flex-1 overflow-y-auto px-2.5 py-2.5 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin">
                 {BLOCK_CATEGORIES.map((cat) => {
                   const blocks = getBlocksByCategory(cat.id);
+                  if (blocks.length === 0) return null;
                   return (
-                    <div key={cat.id} className="mb-4">
+                    <div key={cat.id} className="mb-3">
                       <p
-                        className="mb-2 flex items-center gap-1.5 px-1 text-[9px] font-bold uppercase tracking-[0.12em]"
-                        style={{ color: "var(--b-text-4)" }}
+                        className="mb-1.5 flex items-center gap-1.5 px-1.5 text-[8px] font-extrabold uppercase tracking-[0.15em]"
+                        style={{ color: "var(--b-text-4)", opacity: 0.7 }}
                       >
                         {cat.label}
-                        <span
-                          className="rounded-sm px-1 text-[8px] font-semibold"
-                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
-                        >
-                          {blocks.length}
-                        </span>
                       </p>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-3 gap-1">
                         {blocks.map((def) => (
                           <button
                             key={def.type}
@@ -3263,33 +3258,33 @@ ${sectionsHtml}
                               }
                             }}
                             disabled={portfolio.sections.length === 0}
-                            className="group flex flex-col items-start gap-0.5 rounded-lg px-2.5 py-2.5 text-left transition-all duration-150 disabled:opacity-25"
+                            className="group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-center transition-all duration-150 disabled:opacity-20"
                             style={{
-                              backgroundColor: "var(--b-surface)",
-                              border: "1px solid var(--b-border)",
+                              backgroundColor: "transparent",
+                              border: "1px solid transparent",
                             }}
                             onMouseEnter={(e) => {
-                              if (selectedSectionId) {
-                                e.currentTarget.style.borderColor = "var(--b-accent)";
-                                e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
-                              }
+                              e.currentTarget.style.borderColor = "var(--b-accent-mid)";
+                              e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "var(--b-border)";
-                              e.currentTarget.style.backgroundColor = "var(--b-surface)";
+                              e.currentTarget.style.borderColor = "transparent";
+                              e.currentTarget.style.backgroundColor = "transparent";
                             }}
                           >
+                            <div
+                              className="flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150"
+                              style={{ backgroundColor: "var(--b-surface)", border: "1px solid var(--b-border)" }}
+                            >
+                              <span style={{ color: "var(--b-text-3)", fontSize: 13 }}>
+                                {def.label.charAt(0)}
+                              </span>
+                            </div>
                             <span
-                              className="text-[10.5px] font-semibold"
-                              style={{ color: "var(--b-text-2)" }}
+                              className="w-full truncate text-[9px] font-medium leading-tight"
+                              style={{ color: "var(--b-text-3)" }}
                             >
                               {def.label}
-                            </span>
-                            <span
-                              className="line-clamp-1 text-[8.5px] leading-tight"
-                              style={{ color: "var(--b-text-4)" }}
-                            >
-                              {def.description}
                             </span>
                           </button>
                         ))}
@@ -3304,9 +3299,9 @@ ${sectionsHtml}
           {/* ── Shapes Tab ─────────────────────────────────────── */}
           {leftTab === "shapes" && (
             <div className="flex flex-1 flex-col overflow-hidden">
-              {!selectedSectionId && (
+              {portfolio.sections.length === 0 && (
                 <div
-                  className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
+                  className="mx-2 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
                   style={{
                     backgroundColor: "var(--b-accent-soft)",
                     color: "var(--b-accent)",
@@ -3314,33 +3309,29 @@ ${sectionsHtml}
                   }}
                 >
                   <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
-                  Select a frame first to add shapes
+                  Create a frame first to add shapes
                 </div>
               )}
-              <div className="flex-1 overflow-y-auto px-2.5 py-2.5 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin">
                 {SHAPE_CATEGORIES.map((cat) => {
                   const shapes = getShapesByCategory(cat.id);
                   return (
-                    <div key={cat.id} className="mb-4">
+                    <div key={cat.id} className="mb-3">
                       <p
-                        className="mb-2 flex items-center gap-1.5 px-1 text-[9px] font-bold uppercase tracking-[0.12em]"
-                        style={{ color: "var(--b-text-4)" }}
+                        className="mb-1.5 flex items-center gap-1.5 px-1.5 text-[8px] font-extrabold uppercase tracking-[0.15em]"
+                        style={{ color: "var(--b-text-4)", opacity: 0.7 }}
                       >
                         {cat.label}
-                        <span
-                          className="rounded-sm px-1 text-[8px] font-semibold"
-                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
-                        >
-                          {shapes.length}
-                        </span>
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {shapes.map((shape) => (
                           <button
                             key={shape.id}
                             onClick={() => {
-                              if (!selectedSectionId) return;
-                              const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+                              const targetSection = selectedSectionId ?? portfolio.sections[0]?.id;
+                              if (!targetSection) return;
+                              setSelectedSectionId(targetSection);
+                              const section = portfolio.sections.find((s) => s.id === targetSection);
                               if (!section) return;
                               const sectionSt = section.styles as SectionStyles;
                               const fw = sectionSt.frameWidth ?? DEFAULT_FRAME_WIDTH;
@@ -3349,36 +3340,38 @@ ${sectionsHtml}
                               const h = shape.category === "dividers" ? shape.defaultHeight : Math.min(shape.defaultHeight, 400);
                               const x = shape.category === "dividers" ? 0 : Math.round((fw - w) / 2);
                               const y = shape.category === "dividers" ? fh - h : Math.round((fh - h) / 2);
-                              addBlock(selectedSectionId, "shape" as BlockType, {
+                              addBlock(targetSection, "shape" as BlockType, {
                                 content: { svgId: shape.id, color: "primary" },
                                 styles: { x, y, w, h },
                               });
                             }}
-                            disabled={!selectedSectionId}
-                            className="group flex flex-col items-center gap-1 rounded-lg px-2 py-3 transition-all duration-150 disabled:opacity-25"
+                            disabled={portfolio.sections.length === 0}
+                            className="group flex flex-col items-center gap-1.5 rounded-xl p-2.5 transition-all duration-200 disabled:opacity-20"
                             style={{
                               backgroundColor: "var(--b-surface)",
                               border: "1px solid var(--b-border)",
                             }}
                             onMouseEnter={(e) => {
-                              if (selectedSectionId) {
-                                e.currentTarget.style.borderColor = "var(--b-accent)";
-                                e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
-                              }
+                              e.currentTarget.style.borderColor = "var(--b-accent-mid)";
+                              e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
+                              const svgEl = e.currentTarget.querySelector(".shape-preview");
+                              if (svgEl) (svgEl as HTMLElement).style.color = "var(--b-accent)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.borderColor = "var(--b-border)";
                               e.currentTarget.style.backgroundColor = "var(--b-surface)";
+                              const svgEl = e.currentTarget.querySelector(".shape-preview");
+                              if (svgEl) (svgEl as HTMLElement).style.color = "var(--b-text-3)";
                             }}
                           >
                             <div
-                              className="flex h-10 w-full items-center justify-center overflow-hidden"
-                              style={{ color: "var(--b-text-3)" }}
+                              className="shape-preview flex h-14 w-full items-center justify-center overflow-hidden rounded-md transition-colors duration-200"
+                              style={{ color: "var(--b-text-3)", backgroundColor: "var(--b-bg)", padding: shape.category === "dividers" ? "0 4px" : "4px" }}
                               dangerouslySetInnerHTML={{ __html: shape.svg }}
                             />
                             <span
-                              className="text-[9px] font-medium"
-                              style={{ color: "var(--b-text-3)" }}
+                              className="w-full truncate text-center text-[8.5px] font-semibold"
+                              style={{ color: "var(--b-text-4)" }}
                             >
                               {shape.name}
                             </span>
