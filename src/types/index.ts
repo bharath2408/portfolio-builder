@@ -308,10 +308,12 @@ export type BlockWithStyles = Block & {
 export type SectionWithBlocks = Section & {
   blocks: BlockWithStyles[];
   styles: SectionStyles;
+  pageId?: string | null;
 };
 
 export type PortfolioWithRelations = Portfolio & {
   sections: SectionWithBlocks[];
+  pages?: Array<{ id: string; title: string; slug: string; sortOrder: number; isDefault: boolean }>;
   theme: Theme | null;
   template: Template | null;
   user: Pick<User, "id" | "name" | "username" | "image">;
