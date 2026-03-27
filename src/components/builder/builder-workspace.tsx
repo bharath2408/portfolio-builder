@@ -24,6 +24,8 @@ import {
   EyeOff,
   ExternalLink,
   FileJson,
+  FolderDown,
+  FolderUp,
   Globe,
   GripVertical,
   ImageDown,
@@ -1860,6 +1862,123 @@ export function BuilderWorkspace({
     URL.revokeObjectURL(url);
   }, [portfolio]);
 
+  // ── Export as .folio file ──────────────────────────────────────
+  const exportAsFolio = useCallback(() => {
+    const folioData = {
+      _format: "foliocraft",
+      _version: 1,
+      exportedAt: new Date().toISOString(),
+      portfolio: {
+        title: portfolio.title,
+        slug: portfolio.slug,
+        description: portfolio.description,
+        status: portfolio.status,
+        theme: portfolio.theme,
+        sections: portfolio.sections.map((s) => ({
+          name: s.name,
+          sortOrder: s.sortOrder,
+          isVisible: s.isVisible,
+          isLocked: s.isLocked,
+          styles: s.styles,
+          blocks: s.blocks.map((b) => ({
+            type: b.type,
+            content: b.content,
+            styles: b.styles,
+            tabletStyles: b.tabletStyles ?? {},
+            mobileStyles: b.mobileStyles ?? {},
+            sortOrder: b.sortOrder,
+            isVisible: b.isVisible,
+            isLocked: b.isLocked,
+            parentId: b.parentId ?? null,
+          })),
+        })),
+      },
+    };
+    const blob = new Blob([JSON.stringify(folioData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${portfolio.slug || "portfolio"}.folio`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [portfolio]);
+
+  // ── Import .folio file ────────────────────────────────────────
+  const importFolio = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".folio,.json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        // Validate format
+        const folioPortfolio = data._format === "foliocraft" ? data.portfolio : data;
+        if (!folioPortfolio?.sections || !Array.isArray(folioPortfolio.sections)) {
+          alert("Invalid .folio file — no sections found.");
+          return;
+        }
+
+        builderStore.pushSnapshot("import-folio");
+
+        // Import theme if present
+        if (folioPortfolio.theme && portfolio.theme) {
+          const { id: _id, portfolioId: _pid, ...themeData } = folioPortfolio.theme;
+          portfolioStore.updateTheme({ ...portfolio.theme, ...themeData });
+        }
+
+        // Clear existing sections and replace with imported ones
+        // Remove all current sections
+        for (const s of [...portfolio.sections]) {
+          portfolioStore.removeSection(s.id);
+        }
+
+        // Add imported sections with new IDs
+        for (const section of folioPortfolio.sections) {
+          const sectionId = crypto.randomUUID();
+          const newSection = {
+            id: sectionId,
+            portfolioId: portfolio.id,
+            name: section.name ?? "Imported Section",
+            sortOrder: section.sortOrder ?? 0,
+            isVisible: section.isVisible ?? true,
+            isLocked: section.isLocked ?? false,
+            styles: section.styles ?? {},
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            blocks: (section.blocks ?? []).map((b: Record<string, unknown>, i: number) => ({
+              id: crypto.randomUUID(),
+              sectionId,
+              type: b.type ?? "text",
+              content: b.content ?? {},
+              styles: b.styles ?? {},
+              tabletStyles: b.tabletStyles ?? {},
+              mobileStyles: b.mobileStyles ?? {},
+              sortOrder: b.sortOrder ?? i,
+              isVisible: b.isVisible ?? true,
+              isLocked: b.isLocked ?? false,
+              parentId: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })),
+          };
+          portfolioStore.addSection(newSection as unknown as import("@/types").SectionWithBlocks);
+        }
+
+        builderStore.setDirty(true);
+        scheduleAutoSave();
+        alert(`Imported ${folioPortfolio.sections.length} section(s) from "${file.name}"`);
+      } catch {
+        alert("Failed to import file. Make sure it's a valid .folio or JSON file.");
+      }
+    };
+    input.click();
+  }, [portfolio, portfolioStore, builderStore, scheduleAutoSave]);
+
+
   // ── Export as HTML ────────────────────────────────────────────────
   const exportAsHtml = useCallback(() => {
     const t = theme;
@@ -2305,6 +2424,27 @@ ${sectionsHtml}
                 <Save className="h-3.5 w-3.5" />
                 {saving ? "Saving..." : "Save"}
                 <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
+              <DropdownMenuItem
+                onClick={exportAsFolio}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <FolderDown className="h-3.5 w-3.5" />
+                Save as .folio
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={importFolio}
+                className="text-[12px]"
+                style={{ color: dropdownColors.textMuted, backgroundColor: "transparent" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = dropdownColors.hover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <FolderUp className="h-3.5 w-3.5" />
+                Import .folio
               </DropdownMenuItem>
               <DropdownMenuSeparator style={{ backgroundColor: dropdownColors.separator }} />
               <DropdownMenuItem
