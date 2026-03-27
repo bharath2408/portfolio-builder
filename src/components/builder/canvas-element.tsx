@@ -549,6 +549,10 @@ export const CanvasFrame = memo(function CanvasFrame({
             inset: 0,
             zIndex: 0,
           }}
+          onPointerDown={(e) => {
+            // Stop CanvasEngine from starting marquee when clicking inside frame
+            e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
             onSelect(id);
