@@ -1717,11 +1717,19 @@ export function BuilderWorkspace({
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
+  const pendingSave = useRef(false);
 
   const batchSave = useCallback(async () => {
-    if (isSavingRef.current || portfolio.sections.length === 0) return;
+    if (portfolio.sections.length === 0) return;
+    // If already saving, queue a follow-up save with latest state
+    if (isSavingRef.current) {
+      pendingSave.current = true;
+      return;
+    }
     isSavingRef.current = true;
     setSaving(true);
+    // Clear idle timer to prevent duplicate saves
+    if (autoSaveTimer.current) { clearTimeout(autoSaveTimer.current); autoSaveTimer.current = null; }
     try {
       await apiPut(
         `/portfolios/${portfolio.id}/batch`,
@@ -1756,6 +1764,11 @@ export function BuilderWorkspace({
     }
     isSavingRef.current = false;
     setSaving(false);
+    // If a save was queued while we were saving, run it now with latest state
+    if (pendingSave.current) {
+      pendingSave.current = false;
+      setTimeout(() => batchSave(), 100);
+    }
   }, [portfolio.sections, portfolio.id, builderStore]);
 
   // ── Smart Save: save on idle (10s), blur, Ctrl+S, drag end ──
