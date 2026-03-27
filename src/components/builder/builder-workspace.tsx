@@ -3215,7 +3215,7 @@ ${sectionsHtml}
           style={{ borderBottom: "1px solid var(--b-border)", backgroundColor: "var(--b-panel)" }}
         >
           <button
-            onClick={() => setCurrentPageId(null)}
+            onClick={() => { setCurrentPageId(null); setTimeout(fitToScreen, 100); }}
             className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
             style={{
               backgroundColor: !currentPageId ? "var(--b-accent-soft)" : "transparent",
@@ -3227,7 +3227,7 @@ ${sectionsHtml}
           {(portfolio.pages ?? []).filter(p => !p.isDefault).map((page) => (
             <button
               key={page.id}
-              onClick={() => setCurrentPageId(page.id)}
+              onClick={() => { setCurrentPageId(page.id); setTimeout(fitToScreen, 100); }}
               onDoubleClick={() => setPageDialog({ mode: "rename", pageId: page.id, value: page.title })}
               onContextMenu={(e) => {
                 e.preventDefault();
