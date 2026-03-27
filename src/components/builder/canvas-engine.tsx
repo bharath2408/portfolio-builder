@@ -210,8 +210,7 @@ export function CanvasEngine({
           canvasY >= frame.y - 32 &&
           canvasY <= frame.y + frame.h
         ) {
-          e.preventDefault();
-          container.setPointerCapture(e.pointerId);
+          // Store potential drag start — only activate on actual movement (threshold: 4px)
           frameDrag.current = {
             id: frame.id,
             startMouseX: e.clientX,
@@ -219,6 +218,7 @@ export function CanvasEngine({
             startFrameX: frame.x,
             startFrameY: frame.y,
           };
+          // Don't preventDefault or capture pointer yet — let click events pass through
           return;
         }
         // Not on the selected frame — fall through to marquee
@@ -258,9 +258,18 @@ export function CanvasEngine({
         return;
       }
       if (frameDrag.current && onFrameMove) {
+        const rawDx = e.clientX - frameDrag.current.startMouseX;
+        const rawDy = e.clientY - frameDrag.current.startMouseY;
+        // Only start dragging after 4px threshold — allows clicks to pass through
+        if (Math.abs(rawDx) < 4 && Math.abs(rawDy) < 4) return;
+        // Capture pointer on first real drag movement
+        const container = containerRef.current;
+        if (container && !container.hasPointerCapture(e.pointerId)) {
+          container.setPointerCapture(e.pointerId);
+        }
         const t = transformRef.current;
-        const dx = (e.clientX - frameDrag.current.startMouseX) / t.scale;
-        const dy = (e.clientY - frameDrag.current.startMouseY) / t.scale;
+        const dx = rawDx / t.scale;
+        const dy = rawDy / t.scale;
         onFrameMove(
           frameDrag.current.id,
           Math.round(frameDrag.current.startFrameX + dx),
