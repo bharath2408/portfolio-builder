@@ -117,6 +117,7 @@ model Portfolio {
   submissions ContactSubmission[]
   versions    PortfolioVersion[]
   communityTemplate CommunityTemplate?
+  collections Collection[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -313,4 +314,39 @@ model CommunityTemplate {
   @@index([category])
   @@index([useCount])
   @@map("community_templates")
+}
+
+// ─── CMS Collections ─────────────────────────────────────────────
+
+model Collection {
+  id          String   @id @default(cuid())
+  portfolioId String
+  name        String
+  slug        String
+  fields      Json     @default("[]") // Array of { name, type, required }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  items     CollectionItem[]
+
+  @@unique([portfolioId, slug])
+  @@index([portfolioId])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  data         Json     @default("{}") // Key-value pairs matching collection fields
+  sortOrder    Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+  @@index([collectionId, sortOrder])
+  @@map("collection_items")
 }
