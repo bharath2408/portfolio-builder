@@ -2316,6 +2316,30 @@ ${sectionsHtml}
       // Escape → Exit draw mode
       if (e.key === "Escape" && drawMode) { setDrawMode(null); setDrawStart(null); setDrawRect(null); return; }
 
+      // Ctrl+Alt+C → Copy styles
+      if (mod && e.altKey && e.key === "c" && singleId) {
+        e.preventDefault();
+        const block = portfolio.sections.flatMap(s => s.blocks).find(b => b.id === singleId);
+        if (block) {
+          const { x: _x, y: _y, w: _w, h: _h, ...visualStyles } = block.styles as Record<string, unknown>;
+          builderStore.copyStyles(structuredClone(visualStyles));
+        }
+        return;
+      }
+      // Ctrl+Alt+V → Paste styles
+      if (mod && e.altKey && e.key === "v" && singleId && builderStore.styleClipboard && selectedSectionId) {
+        e.preventDefault();
+        builderStore.pushSnapshot("paste-styles");
+        const block = portfolio.sections.flatMap(s => s.blocks).find(b => b.id === singleId);
+        if (block) {
+          const currentStyles = block.styles as BlockStyles;
+          const merged = { ...currentStyles, ...builderStore.styleClipboard, x: currentStyles.x, y: currentStyles.y, w: currentStyles.w, h: currentStyles.h };
+          portfolioStore.updateBlockInSection(selectedSectionId, singleId, { styles: merged } as Partial<BlockWithStyles>);
+          builderStore.setDirty(true);
+          scheduleAutoSave();
+        }
+        return;
+      }
       // Ctrl+C → Copy block
       if (mod && e.key === "c" && singleId) {
         e.preventDefault();
@@ -3968,6 +3992,8 @@ ${sectionsHtml}
                   return [
                     { label: "Cut", shortcut: "Ctrl+X", action: act(() => { doCopy(); deleteBlock(bid, sid); }), icon: "✂" },
                     { label: "Copy", shortcut: "Ctrl+C", action: act(() => doCopy()), icon: "📋" },
+                    { label: "Copy Styles", shortcut: "Ctrl+Alt+C", action: act(() => { if (blk) { const { x: _x, y: _y, w: _w, h: _h, ...vs } = blk.styles as Record<string, unknown>; builderStore.copyStyles(structuredClone(vs)); } }), icon: "🎨" },
+                    ...(builderStore.styleClipboard ? [{ label: "Paste Styles", shortcut: "Ctrl+Alt+V", action: act(() => { if (blk) { builderStore.pushSnapshot("paste-styles"); const cs = blk.styles as BlockStyles; portfolioStore.updateBlockInSection(sid, bid, { styles: { ...cs, ...builderStore.styleClipboard, x: cs.x, y: cs.y, w: cs.w, h: cs.h } } as Partial<BlockWithStyles>); builderStore.setDirty(true); scheduleAutoSave(); } }), icon: "🎨" }] : []),
                     { label: "Duplicate", shortcut: "Ctrl+D", action: act(() => { if (blk) duplicateBlock(blk, sid); }), icon: "⧉" },
                     { label: "---" },
                     { label: "Bring to Front", shortcut: "]", action: reorder(maxOrd + 1), icon: "⇈" },

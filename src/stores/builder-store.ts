@@ -35,7 +35,9 @@ interface BuilderState {
 
   // Clipboard
   clipboard: BlockClipboard | null;
+  styleClipboard: Record<string, unknown> | null;
   copyBlock: (block: BlockClipboard) => void;
+  copyStyles: (styles: Record<string, unknown>) => void;
 
   // Undo / Redo
   undoStack: BuilderSnapshot[];
@@ -149,6 +151,7 @@ const initialState = {
   activeRightTab: "style" as const,
   devicePreview: "desktop" as const,
   clipboard: null as BlockClipboard | null,
+  styleClipboard: null as Record<string, unknown> | null,
   gridSize: savedPrefs.gridSize,
   snapToGrid: savedPrefs.snapToGrid,
   showGrid: savedPrefs.showGrid,
@@ -209,6 +212,7 @@ export const useBuilderStore = create<BuilderState>()(
       setShowMinimap: (show) => { set({ showMinimap: show }, false, "setShowMinimap"); syncPrefsToDb({ showMinimap: show }); },
 
       copyBlock: (block) => set({ clipboard: block }, false, "copyBlock"),
+      copyStyles: (styles) => set({ styleClipboard: styles }, false, "copyStyles"),
 
       pushSnapshot: (type: string) => {
         const currentPortfolio = usePortfolioStore.getState().currentPortfolio;
