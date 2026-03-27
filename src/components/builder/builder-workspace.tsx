@@ -3005,25 +3005,29 @@ ${sectionsHtml}
         >
           {/* Tab bar */}
           <div
-            className="flex flex-shrink-0 gap-0.5 p-1.5"
+            className="flex flex-shrink-0 px-2 pt-2 pb-0"
             style={{ borderBottom: "1px solid var(--b-border)" }}
           >
             {([
-              { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
-              { id: "elements" as const, label: "Elements", icon: <LayoutGrid className="h-3 w-3" /> },
-              { id: "shapes" as const, label: "Shapes", icon: <Hexagon className="h-3 w-3" /> },
+              { id: "layers" as const, label: "Layers" },
+              { id: "elements" as const, label: "Elements" },
+              { id: "shapes" as const, label: "Shapes" },
             ]).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setLeftTab(tab.id)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-all duration-150"
+                className="relative flex-1 pb-2 text-center text-[10px] font-semibold tracking-wide transition-colors duration-150"
                 style={{
-                  color: leftTab === tab.id ? "var(--b-accent)" : "var(--b-text-4)",
-                  backgroundColor: leftTab === tab.id ? "var(--b-accent-soft)" : "transparent",
+                  color: leftTab === tab.id ? "var(--b-text)" : "var(--b-text-4)",
                 }}
               >
-                {tab.icon}
                 {tab.label}
+                {leftTab === tab.id && (
+                  <span
+                    className="absolute bottom-0 left-1/4 right-1/4 h-[2px] rounded-full"
+                    style={{ backgroundColor: "var(--b-accent)" }}
+                  />
+                )}
               </button>
             ))}
           </div>
