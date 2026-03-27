@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { BlockRenderer } from "@/components/builder/block-renderer";
 import { MotionBlockWrapper } from "@/components/portfolio/motion-block-wrapper";
 import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
+import { generatePatternStyles } from "@/config/background-patterns";
 import type {
   PortfolioWithRelations,
   SectionStyles,
@@ -254,8 +255,35 @@ function PortfolioSection({
   // Determine flex direction — stack rows vertically on mobile
   const flexDir = ss.layout === "flex-row" ? (isMobile ? "column" : "row") : "column";
 
+  // Resolve pattern color tokens → real hex
+  const resolvePatternColor = (value: string): string => {
+    const map: Record<string, string> = {
+      primary: theme.primaryColor, secondary: theme.secondaryColor,
+      accent: theme.accentColor, text: theme.textColor,
+      muted: theme.mutedColor, surface: theme.surfaceColor,
+    };
+    return map[value] ?? value;
+  };
+
+  const patternCss = ss.pattern && ss.pattern.id !== "none"
+    ? generatePatternStyles(ss.pattern.id, resolvePatternColor(ss.pattern.color), ss.pattern.opacity, ss.pattern.scale)
+    : null;
+
   return (
     <section ref={containerRef} id={`section-${section.id}`} style={sectionStyle}>
+      {/* Background pattern overlay */}
+      {patternCss && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            ...patternCss,
+          }}
+        />
+      )}
       {isAbsolute ? (
         // Absolute layout — scale the canvas to fit viewport
         <div

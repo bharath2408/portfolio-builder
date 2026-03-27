@@ -78,6 +78,8 @@ export const BLOCK_TYPES = {
   RECTANGLE: "rectangle",
   CIRCLE: "circle",
   LINE: "line",
+  SHAPE: "shape",
+  CUSTOM_SVG: "custom_svg",
   GROUP: "group",
 } as const;
 
@@ -112,6 +114,8 @@ export interface ContactFormContent { fields: Array<{name: string; label: string
 export interface ColumnsContent { columns: number; gap?: number; }
 export interface CardContent { elevation?: "none"|"sm"|"md"|"lg"; border?: boolean; hover?: boolean; }
 export interface EmbedContent { url: string; height?: number; }
+export interface ShapeContent { svgId: string; color?: string; flipH?: boolean; flipV?: boolean; }
+export interface CustomSvgContent { svg: string; originalFilename?: string; viewBox?: string; }
 
 export type BlockContentMap = {
   heading: HeadingContent;
@@ -141,6 +145,8 @@ export type BlockContentMap = {
   columns: ColumnsContent;
   card: CardContent;
   embed: EmbedContent;
+  shape: ShapeContent;
+  custom_svg: CustomSvgContent;
 };
 
 // ─── Block Styles (Figma design panel) ────────────────────────────
@@ -242,6 +248,14 @@ export interface SectionStyles {
   staggerAnimation?: "fade-up"|"fade-in"|"slide-left"|"slide-right"|"scale"|"blur-in"|"bounce-in"|"flip-x"|"flip-y"|"rotate-in"|"zoom-in";
   staggerDelay?: number; // ms between each child animation (default 100)
   staggerFrom?: "start"|"center"|"end"|"random";
+
+  // Background pattern
+  pattern?: {
+    id: string;          // "dots", "grid", "hexagons", etc.
+    color: string;       // "primary" | "#hex"
+    opacity: number;     // 0-1 (default 0.1)
+    scale: number;       // 0.5-3 (default 1)
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════

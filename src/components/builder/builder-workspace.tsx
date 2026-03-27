@@ -101,6 +101,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { BACKGROUND_PATTERNS, generatePatternStyles } from "@/config/background-patterns";
 import {
   BLOCK_REGISTRY,
   BLOCK_CATEGORIES,
@@ -3360,6 +3361,19 @@ ${sectionsHtml}
                 const fw = previewWidth ?? ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
                 const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
 
+                // Resolve pattern for canvas frame
+                const resolvePatternColor = (v: string): string => {
+                  const map: Record<string, string> = {
+                    primary: theme.primaryColor, secondary: theme.secondaryColor,
+                    accent: theme.accentColor, text: theme.textColor,
+                    muted: theme.mutedColor, surface: theme.surfaceColor,
+                  };
+                  return map[v] ?? v;
+                };
+                const framePatternStyle = ss.pattern && ss.pattern.id !== "none"
+                  ? generatePatternStyles(ss.pattern.id, resolvePatternColor(ss.pattern.color), ss.pattern.opacity, ss.pattern.scale)
+                  : undefined;
+
                 return (
                   <CanvasFrame
                     key={section.id}
@@ -3374,6 +3388,7 @@ ${sectionsHtml}
                         ? (ss.backgroundColor as string)
                         : theme.backgroundColor
                     }
+                    patternStyle={framePatternStyle}
                     isSelected={
                       selectedSectionId === section.id && selectedBlockIds.size === 0
                     }
@@ -4032,6 +4047,93 @@ ${sectionsHtml}
                         onChange={(v) => updateSec({ backgroundColor: v, backgroundCustom: true } as Partial<SectionStyles>)}
                         placeholder={theme.backgroundColor}
                       />
+                    </div>
+
+                    {/* Background Pattern */}
+                    <div style={{ borderBottom: "1px solid var(--b-border)" }} className="px-3 py-3">
+                      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-3)" }}>
+                        Pattern
+                      </span>
+                      {/* Pattern grid */}
+                      <div className="mb-2 grid grid-cols-4 gap-1">
+                        {BACKGROUND_PATTERNS.map((p) => {
+                          const isActive = (ss.pattern?.id ?? "none") === p.id;
+                          const previewColor = theme.textColor;
+                          const preview = p.id === "none" ? {} : p.generate(previewColor, 0.4, 0.5);
+                          return (
+                            <button
+                              key={p.id}
+                              title={p.name}
+                              onClick={() => {
+                                if (p.id === "none") {
+                                  updateSec({ pattern: undefined } as Partial<SectionStyles>);
+                                } else {
+                                  updateSec({
+                                    pattern: {
+                                      id: p.id,
+                                      color: ss.pattern?.color ?? "primary",
+                                      opacity: ss.pattern?.opacity ?? 0.1,
+                                      scale: ss.pattern?.scale ?? 1,
+                                    },
+                                  });
+                                }
+                              }}
+                              className="relative flex h-8 items-center justify-center overflow-hidden rounded-md transition-all"
+                              style={{
+                                backgroundColor: "var(--b-surface)",
+                                border: isActive ? "1.5px solid var(--b-accent)" : "1px solid var(--b-border)",
+                                ...(p.id !== "none" ? {
+                                  backgroundImage: preview.backgroundImage,
+                                  backgroundSize: preview.backgroundSize,
+                                  backgroundPosition: preview.backgroundPosition,
+                                } : {}),
+                              }}
+                            >
+                              {p.id === "none" && (
+                                <span className="text-[8px] font-bold" style={{ color: "var(--b-text-4)" }}>None</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {ss.pattern && ss.pattern.id !== "none" && (
+                        <div className="space-y-2">
+                          <div>
+                            <span className="mb-1 block text-[9px] font-semibold uppercase" style={{ color: "var(--b-text-4)" }}>Color</span>
+                            <AdvancedColorInput
+                              value={ss.pattern.color ?? "primary"}
+                              onChange={(v) => updateSec({ pattern: { ...ss.pattern!, color: v } })}
+                              placeholder="primary"
+                            />
+                          </div>
+                          <div>
+                            <span className="mb-1 block text-[9px] font-semibold uppercase" style={{ color: "var(--b-text-4)" }}>Opacity</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={1}
+                              step={0.05}
+                              value={ss.pattern.opacity ?? 0.1}
+                              onChange={(e) => updateSec({ pattern: { ...ss.pattern!, opacity: Number(e.target.value) } })}
+                              className="w-full"
+                            />
+                            <span className="text-[9px] font-mono" style={{ color: "var(--b-text-4)" }}>{(ss.pattern.opacity ?? 0.1).toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="mb-1 block text-[9px] font-semibold uppercase" style={{ color: "var(--b-text-4)" }}>Scale</span>
+                            <input
+                              type="range"
+                              min={0.5}
+                              max={3}
+                              step={0.1}
+                              value={ss.pattern.scale ?? 1}
+                              onChange={(e) => updateSec({ pattern: { ...ss.pattern!, scale: Number(e.target.value) } })}
+                              className="w-full"
+                            />
+                            <span className="text-[9px] font-mono" style={{ color: "var(--b-text-4)" }}>{(ss.pattern.scale ?? 1).toFixed(1)}x</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Frame Dimensions */}

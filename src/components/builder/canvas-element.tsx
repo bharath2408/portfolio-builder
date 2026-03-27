@@ -459,6 +459,7 @@ export interface FrameProps {
   width: number;
   height: number;
   backgroundColor?: string;
+  patternStyle?: React.CSSProperties;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onContextMenu?: (id: string, x: number, y: number) => void;
@@ -473,6 +474,7 @@ export const CanvasFrame = memo(function CanvasFrame({
   width,
   height,
   backgroundColor,
+  patternStyle,
   isSelected,
   onSelect,
   onContextMenu: onCtxMenu,
@@ -546,6 +548,19 @@ export const CanvasFrame = memo(function CanvasFrame({
           }
         }}
       >
+        {/* Pattern overlay */}
+        {patternStyle && Object.keys(patternStyle).length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              zIndex: 0,
+              borderRadius: 10,
+              ...patternStyle,
+            }}
+          />
+        )}
         {children}
       </div>
     </div>
