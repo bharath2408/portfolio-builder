@@ -5,6 +5,7 @@ import { Download, FileText, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import { ResumePDF } from "@/components/resume/resume-pdf";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePortfolios } from "@/hooks";
@@ -228,14 +229,16 @@ export default function ResumePage() {
           resumeData &&
           hasContent &&
           mounted && (
-            <PDFViewer
-              width="100%"
-              height={700}
-              showToolbar={false}
-              style={{ border: "none" }}
-            >
-              <ResumePDF data={resumeData} accentColor={accentColor} />
-            </PDFViewer>
+            <ErrorBoundary>
+              <PDFViewer
+                width="100%"
+                height={700}
+                showToolbar={false}
+                style={{ border: "none" }}
+              >
+                <ResumePDF data={resumeData} accentColor={accentColor} />
+              </PDFViewer>
+            </ErrorBoundary>
           )}
       </div>
     </div>

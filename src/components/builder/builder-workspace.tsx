@@ -71,6 +71,7 @@ import {
 
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
 import { BlockRenderer } from "@/components/builder/block-renderer";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import {
   CanvasElement,
   CanvasFrame,
@@ -415,7 +416,7 @@ function SeoEditor({ portfolioId, portfolio }: { portfolioId: string; portfolio:
             {ogImage && (
               <div style={{ aspectRatio: "2/1", overflow: "hidden", backgroundColor: "var(--b-surface)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ogImage} alt="Twitter Card" className="h-full w-full" style={{ objectFit: "cover" }} />
+                <img src={ogImage} alt="Twitter Card" loading="lazy" decoding="async" className="h-full w-full" style={{ objectFit: "cover" }} />
               </div>
             )}
             <div className="p-2.5" style={{ backgroundColor: "var(--b-surface)" }}>
@@ -2491,8 +2492,20 @@ ${sectionsHtml}
     selectedSectionId && selectedBlockIds.size === 0 ? selectedSectionId : null;
 
   return (
+    <>
+    {/* Mobile warning — editor requires desktop */}
+    <div className="flex h-screen flex-col items-center justify-center gap-4 p-6 text-center lg:hidden">
+      <Monitor className="h-12 w-12 text-muted-foreground/40" />
+      <h2 className="text-lg font-bold text-foreground">Desktop Required</h2>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        The studio editor works best on desktop screens (1024px+). Please switch to a larger screen to edit your portfolio.
+      </p>
+      <Link href="/dashboard/portfolios" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+        Back to Dashboard
+      </Link>
+    </div>
     <div
-      className="flex h-screen flex-col"
+      className="hidden h-screen flex-col lg:flex"
       style={{ backgroundColor: "var(--b-bg)" }}
       data-builder-theme={studioTheme}
     >
@@ -3066,7 +3079,7 @@ ${sectionsHtml}
             <DropdownMenuTrigger asChild>
               <button className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors" style={{ color: "var(--b-text-2)" }}>
                 {sessionData?.user?.image ? (
-                  <img src={sessionData.user.image} alt="" className="h-7 w-7 rounded-full object-cover" />
+                  <img src={sessionData.user.image} alt="" loading="lazy" decoding="async" className="h-7 w-7 rounded-full object-cover" />
                 ) : (
                   <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)" }}>
                     {getInitials(sessionData?.user?.name)}
@@ -3684,11 +3697,13 @@ ${sectionsHtml}
                             sortOrder={block.sortOrder}
                             onContextMenu={handleBlockContextMenu}
                           >
-                            <BlockRenderer
-                              block={mergedBlock}
-                              theme={theme}
-                              isEditing
-                            />
+                            <ErrorBoundary>
+                              <BlockRenderer
+                                block={mergedBlock}
+                                theme={theme}
+                                isEditing
+                              />
+                            </ErrorBoundary>
                             {block.type === "group" &&
                               section.blocks
                                 .filter((c) => c.parentId === block.id && c.isVisible)
@@ -3717,11 +3732,13 @@ ${sectionsHtml}
                                       sortOrder={child.sortOrder}
                                       onContextMenu={handleBlockContextMenu}
                                     >
-                                      <BlockRenderer
-                                        block={mergedChild}
-                                        theme={theme}
-                                        isEditing
-                                      />
+                                      <ErrorBoundary>
+                                        <BlockRenderer
+                                          block={mergedChild}
+                                          theme={theme}
+                                          isEditing
+                                        />
+                                      </ErrorBoundary>
                                     </CanvasElement>
                                   );
                                 })}
@@ -4120,7 +4137,9 @@ ${sectionsHtml}
                               height: bs.h === 0 ? "auto" : (bs.h ?? "auto"),
                             }}
                           >
-                            <BlockRenderer block={block} theme={theme} isEditing />
+                            <ErrorBoundary>
+                              <BlockRenderer block={block} theme={theme} isEditing />
+                            </ErrorBoundary>
                             {/* Selected block highlight */}
                             {isSelectedBlock && (
                               <div
@@ -4973,5 +4992,6 @@ ${sectionsHtml}
         theme={theme}
       />
     </div>
+    </>
   );
 }

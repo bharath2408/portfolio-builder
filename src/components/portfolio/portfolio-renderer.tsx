@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { BlockRenderer } from "@/components/builder/block-renderer";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import { MotionBlockWrapper } from "@/components/portfolio/motion-block-wrapper";
 import { generatePatternStyles } from "@/config/background-patterns";
 import { mergeDeviceStyles, getDeviceType, type DeviceType } from "@/lib/utils/device-styles";
@@ -314,25 +315,26 @@ function PortfolioSection({
                 (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
               ].filter(Boolean).join(" ") || undefined;
               return (
-                <MotionBlockWrapper
-                  key={block.id}
-                  styles={bs}
-                  className={responsiveClass}
-                  staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
-                  staggerDelay={staggerDelay}
-                  style={{
-                    position: "absolute",
-                    left: bs.x ?? 0,
-                    top: bs.y ?? 0,
-                    width: bs.w ?? "auto",
-                    height: bs.h === 0 ? "auto" : (bs.h ?? "auto"),
-                    transform: bs.rotation
-                      ? `rotate(${bs.rotation}deg)`
-                      : undefined,
-                  }}
-                >
-                  <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
-                </MotionBlockWrapper>
+                <ErrorBoundary key={block.id}>
+                  <MotionBlockWrapper
+                    styles={bs}
+                    className={responsiveClass}
+                    staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
+                    staggerDelay={staggerDelay}
+                    style={{
+                      position: "absolute",
+                      left: bs.x ?? 0,
+                      top: bs.y ?? 0,
+                      width: bs.w ?? "auto",
+                      height: bs.h === 0 ? "auto" : (bs.h ?? "auto"),
+                      transform: bs.rotation
+                        ? `rotate(${bs.rotation}deg)`
+                        : undefined,
+                    }}
+                  >
+                    <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
+                  </MotionBlockWrapper>
+                </ErrorBoundary>
               );
             })}
           </div>
@@ -370,16 +372,17 @@ function PortfolioSection({
               (bs.hoverScale || bs.hoverOpacity !== undefined || bs.hoverBackgroundColor) ? "block-hover" : "",
             ].filter(Boolean).join(" ") || undefined;
             return (
-              <MotionBlockWrapper
-                key={block.id}
-                styles={bs}
-                className={responsiveClass}
-                staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
-                staggerDelay={staggerDelay}
-                style={{ maxWidth: "100%" }}
-              >
-                <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
-              </MotionBlockWrapper>
+              <ErrorBoundary key={block.id}>
+                <MotionBlockWrapper
+                  styles={bs}
+                  className={responsiveClass}
+                  staggerIndex={getStaggerIndex(i, visibleBlocks.length)}
+                  staggerDelay={staggerDelay}
+                  style={{ maxWidth: "100%" }}
+                >
+                  <BlockRenderer block={mergedBlock} theme={theme} portfolioId={portfolioId} counterAnimation={counterEnabled} />
+                </MotionBlockWrapper>
+              </ErrorBoundary>
             );
           })}
         </div>
