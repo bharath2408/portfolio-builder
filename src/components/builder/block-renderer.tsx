@@ -4,6 +4,7 @@ import {
   ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
   Mail, MapPin, Phone, Quote as QuoteIcon,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
@@ -277,8 +278,7 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       const iconSize = (c.size as number) ?? 32;
       const iconColor = resolveColor((c.color as string) ?? "primary", theme) ?? theme.primaryColor;
       // Dynamically render a Lucide icon
-      const LucideAll = require("lucide-react") as Record<string, React.ComponentType<{ size?: number; color?: string; className?: string }>>;
-      const IconComp = LucideAll[iconName];
+      const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; color?: string; className?: string }>>)[iconName];
       return (
         <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {IconComp ? <IconComp size={iconSize} color={iconColor} /> : (
