@@ -40,6 +40,7 @@ export const POST = withErrorHandler(async (req, ctx) => {
       name: body.name ?? "New Section",
       sortOrder: body.sortOrder ?? 0,
       styles: body.styles ?? {},
+      pageId: body.pageId ?? null,
     },
     include: { blocks: true },
   });

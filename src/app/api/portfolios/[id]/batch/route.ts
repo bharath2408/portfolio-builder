@@ -34,6 +34,7 @@ interface BatchSection {
   sortOrder: number;
   styles: Record<string, unknown>;
   isVisible?: boolean;
+  pageId?: string | null;
   blocks: BatchBlock[];
 }
 
@@ -81,6 +82,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
           sortOrder: section.sortOrder,
           styles: section.styles as Prisma.InputJsonValue,
           isVisible: section.isVisible ?? true,
+          pageId: section.pageId ?? null,
         },
         create: {
           id: section.id,
@@ -89,6 +91,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
           sortOrder: section.sortOrder,
           styles: section.styles as Prisma.InputJsonValue,
           isVisible: section.isVisible ?? true,
+          pageId: section.pageId ?? null,
         },
       }),
     );
