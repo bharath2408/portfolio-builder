@@ -92,8 +92,8 @@ export default async function HomePage() {
 
           {/* Subtitle */}
           <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed text-stone-500 dark:text-stone-400 sm:text-[18px]">
-            A Figma-like canvas editor with 25+ drag-and-drop blocks, real-time theme customization, one-click publishing, and built-in analytics.
-            No code required.
+            A Figma-like canvas editor with 30+ drag-and-drop blocks, block grouping, smart alignment guides,
+            magnetic cursor effects, background patterns, shape presets, and one-click publishing. No code required.
           </p>
 
           {/* CTA buttons */}
@@ -222,42 +222,42 @@ export default async function HomePage() {
             {
               icon: PenTool,
               title: "Visual Studio Editor",
-              description: "A Figma-like canvas with drag-and-drop blocks, resizing handles, smart guides, and real-time preview. Design exactly what you envision.",
+              description: "A Figma-like canvas with frame drag & resize, smart alignment guides, canvas rulers, block grouping (Ctrl+G), and rubber-band marquee selection.",
               gradient: "from-teal-500 to-cyan-500",
               bg: "from-teal-500/[0.05] to-cyan-500/[0.02]",
             },
             {
               icon: Layers,
-              title: "25+ Block Types",
-              description: "Headings, images, skill bars, project cards, testimonials, contact forms, and more. Everything you need to tell your story.",
+              title: "30+ Block Types",
+              description: "Headings, skill bars, project cards, shapes, SVG imports, icons, groups, and more. Plus background patterns and shape presets for sections.",
               gradient: "from-violet-500 to-purple-500",
               bg: "from-violet-500/[0.05] to-purple-500/[0.02]",
             },
             {
               icon: Palette,
-              title: "Full Theme Control",
-              description: "Customize every color, font, shadow, and border radius. Reference theme tokens in blocks for consistent, one-click theme changes.",
+              title: "Full Theme & Effects",
+              description: "Customize colors, fonts, shadows. Add magnetic cursor effects, hover animations, entrance animations, parallax scrolling, and text splitting effects.",
               gradient: "from-amber-500 to-orange-500",
               bg: "from-amber-500/[0.05] to-orange-500/[0.02]",
             },
             {
               icon: Search,
-              title: "SEO & Open Graph",
-              description: "Set meta titles, descriptions, and OG images. Your portfolio is built to rank in Google and look stunning when shared on social media.",
+              title: "SEO & Analytics",
+              description: "Meta titles, descriptions, OG images. Built-in analytics with views, referrers, and device breakdowns. Contact form submissions with notification bell.",
               gradient: "from-emerald-500 to-green-500",
               bg: "from-emerald-500/[0.05] to-green-500/[0.02]",
             },
             {
               icon: BarChart3,
-              title: "Built-in Analytics",
-              description: "Track views, referrers, and device breakdowns with charts. Understand how visitors discover and interact with your portfolio.",
+              title: "Export & Share",
+              description: "Save as portable .folio files, export JSON or HTML, generate PDF resumes from portfolio data, and share community templates.",
               gradient: "from-blue-500 to-indigo-500",
               bg: "from-blue-500/[0.05] to-indigo-500/[0.02]",
             },
             {
               icon: Rocket,
               title: "One-Click Publish",
-              description: "Hit publish and your portfolio is live instantly. Auto-versioning lets you preview and restore any previous state.",
+              description: "Publish instantly with auto-versioning. Smart save protects your work. Soft-delete with 30-day trash recovery. Copy/paste styles between blocks.",
               gradient: "from-rose-500 to-pink-500",
               bg: "from-rose-500/[0.05] to-pink-500/[0.02]",
             },
@@ -287,10 +287,10 @@ export default async function HomePage() {
           {[
             { icon: Zap, label: "Command Palette (Ctrl+K)" },
             { icon: Clock, label: "Version History" },
-            { icon: Shield, label: "Password Protection" },
-            { icon: Code, label: "Custom CSS Support" },
+            { icon: Shield, label: "Trash & Recovery" },
+            { icon: Code, label: "Custom CSS & SVG Import" },
             { icon: Eye, label: "Responsive Preview" },
-            { icon: Layout, label: "Multiple Layouts" },
+            { icon: Layout, label: "Block Grouping & Shapes" },
           ].map((item) => (
             <span key={item.label} className="flex items-center gap-1.5">
               <item.icon className="h-3 w-3 text-teal-500/50" />
