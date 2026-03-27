@@ -3290,7 +3290,7 @@ ${sectionsHtml}
                 style={{ borderBottom: "1px solid var(--b-border)" }}
               >
                 <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-4)" }}>
-                  Frames ({sortedSections.length})
+                  Frames ({visibleSections.length})
                 </span>
                 <div className="flex items-center gap-0.5">
                   <button
@@ -3368,7 +3368,11 @@ ${sectionsHtml}
 
                 <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
                   <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-                    {sortedSections.map((section) => {
+                    {sortedSections.filter((s) => {
+                      if (!hasPages) return true;
+                      if (!currentPageId) return !s.pageId;
+                      return s.pageId === currentPageId;
+                    }).map((section) => {
                       const isExpanded = expandedSections.has(section.id);
                       const isSectionSelected = selectedSectionId === section.id && selectedBlockIds.size === 0;
                       const blockCount = section.blocks.length;
