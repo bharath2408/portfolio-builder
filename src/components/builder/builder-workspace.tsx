@@ -16,46 +16,84 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   AlertCircle,
+  AlignLeft,
   ArrowLeft,
+  BarChart3,
+  Briefcase,
+  Calendar,
   Check,
   ChevronRight,
+  Circle,
+  CircleDot,
+  CircleUser,
   Clock,
+  Code,
+  Code2,
+  Columns3,
   Eye,
   EyeOff,
   ExternalLink,
   FileImage,
+  FileInput,
   FileJson,
   FolderDown,
+  FolderKanban,
   FolderUp,
   Globe,
   GripVertical,
+  Group,
+  Hash,
+  HelpCircle,
+  Hexagon,
   ImageDown,
+  Image,
   Layers,
   Layout,
   LayoutGrid,
+  Link as LinkIcon,
+  List,
   Loader2,
   Lock,
   LogOut,
+  Mail,
+  MapPin,
   Maximize,
+  Megaphone,
+  MessageSquareQuote,
+  Minus,
   Monitor,
   Moon,
   MousePointer2,
+  MousePointerClick,
+  MoveVertical,
+  Music,
   PanelLeft,
   PanelRight,
+  Play,
   Plus,
+  Quote,
   Redo2,
   Rocket,
   Save,
   Settings,
-  Sparkles,
+  Share2,
+  ShoppingBag,
   Smartphone,
+  Sparkles,
+  Square,
+  Star,
   Sun,
   Tablet,
+  Tag,
+  Tags,
   Trash2,
+  Type,
   Undo2,
   X,
+  Zap,
   ZoomIn,
   ZoomOut,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -128,6 +166,23 @@ import type {
   SectionStyles,
   PortfolioStatus,
 } from "@/types";
+
+// ─── Block Icon Lookup ────────────────────────────────────────────
+
+const BLOCK_ICON_MAP: Record<string, LucideIcon> = {
+  Type, AlignLeft, Quote, List, Code2, Image, CircleUser, Star, Minus,
+  MoveVertical, MousePointerClick, Link: LinkIcon, Share2, Tag, Tags,
+  BarChart3, LayoutGrid, CircleDot, Hash, FolderKanban, Briefcase,
+  MessageSquareQuote, Mail, FileInput, Columns3, Square, Globe, Play,
+  Music, MapPin, Calendar, Github: Globe, Code, Circle, Hexagon,
+  FileImage, HelpCircle, Sparkles, Zap, ShoppingBag, Megaphone, Group,
+};
+
+function BlockIcon({ iconName, className, style }: { iconName?: string; className?: string; style?: React.CSSProperties }) {
+  const Icon = iconName ? BLOCK_ICON_MAP[iconName] : null;
+  if (!Icon) return <Square className={className} style={style} />;
+  return <Icon className={className} style={style} />;
+}
 
 // ─── Constants ───────────────────────────────────────────────────
 
@@ -243,11 +298,9 @@ const LayerBlockItem = memo(function LayerBlockItem({
           style={{
             backgroundColor: isSelected ? "var(--b-accent-mid)" : "var(--b-surface)",
             color: isSelected ? "var(--b-accent)" : "var(--b-text-4)",
-            fontSize: 9,
-            fontWeight: 700,
           }}
         >
-          {label.charAt(0)}
+          <BlockIcon iconName={def?.icon} className="h-2.5 w-2.5" />
         </span>
         <span
           className="min-w-0 flex-1 truncate text-[10px] font-medium"
@@ -1975,7 +2028,8 @@ export function BuilderWorkspace({
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
-    for (const s of portfolio.sections) {
+    // Only measure sections visible on the current page
+    for (const s of visibleSections) {
       const ss = s.styles as SectionStyles;
       const fx = ss.frameX ?? 0;
       const fy = ss.frameY ?? 0;
@@ -2005,7 +2059,21 @@ export function BuilderWorkspace({
       x: -minX * scale + padding * scale + 50,
       y: -minY * scale + padding * scale + 50,
     });
-  }, [portfolio.sections]);
+  }, [visibleSections]);
+
+  // ── Fit canvas to screen when switching pages ──
+  const prevPageId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (prevPageId.current === undefined) {
+      prevPageId.current = currentPageId;
+      return;
+    }
+    if (prevPageId.current !== currentPageId) {
+      prevPageId.current = currentPageId;
+      const t = setTimeout(fitToScreen, 50);
+      return () => clearTimeout(t);
+    }
+  }, [currentPageId, fitToScreen]);
 
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
@@ -2630,10 +2698,7 @@ ${sectionsHtml}
             </div>
           </Link>
 
-          <div
-            className="mx-0.5 h-4 w-px"
-            style={{ backgroundColor: "var(--b-border)" }}
-          />
+          <div className="builder-toolbar-divider" />
 
           {/* ── File Menu ─────────────────────────────────── */}
           <DropdownMenu>
@@ -2958,10 +3023,7 @@ ${sectionsHtml}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div
-            className="mx-0.5 h-4 w-px"
-            style={{ backgroundColor: "var(--b-border)" }}
-          />
+          <div className="builder-toolbar-divider" />
 
           {/* Undo / Redo */}
           <button
@@ -3043,12 +3105,9 @@ ${sectionsHtml}
               </button>
             ))}
           </div>
-          <div className="mx-1 h-4 w-px" style={{ backgroundColor: "var(--b-border)" }} />
+          <div className="builder-toolbar-divider mx-1" />
 
-          <div
-            className="h-4 w-px"
-            style={{ backgroundColor: "var(--b-border)" }}
-          />
+          <div className="builder-toolbar-divider" />
 
           {/* Light/Dark toggle */}
           <button
@@ -3064,10 +3123,7 @@ ${sectionsHtml}
             )}
           </button>
 
-          <div
-            className="h-4 w-px"
-            style={{ backgroundColor: "var(--b-border)" }}
-          />
+          <div className="builder-toolbar-divider" />
 
           <button
             onClick={() => { setRightPanel("seo"); setSelectedBlockIds(new Set()); }}
@@ -3137,7 +3193,7 @@ ${sectionsHtml}
             )}
           </button>
 
-          <div className="mx-1 h-4 w-px" style={{ backgroundColor: "var(--b-border)" }} />
+          <div className="builder-toolbar-divider mx-1" />
 
           {/* Profile dropdown */}
           <DropdownMenu>
@@ -3211,12 +3267,12 @@ ${sectionsHtml}
       {/* ── PAGE SWITCHER BAR ────────────────────────────────────── */}
       {(
         <div
-          className="flex flex-shrink-0 items-center gap-1 overflow-x-auto px-3 py-1.5 scrollbar-thin"
+          className="flex flex-shrink-0 items-center gap-0.5 overflow-x-auto px-3 py-1 scrollbar-thin"
           style={{ borderBottom: "1px solid var(--b-border)", backgroundColor: "var(--b-panel)" }}
         >
           <button
-            onClick={() => { setCurrentPageId(null); setTimeout(fitToScreen, 100); }}
-            className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
+            onClick={() => setCurrentPageId(null)}
+            className="builder-page-tab flex-shrink-0 rounded-md px-3 py-1.5 text-[11px] font-semibold"
             style={{
               backgroundColor: !currentPageId ? "var(--b-accent-soft)" : "transparent",
               color: !currentPageId ? "var(--b-accent)" : "var(--b-text-4)",
@@ -3227,25 +3283,25 @@ ${sectionsHtml}
           {(portfolio.pages ?? []).filter(p => !p.isDefault).map((page) => (
             <button
               key={page.id}
-              onClick={() => { setCurrentPageId(page.id); setTimeout(fitToScreen, 100); }}
+              onClick={() => setCurrentPageId(page.id)}
               onDoubleClick={() => setPageDialog({ mode: "rename", pageId: page.id, value: page.title })}
               onContextMenu={(e) => {
                 e.preventDefault();
                 setPageDialog({ mode: "delete", pageId: page.id });
               }}
-              className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
+              className="builder-page-tab flex-shrink-0 rounded-md px-3 py-1.5 text-[11px] font-semibold"
               style={{
                 backgroundColor: currentPageId === page.id ? "var(--b-accent-soft)" : "transparent",
                 color: currentPageId === page.id ? "var(--b-accent)" : "var(--b-text-4)",
               }}
-              title={`Right-click for options`}
+              title="Double-click to rename, right-click for options"
             >
               {page.title}
             </button>
           ))}
           <button
             onClick={() => setPageDialog({ mode: "add", value: "" })}
-            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors"
+            className="builder-toolbar-btn flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md"
             style={{ color: "var(--b-text-4)" }}
             title="Add page"
           >
@@ -3271,9 +3327,9 @@ ${sectionsHtml}
             style={{ borderBottom: "1px solid var(--b-border)" }}
           >
             {([
-              { id: "layers" as const, label: "Layers" },
-              { id: "elements" as const, label: "Elements" },
-              { id: "shapes" as const, label: "Shapes" },
+              { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
+              { id: "elements" as const, label: "Elements", icon: <Plus className="h-3 w-3" /> },
+              { id: "shapes" as const, label: "Shapes", icon: <Hexagon className="h-3 w-3" /> },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -3283,12 +3339,12 @@ ${sectionsHtml}
                   color: leftTab === tab.id ? "var(--b-text)" : "var(--b-text-4)",
                 }}
               >
-                {tab.label}
+                <span className="inline-flex items-center gap-1">
+                  {tab.icon}
+                  {tab.label}
+                </span>
                 {leftTab === tab.id && (
-                  <span
-                    className="absolute bottom-0 left-1/4 right-1/4 h-[2px] rounded-full"
-                    style={{ backgroundColor: "var(--b-accent)" }}
-                  />
+                  <span className="builder-tab-indicator" />
                 )}
               </button>
             ))}
@@ -3361,19 +3417,20 @@ ${sectionsHtml}
               )}
 
               {/* Section + Block tree */}
-              <div className="flex-1 overflow-y-auto py-1 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto py-1 scrollbar-thin scrollbar-auto">
                 {hasNoSections && !showAddSection && (
-                  <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                  <div className="builder-empty-state flex flex-col items-center gap-3 px-4 py-12 text-center">
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: "var(--b-surface)", border: "1px dashed var(--b-border-active)" }}
+                      className="builder-empty-icon flex h-12 w-12 items-center justify-center rounded-2xl"
+                      style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}
                     >
-                      <Layers className="h-4 w-4" style={{ color: "var(--b-text-4)" }} />
+                      <Layers className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
                     </div>
                     <div>
-                      <p className="text-[11px] font-medium" style={{ color: "var(--b-text-3)" }}>No frames yet</p>
-                      <p className="mt-0.5 text-[10px]" style={{ color: "var(--b-text-4)" }}>
-                        Click <strong>+</strong> above to add one
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>Start with a frame</p>
+                      <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--b-text-4)" }}>
+                        Frames are containers for your content.<br />
+                        Click <strong style={{ color: "var(--b-accent)" }}>+</strong> above to create one.
                       </p>
                     </div>
                   </div>
@@ -3457,8 +3514,8 @@ ${sectionsHtml}
                                       style={{ borderColor: isSectionSelected ? "var(--b-accent-mid)" : "var(--b-border)" }}
                                     >
                                       {blockCount === 0 && (
-                                        <p className="px-4 py-2 text-[9px]" style={{ color: "var(--b-text-4)" }}>
-                                          No elements — switch to Elements tab to add
+                                        <p className="px-4 py-3 text-[9px] italic" style={{ color: "var(--b-text-4)" }}>
+                                          Empty frame — use the <span style={{ color: "var(--b-accent)" }}>Elements</span> tab to add content
                                         </p>
                                       )}
                                       {sortedBlocks.map((block) => {
@@ -3512,21 +3569,21 @@ ${sectionsHtml}
             <div className="flex flex-1 flex-col overflow-hidden">
               {/* Notice */}
               {portfolio.sections.length === 0 && (
-                <div
-                  className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
-                  style={{
-                    backgroundColor: "var(--b-accent-soft)",
-                    color: "var(--b-accent)",
-                    border: "1px solid var(--b-accent-mid)",
-                  }}
-                >
-                  <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
-                  Create a frame first to add elements
+                <div className="builder-empty-state flex flex-col items-center gap-2 px-4 py-8 text-center">
+                  <div
+                    className="builder-empty-icon flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}
+                  >
+                    <MousePointer2 className="h-4 w-4" style={{ color: "var(--b-accent)" }} />
+                  </div>
+                  <p className="text-[10px] font-medium" style={{ color: "var(--b-text-3)" }}>
+                    Add a frame first from the <span style={{ color: "var(--b-accent)" }}>Layers</span> tab
+                  </p>
                 </div>
               )}
 
               {/* Elements list */}
-              <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-auto">
                 {BLOCK_CATEGORIES.map((cat) => {
                   const blocks = getBlocksByCategory(cat.id);
                   if (blocks.length === 0) return null;
@@ -3550,27 +3607,13 @@ ${sectionsHtml}
                               }
                             }}
                             disabled={portfolio.sections.length === 0}
-                            className="group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-center transition-all duration-150 disabled:opacity-20"
-                            style={{
-                              backgroundColor: "transparent",
-                              border: "1px solid transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = "var(--b-accent-mid)";
-                              e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "transparent";
-                              e.currentTarget.style.backgroundColor = "transparent";
-                            }}
+                            className="builder-element-card group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-center"
                           >
                             <div
-                              className="flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150"
-                              style={{ backgroundColor: "var(--b-surface)", border: "1px solid var(--b-border)" }}
+                              className="element-icon flex h-8 w-8 items-center justify-center rounded-md"
+                              style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)" }}
                             >
-                              <span style={{ color: "var(--b-text-3)", fontSize: 13 }}>
-                                {def.label.charAt(0)}
-                              </span>
+                              <BlockIcon iconName={def.icon} className="h-3.5 w-3.5" />
                             </div>
                             <span
                               className="w-full truncate text-[9px] font-medium leading-tight"
@@ -3592,16 +3635,16 @@ ${sectionsHtml}
           {leftTab === "shapes" && (
             <div className="flex flex-1 flex-col overflow-hidden">
               {portfolio.sections.length === 0 && (
-                <div
-                  className="mx-2 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
-                  style={{
-                    backgroundColor: "var(--b-accent-soft)",
-                    color: "var(--b-accent)",
-                    border: "1px solid var(--b-accent-mid)",
-                  }}
-                >
-                  <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
-                  Create a frame first to add shapes
+                <div className="builder-empty-state flex flex-col items-center gap-2 px-4 py-8 text-center">
+                  <div
+                    className="builder-empty-icon flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}
+                  >
+                    <Hexagon className="h-4 w-4" style={{ color: "var(--b-accent)" }} />
+                  </div>
+                  <p className="text-[10px] font-medium" style={{ color: "var(--b-text-3)" }}>
+                    Add a frame first from the <span style={{ color: "var(--b-accent)" }}>Layers</span> tab
+                  </p>
                 </div>
               )}
               <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin">
