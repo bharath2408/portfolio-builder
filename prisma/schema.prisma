@@ -117,6 +117,7 @@ model Portfolio {
   submissions ContactSubmission[]
   versions    PortfolioVersion[]
   communityTemplate CommunityTemplate?
+  pages       Page[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -125,12 +126,34 @@ model Portfolio {
   @@map("portfolios")
 }
 
+// ─── Pages (Multi-page support) ──────────────────────────────────
+// Each portfolio can have multiple pages. Default page is "Home".
+
+model Page {
+  id          String   @id @default(cuid())
+  portfolioId String
+  title       String
+  slug        String
+  sortOrder   Int      @default(0)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  sections  Section[]
+
+  @@unique([portfolioId, slug])
+  @@index([portfolioId])
+  @@map("pages")
+}
+
 // ─── Sections (Frames / Containers) ──────────────────────────────
 // Like Figma frames — a section is a layout container that holds blocks.
 
 model Section {
   id          String   @id @default(cuid())
   portfolioId String
+  pageId      String?
   name        String
   sortOrder   Int      @default(0)
   isVisible   Boolean  @default(true)
@@ -144,10 +167,12 @@ model Section {
   updatedAt   DateTime @updatedAt
 
   portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  page      Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
   blocks    Block[]
 
   @@index([portfolioId])
   @@index([portfolioId, sortOrder])
+  @@index([pageId])
   @@map("sections")
 }
 
