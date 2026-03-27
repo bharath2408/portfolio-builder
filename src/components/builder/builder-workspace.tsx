@@ -1518,7 +1518,12 @@ export function BuilderWorkspace({
 
   const addSection = async () => {
     if (!addSectionName.trim()) return;
-    const yOffset = portfolio.sections.reduce((max, s) => {
+    // Only consider sections on the current page for Y offset
+    const pageSections = portfolio.sections.filter((s) => {
+      if (!currentPageId) return !s.pageId;
+      return s.pageId === currentPageId;
+    });
+    const yOffset = pageSections.reduce((max, s) => {
       const ss = s.styles as SectionStyles;
       return Math.max(
         max,
@@ -3417,19 +3422,6 @@ ${sectionsHtml}
                                   <Layout className="h-3 w-3" style={{ color: isSectionSelected ? "var(--b-accent)" : "var(--b-text-4)" }} />
                                 </span>
                                 <span className="flex-1 truncate text-[10.5px] font-semibold">{section.name}</span>
-                                {(() => {
-                                  const pageName = section.pageId
-                                    ? (portfolio.pages ?? []).find((p) => p.id === section.pageId)?.title
-                                    : null;
-                                  return pageName ? (
-                                    <span
-                                      className="flex-shrink-0 truncate rounded px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider"
-                                      style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)", maxWidth: 60 }}
-                                    >
-                                      {pageName}
-                                    </span>
-                                  ) : null;
-                                })()}
                                 <span
                                   className="flex h-4 min-w-[16px] flex-shrink-0 items-center justify-center rounded-full px-1 text-[8px] font-bold"
                                   style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
