@@ -3219,7 +3219,7 @@ ${sectionsHtml}
           {leftTab === "elements" && (
             <div className="flex flex-1 flex-col overflow-hidden">
               {/* Notice */}
-              {!selectedSectionId && (
+              {portfolio.sections.length === 0 && (
                 <div
                   className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
                   style={{
@@ -3229,7 +3229,7 @@ ${sectionsHtml}
                   }}
                 >
                   <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
-                  Select a frame first to add elements
+                  Create a frame first to add elements
                 </div>
               )}
 
@@ -3256,9 +3256,13 @@ ${sectionsHtml}
                           <button
                             key={def.type}
                             onClick={() => {
-                              if (selectedSectionId) addBlock(selectedSectionId, def.type);
+                              const targetSection = selectedSectionId ?? portfolio.sections[0]?.id;
+                              if (targetSection) {
+                                setSelectedSectionId(targetSection);
+                                addBlock(targetSection, def.type);
+                              }
                             }}
-                            disabled={!selectedSectionId}
+                            disabled={portfolio.sections.length === 0}
                             className="group flex flex-col items-start gap-0.5 rounded-lg px-2.5 py-2.5 text-left transition-all duration-150 disabled:opacity-25"
                             style={{
                               backgroundColor: "var(--b-surface)",
