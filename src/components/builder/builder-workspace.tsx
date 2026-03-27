@@ -813,6 +813,7 @@ export function BuilderWorkspace({
   const [showAddSection, setShowAddSection] = useState(false);
   const [addSectionName, setAddSectionName] = useState("");
   const [showFrameTemplateDialog, setShowFrameTemplateDialog] = useState(false);
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [rightPanel, setRightPanel] = useState<"properties" | "theme" | "seo">(
     "properties",
   );
@@ -872,9 +873,15 @@ export function BuilderWorkspace({
     [portfolio.sections],
   );
 
+  const hasPages = portfolio.pages && portfolio.pages.length > 0;
   const visibleSections = useMemo(
-    () => sortedSections.filter((s) => s.isVisible),
-    [sortedSections],
+    () => sortedSections.filter((s) => {
+      if (!s.isVisible) return false;
+      if (!hasPages) return true; // No pages = show all (backwards compat)
+      if (!currentPageId) return !s.pageId; // Home page = sections with no pageId
+      return s.pageId === currentPageId;
+    }),
+    [sortedSections, currentPageId, hasPages],
   );
 
   const selectedBlock = useMemo(() => {
@@ -1531,13 +1538,61 @@ export function BuilderWorkspace({
             layout: "absolute",
             // No backgroundColor — inherits from theme.backgroundColor dynamically
           },
+          pageId: currentPageId,
         },
       );
       builderStore.pushSnapshot("add-section");
-      portfolioStore.addSection(res);
+      portfolioStore.addSection({ ...res, pageId: currentPageId } as SectionWithBlocks);
       setAddSectionName("");
       setShowAddSection(false);
       setExpandedSections((p) => new Set([...p, res.id]));
+    } catch {
+      /* handle */
+    }
+  };
+
+  const addPage = async () => {
+    const title = prompt("Page name:", "New Page");
+    if (!title) return;
+    const slug = title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    try {
+      const res = await apiPost<{ id: string; title: string; slug: string; sortOrder: number; isDefault: boolean }>(`/portfolios/${portfolio.id}/pages`, { title, slug });
+      portfolioStore.replacePortfolio({ ...portfolio, pages: [...(portfolio.pages ?? []), res] });
+      setCurrentPageId(res.id);
+    } catch {
+      /* handle */
+    }
+  };
+
+  const deletePage = async (pageId: string) => {
+    const page = portfolio.pages?.find((p) => p.id === pageId);
+    if (!page || page.isDefault) return;
+    if (!confirm(`Delete page "${page.title}"? Sections will be moved to the default page.`)) return;
+    try {
+      await apiDelete(`/portfolios/${portfolio.id}/pages/${pageId}`);
+      portfolioStore.replacePortfolio({
+        ...portfolio,
+        pages: (portfolio.pages ?? []).filter((p) => p.id !== pageId),
+        sections: portfolio.sections.map((s) => s.pageId === pageId ? { ...s, pageId: null } : s),
+      });
+      if (currentPageId === pageId) setCurrentPageId(null);
+    } catch {
+      /* handle */
+    }
+  };
+
+  const renamePage = async (pageId: string) => {
+    const page = portfolio.pages?.find((p) => p.id === pageId);
+    if (!page) return;
+    const newTitle = prompt("Rename page:", page.title);
+    if (!newTitle || newTitle === page.title) return;
+    const newSlug = newTitle.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    try {
+      await apiPatch(`/portfolios/${portfolio.id}/pages/${pageId}`, { title: newTitle, slug: newSlug });
+      portfolioStore.replacePortfolio({
+        ...portfolio,
+        pages: (portfolio.pages ?? []).map((p) => p.id === pageId ? { ...p, title: newTitle, slug: newSlug } : p),
+      });
     } catch {
       /* handle */
     }
@@ -1565,11 +1620,12 @@ export function BuilderWorkspace({
             // Enable stagger for templates with multiple blocks
             ...(template.id !== "blank" ? { staggerChildren: true, staggerAnimation: "fade-up", staggerDelay: 100 } : {}),
           },
+          pageId: currentPageId,
         },
       );
 
       builderStore.pushSnapshot("add-section-template");
-      portfolioStore.addSection(res);
+      portfolioStore.addSection({ ...res, pageId: currentPageId } as SectionWithBlocks);
       setExpandedSections((p) => new Set([...p, res.id]));
       setSelectedSectionId(res.id);
       setSelectedBlockIds(new Set());
@@ -1681,6 +1737,7 @@ export function BuilderWorkspace({
             sortOrder: s.sortOrder,
             styles: s.styles,
             isVisible: s.isVisible,
+            pageId: s.pageId ?? null,
             blocks: s.blocks.map((b) => ({
               id: b.id,
               type: b.type,
@@ -3142,6 +3199,53 @@ ${sectionsHtml}
           </div>
         )}
       </div>
+
+      {/* ── PAGE SWITCHER BAR ────────────────────────────────────── */}
+      {portfolio.pages && portfolio.pages.length > 0 && (
+        <div
+          className="flex flex-shrink-0 items-center gap-1 overflow-x-auto px-3 py-1.5 scrollbar-thin"
+          style={{ borderBottom: "1px solid var(--b-border)", backgroundColor: "var(--b-panel)" }}
+        >
+          <button
+            onClick={() => setCurrentPageId(null)}
+            className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
+            style={{
+              backgroundColor: !currentPageId ? "var(--b-accent-soft)" : "transparent",
+              color: !currentPageId ? "var(--b-accent)" : "var(--b-text-4)",
+            }}
+          >
+            Home
+          </button>
+          {portfolio.pages.filter(p => !p.isDefault).map((page) => (
+            <button
+              key={page.id}
+              onClick={() => setCurrentPageId(page.id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const action = prompt(`Page: ${page.title}\nType "rename" to rename or "delete" to delete:`);
+                if (action === "rename") renamePage(page.id);
+                else if (action === "delete") deletePage(page.id);
+              }}
+              className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
+              style={{
+                backgroundColor: currentPageId === page.id ? "var(--b-accent-soft)" : "transparent",
+                color: currentPageId === page.id ? "var(--b-accent)" : "var(--b-text-4)",
+              }}
+              title={`Right-click for options`}
+            >
+              {page.title}
+            </button>
+          ))}
+          <button
+            onClick={addPage}
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors"
+            style={{ color: "var(--b-text-4)" }}
+            title="Add page"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── LEFT: Layers / Elements Panel ────────────────────────── */}
