@@ -11,7 +11,7 @@ import { db } from "@/lib/db";
 import type { PortfolioWithRelations } from "@/types";
 
 interface Props {
-  params: Promise<{ username: string; slug: string }>;
+  params: Promise<{ username: string; slug: string; pageSlug: string }>;
 }
 
 const getPortfolioData = cache(async (
@@ -93,12 +93,15 @@ function trackView(portfolioId: string, headersList: Headers) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { username, slug } = await params;
+  const { username, slug, pageSlug } = await params;
   const portfolio = await getPortfolioData(username, slug);
 
   if (!portfolio) return { title: "Portfolio Not Found" };
 
-  const title = portfolio.seoTitle ?? `${portfolio.title} — ${portfolio.user.name ?? username}`;
+  const page = portfolio.pages?.find((p) => p.slug === pageSlug);
+  const pageTitle = page?.title ?? pageSlug;
+
+  const title = `${pageTitle} — ${portfolio.title} — ${portfolio.user.name ?? username}`;
   const description =
     portfolio.seoDescription ??
     portfolio.description ??
@@ -111,7 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       type: "website",
-      url: `${APP_URL}/portfolio/${username}/${slug}`,
+      url: `${APP_URL}/portfolio/${username}/${slug}/${pageSlug}`,
       siteName: APP_NAME,
       ...(portfolio.ogImageUrl ? { images: [{ url: portfolio.ogImageUrl }] } : {}),
     },
@@ -126,11 +129,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const revalidate = 60;
 
-export default async function PortfolioBySlugPage({ params }: Props) {
-  const { username, slug } = await params;
+export default async function PortfolioSubPage({ params }: Props) {
+  const { username, slug, pageSlug } = await params;
   const portfolio = await getPortfolioData(username, slug);
 
   if (!portfolio) notFound();
+
+  // Find the page by slug
+  const page = portfolio.pages?.find((p) => p.slug === pageSlug);
+  if (!page) notFound();
 
   // Password protection check
   if (portfolio.accessPassword) {
@@ -144,14 +151,13 @@ export default async function PortfolioBySlugPage({ params }: Props) {
   const headersList = await headers();
   trackView(portfolio.id, headersList);
 
+  // Filter sections to only those belonging to this page
+  const filteredPortfolio = {
+    ...portfolio,
+    sections: portfolio.sections.filter((s) => s.pageId === page.id),
+  };
+
   const pages = portfolio.pages ?? [];
-  const hasPages = pages.length > 0;
-
-  // Filter to home page sections (no pageId) when pages exist
-  const homePortfolio = hasPages
-    ? { ...portfolio, sections: portfolio.sections.filter((s) => !s.pageId) }
-    : portfolio;
-
   const baseUrl = `/portfolio/${username}/${slug}`;
   const t = portfolio.theme;
   const primaryColor = t?.primaryColor ?? "#06b6d4";
@@ -160,16 +166,14 @@ export default async function PortfolioBySlugPage({ params }: Props) {
 
   return (
     <>
-      {hasPages && (
-        <PageNav
-          pages={pages}
-          baseUrl={baseUrl}
-          primaryColor={primaryColor}
-          textColor={textColor}
-          surfaceColor={surfaceColor}
-        />
-      )}
-      <PortfolioRenderer portfolio={homePortfolio} />
+      <PageNav
+        pages={pages}
+        baseUrl={baseUrl}
+        primaryColor={primaryColor}
+        textColor={textColor}
+        surfaceColor={surfaceColor}
+      />
+      <PortfolioRenderer portfolio={filteredPortfolio} />
     </>
   );
 }
