@@ -28,6 +28,7 @@ import {
   FolderUp,
   Globe,
   GripVertical,
+  Hexagon,
   ImageDown,
   Layers,
   Layout,
@@ -107,6 +108,7 @@ import {
   BLOCK_CATEGORIES,
   getBlocksByCategory,
 } from "@/config/block-registry";
+import { SHAPE_PRESETS, SHAPE_CATEGORIES, getShapesByCategory } from "@/config/shape-presets";
 import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from "@/lib/api";
 import { shareCommunityTemplate, type CommunityTemplateCategory } from "@/lib/api/community-templates";
 import { saveBackup, markBackupSynced, getUnsyncedBackup, clearBackup } from "@/lib/idb-backup";
@@ -764,7 +766,7 @@ export function BuilderWorkspace({
     ? { bg: "#0c0c10", border: "rgba(255,255,255,0.15)", text: "#e4e4e7", textMuted: "#a1a1aa", hover: "#1f1f24", separator: "rgba(255,255,255,0.08)" }
     : { bg: "#ffffff", border: "rgba(0,0,0,0.14)", text: "#1c1917", textMuted: "#44403c", hover: "#e8e4dd", separator: "rgba(0,0,0,0.07)" };
 
-  const [leftTab, setLeftTab] = useState<"layers" | "elements">("layers");
+  const [leftTab, setLeftTab] = useState<"layers" | "elements" | "shapes">("layers");
 
   // ── Panel visibility ────────────────────────────────────────────
   const showLeftPanel = builderStore.leftPanelOpen;
@@ -992,7 +994,7 @@ export function BuilderWorkspace({
 
   // ── Block CRUD ────────────────────────────────────────────────
 
-  const addBlock = (sectionId: string, type: BlockType) => {
+  const addBlock = (sectionId: string, type: BlockType, overrides?: { content?: Record<string, unknown>; styles?: Partial<BlockStyles> }) => {
     const def = BLOCK_REGISTRY[type];
     if (!def) return;
     const section = portfolio.sections.find((s) => s.id === sectionId);
@@ -1011,13 +1013,14 @@ export function BuilderWorkspace({
       sortOrder: existingBlocks.length,
       isVisible: true,
       isLocked: false,
-      content: def.defaultContent,
+      content: { ...def.defaultContent, ...overrides?.content },
       styles: {
         ...def.defaultStyles,
         x: 40,
         y: maxY + 16,
         w: DEFAULT_BLOCK_W,
         h: DEFAULT_BLOCK_H,
+        ...overrides?.styles,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -2995,6 +2998,7 @@ ${sectionsHtml}
             {([
               { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
               { id: "elements" as const, label: "Elements", icon: <LayoutGrid className="h-3 w-3" /> },
+              { id: "shapes" as const, label: "Shapes", icon: <Hexagon className="h-3 w-3" /> },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -3279,6 +3283,97 @@ ${sectionsHtml}
                               style={{ color: "var(--b-text-4)" }}
                             >
                               {def.description}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Shapes Tab ─────────────────────────────────────── */}
+          {leftTab === "shapes" && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {!selectedSectionId && (
+                <div
+                  className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: "var(--b-accent-soft)",
+                    color: "var(--b-accent)",
+                    border: "1px solid var(--b-accent-mid)",
+                  }}
+                >
+                  <MousePointer2 className="h-3.5 w-3.5 flex-shrink-0" />
+                  Select a frame first to add shapes
+                </div>
+              )}
+              <div className="flex-1 overflow-y-auto px-2.5 py-2.5 scrollbar-thin">
+                {SHAPE_CATEGORIES.map((cat) => {
+                  const shapes = getShapesByCategory(cat.id);
+                  return (
+                    <div key={cat.id} className="mb-4">
+                      <p
+                        className="mb-2 flex items-center gap-1.5 px-1 text-[9px] font-bold uppercase tracking-[0.12em]"
+                        style={{ color: "var(--b-text-4)" }}
+                      >
+                        {cat.label}
+                        <span
+                          className="rounded-sm px-1 text-[8px] font-semibold"
+                          style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}
+                        >
+                          {shapes.length}
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {shapes.map((shape) => (
+                          <button
+                            key={shape.id}
+                            onClick={() => {
+                              if (!selectedSectionId) return;
+                              const section = portfolio.sections.find((s) => s.id === selectedSectionId);
+                              if (!section) return;
+                              const sectionSt = section.styles as SectionStyles;
+                              const fw = sectionSt.frameWidth ?? DEFAULT_FRAME_WIDTH;
+                              const fh = sectionSt.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+                              const w = shape.category === "dividers" ? fw : Math.min(shape.defaultWidth, 400);
+                              const h = shape.category === "dividers" ? shape.defaultHeight : Math.min(shape.defaultHeight, 400);
+                              const x = shape.category === "dividers" ? 0 : Math.round((fw - w) / 2);
+                              const y = shape.category === "dividers" ? fh - h : Math.round((fh - h) / 2);
+                              addBlock(selectedSectionId, "shape" as BlockType, {
+                                content: { svgId: shape.id, color: "primary" },
+                                styles: { x, y, w, h },
+                              });
+                            }}
+                            disabled={!selectedSectionId}
+                            className="group flex flex-col items-center gap-1 rounded-lg px-2 py-3 transition-all duration-150 disabled:opacity-25"
+                            style={{
+                              backgroundColor: "var(--b-surface)",
+                              border: "1px solid var(--b-border)",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (selectedSectionId) {
+                                e.currentTarget.style.borderColor = "var(--b-accent)";
+                                e.currentTarget.style.backgroundColor = "var(--b-accent-soft)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "var(--b-border)";
+                              e.currentTarget.style.backgroundColor = "var(--b-surface)";
+                            }}
+                          >
+                            <div
+                              className="flex h-10 w-full items-center justify-center overflow-hidden"
+                              style={{ color: "var(--b-text-3)" }}
+                              dangerouslySetInnerHTML={{ __html: shape.svg }}
+                            />
+                            <span
+                              className="text-[9px] font-medium"
+                              style={{ color: "var(--b-text-3)" }}
+                            >
+                              {shape.name}
                             </span>
                           </button>
                         ))}

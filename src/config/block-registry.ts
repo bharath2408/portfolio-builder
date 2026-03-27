@@ -385,6 +385,25 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultStyles: { w: 200, h: 2, backgroundColor: "#a1a1aa" },
   },
 
+  shape: {
+    type: "shape",
+    label: "Shape",
+    icon: "Hexagon",
+    category: "shapes",
+    description: "Decorative SVG shape element",
+    defaultContent: { svgId: "wave", color: "primary" },
+    defaultStyles: { w: 1440, h: 120 },
+  },
+  custom_svg: {
+    type: "custom_svg",
+    label: "Custom SVG",
+    icon: "FileImage",
+    category: "shapes",
+    description: "Imported custom SVG graphic",
+    defaultContent: { svg: "", originalFilename: "", viewBox: "0 0 200 200" },
+    defaultStyles: { w: 200, h: 200 },
+  },
+
   // ── Grouping ────────────────────────────────────────────────────
   group: {
     type: "group",

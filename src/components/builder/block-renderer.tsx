@@ -7,6 +7,7 @@ import {
 
 import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
+import { getShapeById } from "@/config/shape-presets";
 import type { BlockWithStyles, ThemeTokens } from "@/types";
 
 interface BlockRendererProps {
@@ -777,6 +778,53 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
         </div>
       ) : (
         <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 8 }}>Add custom HTML code</div>
+      );
+    }
+
+    // ── SHAPE (SVG decorative element) ──
+    case "shape": {
+      const svgId = (c.svgId as string) ?? "wave";
+      const shapeColor = resolveColor((c.color as string) ?? "primary", theme) ?? theme.primaryColor;
+      const flipH = (c.flipH as boolean) ?? false;
+      const flipV = (c.flipV as boolean) ?? false;
+      const shape = getShapeById(svgId);
+      if (!shape) {
+        return <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13 }}>Unknown shape: {svgId}</div>;
+      }
+      const transformParts: string[] = [];
+      if (flipH) transformParts.push("scaleX(-1)");
+      if (flipV) transformParts.push("scaleY(-1)");
+      return (
+        <div
+          style={{
+            ...inlineStyles,
+            width: "100%",
+            height: "100%",
+            color: shapeColor,
+            transform: transformParts.length > 0 ? transformParts.join(" ") : undefined,
+          }}
+          dangerouslySetInnerHTML={{ __html: shape.svg }}
+        />
+      );
+    }
+
+    // ── CUSTOM SVG ──
+    case "custom_svg": {
+      const svgContent = (c.svg as string) ?? "";
+      const svgColor = resolveColor((block.styles.color as string) ?? "primary", theme) ?? theme.primaryColor;
+      if (!svgContent) {
+        return <div style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.4, fontSize: 13, borderWidth: 1, borderStyle: "dashed", borderColor: theme.surfaceColor, borderRadius: 8 }}>Import an SVG</div>;
+      }
+      return (
+        <div
+          style={{
+            ...inlineStyles,
+            width: "100%",
+            height: "100%",
+            color: svgColor,
+          }}
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+        />
       );
     }
 

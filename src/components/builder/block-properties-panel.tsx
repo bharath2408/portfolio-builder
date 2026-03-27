@@ -1200,6 +1200,32 @@ function ContentEditor({
           {field("Direction", "direction", { type: "select", options: [{ label: "Horizontal", value: "horizontal" }, { label: "Vertical", value: "vertical" }] })}
         </div>
       );
+    case "shape":
+      return (
+        <div className="space-y-2.5">
+          {field("Shape", "svgId")}
+          <div>
+            <SubLabel>Color</SubLabel>
+            <AdvancedColorInput value={(content.color as string) ?? "primary"} onChange={(v) => updateContent("color", v)} placeholder="primary" />
+          </div>
+          <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px]" style={{ color: "var(--b-text-2)" }}>
+            <input type="checkbox" checked={(content.flipH as boolean) ?? false} onChange={(e) => updateContent("flipH", e.target.checked)} className="rounded" />
+            Flip Horizontal
+          </label>
+          <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px]" style={{ color: "var(--b-text-2)" }}>
+            <input type="checkbox" checked={(content.flipV as boolean) ?? false} onChange={(e) => updateContent("flipV", e.target.checked)} className="rounded" />
+            Flip Vertical
+          </label>
+        </div>
+      );
+    case "custom_svg":
+      return (
+        <div className="space-y-2.5">
+          <div className="rounded-md px-2 py-1.5 text-[10px]" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)" }}>
+            {(content.originalFilename as string) || "Custom SVG"}
+          </div>
+        </div>
+      );
     case "embed":
       return (
         <div className="space-y-2.5">
