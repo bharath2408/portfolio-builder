@@ -535,10 +535,9 @@ export const CanvasFrame = memo(function CanvasFrame({
           transition: "border-color 0.2s, box-shadow 0.2s",
         }}
         onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-            onSelect(id);
-          }
+          // Select frame when clicking empty space (not on a block's overlay)
+          e.stopPropagation();
+          onSelect(id);
         }}
         onContextMenu={(e) => {
           if (onCtxMenu) {
