@@ -5115,10 +5115,10 @@ ${sectionsHtml}
                   placeholder="Page name..."
                   value={pageDialog.value ?? ""}
                   onChange={(e) => setPageDialog({ ...pageDialog, value: e.target.value })}
-                  onKeyDown={(e) => {
+                  onKeyDown={async (e) => {
                     if (e.key === "Enter" && pageDialog.value?.trim()) {
-                      if (pageDialog.mode === "add") { addPage(pageDialog.value.trim()); setPageDialog(null); }
-                      else if (pageDialog.mode === "rename" && pageDialog.pageId) { renamePage(pageDialog.pageId, pageDialog.value.trim()); setPageDialog(null); }
+                      if (pageDialog.mode === "add") { await addPage(pageDialog.value.trim()); setPageDialog(null); }
+                      else if (pageDialog.mode === "rename" && pageDialog.pageId) { await renamePage(pageDialog.pageId, pageDialog.value.trim()); setPageDialog(null); }
                     }
                     if (e.key === "Escape") setPageDialog(null);
                   }}
@@ -5136,10 +5136,10 @@ ${sectionsHtml}
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  if (pageDialog.mode === "add" && pageDialog.value?.trim()) { addPage(pageDialog.value.trim()); }
-                  else if (pageDialog.mode === "rename" && pageDialog.pageId && pageDialog.value?.trim()) { renamePage(pageDialog.pageId, pageDialog.value.trim()); }
-                  else if (pageDialog.mode === "delete" && pageDialog.pageId) { deletePage(pageDialog.pageId); }
+                onClick={async () => {
+                  if (pageDialog.mode === "add" && pageDialog.value?.trim()) { await addPage(pageDialog.value.trim()); }
+                  else if (pageDialog.mode === "rename" && pageDialog.pageId && pageDialog.value?.trim()) { await renamePage(pageDialog.pageId, pageDialog.value.trim()); }
+                  else if (pageDialog.mode === "delete" && pageDialog.pageId) { await deletePage(pageDialog.pageId); }
                   setPageDialog(null);
                 }}
                 className="rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-colors"
