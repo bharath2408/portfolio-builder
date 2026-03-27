@@ -944,16 +944,18 @@ function ButtonContentEditor({
   const portfolio = usePortfolioStore((s) => s.currentPortfolio);
   const sections = portfolio?.sections ?? [];
 
+  const pages = portfolio?.pages ?? [];
   const currentUrl = (content.url as string) ?? "";
   const isInternalLink = currentUrl.startsWith("#section-");
+  const isPageLink = currentUrl.startsWith("/page/");
   const linkedSectionId = isInternalLink ? currentUrl.replace("#section-", "") : "";
+  const linkedPageSlug = isPageLink ? currentUrl.replace("/page/", "") : "";
 
-  // Track mode explicitly so toggling to "section" works even with empty URL
-  const [linkMode, setLinkMode] = useState<"url" | "section">(isInternalLink ? "section" : "url");
+  const [linkMode, setLinkMode] = useState<"url" | "section" | "page">(isPageLink ? "page" : isInternalLink ? "section" : "url");
 
   // Sync mode when content changes externally
   useEffect(() => {
-    setLinkMode(currentUrl.startsWith("#section-") ? "section" : "url");
+    setLinkMode(currentUrl.startsWith("/page/") ? "page" : currentUrl.startsWith("#section-") ? "section" : "url");
   }, [currentUrl]);
 
   const linkToSection = (sectionId: string) => {
@@ -976,10 +978,12 @@ function ButtonContentEditor({
         <ToggleGroup
           value={linkMode}
           onChange={(v) => {
-            const mode = v as "url" | "section";
+            const mode = v as "url" | "section" | "page";
             setLinkMode(mode);
             if (mode === "section") {
               if (sections[0]) linkToSection(sections[0].id);
+            } else if (mode === "page") {
+              if (pages[0]) updateContent("url", `/page/${pages[0].slug}`);
             } else {
               updateContent("url", "");
             }
@@ -987,6 +991,7 @@ function ButtonContentEditor({
           options={[
             { value: "url", label: "URL" },
             { value: "section", label: "Section" },
+            ...(pages.length > 0 ? [{ value: "page", label: "Page" }] : []),
           ]}
         />
       </div>
@@ -1020,6 +1025,24 @@ function ButtonContentEditor({
             <p className="text-[10px]" style={{ color: "var(--b-text-4)" }}>
               No sections available. Add sections to your portfolio first.
             </p>
+          )}
+        </div>
+      ) : linkMode === "page" ? (
+        <div>
+          <SubLabel>Target Page</SubLabel>
+          {pages.length > 0 ? (
+            <select
+              value={linkedPageSlug}
+              onChange={(e) => { updateContent("url", `/page/${e.target.value}`); updateContent("newTab", false); }}
+              className="h-7 w-full rounded-md border px-2 text-[11px] outline-none"
+              style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+            >
+              {pages.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.title}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-[10px]" style={{ color: "var(--b-text-4)" }}>No pages. Add pages via the page bar.</p>
           )}
         </div>
       ) : (
