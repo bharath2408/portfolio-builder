@@ -23,6 +23,7 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  FileImage,
   FileJson,
   FolderDown,
   FolderUp,
@@ -84,6 +85,7 @@ import {
 } from "@/components/builder/canvas-engine";
 import { HorizontalRuler, VerticalRuler, RulerCorner } from "@/components/builder/canvas-rulers";
 import { AdvancedColorInput } from "@/components/builder/color-picker";
+import { SvgImportDialog } from "@/components/builder/svg-import-dialog";
 import { CommandPalette } from "@/components/builder/command-palette";
 import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
 import { KeyboardShortcutsModal } from "@/components/builder/keyboard-shortcuts-modal";
@@ -779,6 +781,7 @@ export function BuilderWorkspace({
   const [showPreview, setShowPreview] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showSvgImport, setShowSvgImport] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -3744,8 +3747,37 @@ ${sectionsHtml}
                 <Plus className="h-3 w-3" />
                 Image
               </button>
+
+              {/* SVG Import button */}
+              <button
+                onClick={() => setShowSvgImport(true)}
+                className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold transition-all hover:brightness-110 active:scale-95"
+                style={{
+                  backgroundColor: dropdownColors.hover,
+                  color: dropdownColors.text,
+                }}
+                title="Import SVG"
+              >
+                <FileImage className="h-3 w-3" />
+                SVG
+              </button>
             </div>
           )}
+
+          {/* SVG Import Dialog */}
+          <SvgImportDialog
+            open={showSvgImport}
+            onClose={() => setShowSvgImport(false)}
+            onImport={({ svg, viewBox, width, height, filename }) => {
+              if (!selectedSectionId) return;
+              const w = Math.min(width, 600);
+              const h = Math.min(height, 600);
+              addBlock(selectedSectionId, "custom_svg" as BlockType, {
+                content: { svg, originalFilename: filename, viewBox },
+                styles: { w, h },
+              });
+            }}
+          />
 
           {/* ── Context Menu ──────────────────────────────────────── */}
           {ctxMenu && (
