@@ -1864,10 +1864,21 @@ export function BuilderWorkspace({
 
   // ── Export as .folio file ──────────────────────────────────────
   const exportAsFolio = useCallback(() => {
+    const sectionCount = portfolio.sections.length;
+    const blockCount = portfolio.sections.reduce((sum, s) => sum + s.blocks.length, 0);
     const folioData = {
       _format: "foliocraft",
       _version: 1,
+      _description: `Foliocraft portfolio: ${portfolio.title}`,
       exportedAt: new Date().toISOString(),
+      meta: {
+        title: portfolio.title,
+        author: portfolio.user?.name ?? portfolio.user?.username ?? "Unknown",
+        sections: sectionCount,
+        blocks: blockCount,
+        theme: portfolio.theme?.mode ?? "dark",
+        primaryColor: portfolio.theme?.primaryColor ?? "#6366f1",
+      },
       portfolio: {
         title: portfolio.title,
         slug: portfolio.slug,
