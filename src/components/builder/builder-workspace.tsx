@@ -727,6 +727,7 @@ function VersionHistoryPanel({ portfolioId, onClose, onRestore, dropdownColors }
         variant="danger"
         loading={!!restoring}
       />
+
     </>
   );
 }
@@ -811,6 +812,7 @@ export function BuilderWorkspace({
   );
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showAddSection, setShowAddSection] = useState(false);
+  const [pageDialog, setPageDialog] = useState<{ mode: "add" | "rename" | "delete"; pageId?: string; value?: string } | null>(null);
   const [addSectionName, setAddSectionName] = useState("");
   const [showFrameTemplateDialog, setShowFrameTemplateDialog] = useState(false);
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
@@ -1551,9 +1553,7 @@ export function BuilderWorkspace({
     }
   };
 
-  const addPage = async () => {
-    const title = prompt("Page name:", "New Page");
-    if (!title) return;
+  const addPage = async (title: string) => {
     const slug = title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     try {
       const res = await apiPost<{ id: string; title: string; slug: string; sortOrder: number; isDefault: boolean }>(`/portfolios/${portfolio.id}/pages`, { title, slug });
@@ -1567,7 +1567,6 @@ export function BuilderWorkspace({
   const deletePage = async (pageId: string) => {
     const page = portfolio.pages?.find((p) => p.id === pageId);
     if (!page || page.isDefault) return;
-    if (!confirm(`Delete page "${page.title}"? Sections will be moved to the default page.`)) return;
     try {
       await apiDelete(`/portfolios/${portfolio.id}/pages/${pageId}`);
       portfolioStore.replacePortfolio({
@@ -1581,11 +1580,7 @@ export function BuilderWorkspace({
     }
   };
 
-  const renamePage = async (pageId: string) => {
-    const page = portfolio.pages?.find((p) => p.id === pageId);
-    if (!page) return;
-    const newTitle = prompt("Rename page:", page.title);
-    if (!newTitle || newTitle === page.title) return;
+  const renamePage = async (pageId: string, newTitle: string) => {
     const newSlug = newTitle.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     try {
       await apiPatch(`/portfolios/${portfolio.id}/pages/${pageId}`, { title: newTitle, slug: newSlug });
@@ -3220,11 +3215,10 @@ ${sectionsHtml}
             <button
               key={page.id}
               onClick={() => setCurrentPageId(page.id)}
+              onDoubleClick={() => setPageDialog({ mode: "rename", pageId: page.id, value: page.title })}
               onContextMenu={(e) => {
                 e.preventDefault();
-                const action = prompt(`Page: ${page.title}\nType "rename" to rename or "delete" to delete:`);
-                if (action === "rename") renamePage(page.id);
-                else if (action === "delete") deletePage(page.id);
+                setPageDialog({ mode: "delete", pageId: page.id });
               }}
               className="flex-shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold transition-colors"
               style={{
@@ -3237,7 +3231,7 @@ ${sectionsHtml}
             </button>
           ))}
           <button
-            onClick={addPage}
+            onClick={() => setPageDialog({ mode: "add", value: "" })}
             className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors"
             style={{ color: "var(--b-text-4)" }}
             title="Add page"
@@ -5095,6 +5089,68 @@ ${sectionsHtml}
         onSelect={addSectionFromTemplate}
         theme={theme}
       />
+
+      {/* ── Page Dialog (add / rename / delete) ──────────────── */}
+      {pageDialog && (
+        <>
+          <div className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-sm" onClick={() => setPageDialog(null)} />
+          <div
+            className="fixed left-1/2 top-1/2 z-[301] w-[360px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
+            style={{ backgroundColor: dropdownColors.bg, border: `1px solid ${dropdownColors.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
+          >
+            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${dropdownColors.separator}` }}>
+              <h3 className="text-[15px] font-bold" style={{ color: dropdownColors.text }}>
+                {pageDialog.mode === "add" ? "Add Page" : pageDialog.mode === "rename" ? "Rename Page" : "Delete Page"}
+              </h3>
+            </div>
+            <div className="p-5">
+              {pageDialog.mode === "delete" ? (
+                <p className="text-[13px] leading-relaxed" style={{ color: dropdownColors.textMuted }}>
+                  Delete this page? Its sections will be moved to the Home page.
+                </p>
+              ) : (
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Page name..."
+                  value={pageDialog.value ?? ""}
+                  onChange={(e) => setPageDialog({ ...pageDialog, value: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && pageDialog.value?.trim()) {
+                      if (pageDialog.mode === "add") { addPage(pageDialog.value.trim()); setPageDialog(null); }
+                      else if (pageDialog.mode === "rename" && pageDialog.pageId) { renamePage(pageDialog.pageId, pageDialog.value.trim()); setPageDialog(null); }
+                    }
+                    if (e.key === "Escape") setPageDialog(null);
+                  }}
+                  className="w-full rounded-lg border px-3 py-2.5 text-[13px] outline-none transition-colors focus:border-[var(--b-accent)]"
+                  style={{ backgroundColor: dropdownColors.hover, borderColor: dropdownColors.separator, color: dropdownColors.text }}
+                />
+              )}
+            </div>
+            <div className="flex justify-end gap-2 px-5 pb-4">
+              <button
+                onClick={() => setPageDialog(null)}
+                className="rounded-lg px-4 py-2 text-[12px] font-medium transition-colors"
+                style={{ color: dropdownColors.textMuted }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (pageDialog.mode === "add" && pageDialog.value?.trim()) { addPage(pageDialog.value.trim()); }
+                  else if (pageDialog.mode === "rename" && pageDialog.pageId && pageDialog.value?.trim()) { renamePage(pageDialog.pageId, pageDialog.value.trim()); }
+                  else if (pageDialog.mode === "delete" && pageDialog.pageId) { deletePage(pageDialog.pageId); }
+                  setPageDialog(null);
+                }}
+                className="rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-colors"
+                style={{ backgroundColor: pageDialog.mode === "delete" ? "#f43f5e" : "var(--b-accent)" }}
+              >
+                {pageDialog.mode === "add" ? "Create Page" : pageDialog.mode === "rename" ? "Rename" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
     </>
   );
