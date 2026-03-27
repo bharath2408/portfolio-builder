@@ -534,11 +534,6 @@ export const CanvasFrame = memo(function CanvasFrame({
             : "var(--b-frame-shadow)",
           transition: "border-color 0.2s, box-shadow 0.2s",
         }}
-        onClick={(e) => {
-          // Select frame when clicking empty space (not on a block's overlay)
-          e.stopPropagation();
-          onSelect(id);
-        }}
         onContextMenu={(e) => {
           if (onCtxMenu) {
             e.preventDefault();
@@ -547,6 +542,18 @@ export const CanvasFrame = memo(function CanvasFrame({
           }
         }}
       >
+        {/* Click zone — catches clicks on empty space inside frame */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(id);
+          }}
+        />
         {/* Pattern overlay */}
         {patternStyle && Object.keys(patternStyle).length > 0 && (
           <div
@@ -554,7 +561,7 @@ export const CanvasFrame = memo(function CanvasFrame({
               position: "absolute",
               inset: 0,
               pointerEvents: "none",
-              zIndex: 0,
+              zIndex: 1,
               borderRadius: 10,
               ...patternStyle,
             }}
