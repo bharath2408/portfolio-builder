@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import type { ApiResponse, ApiError } from "@/types";
 
 // ─── Success Responses ────────────────────────────────────────────
@@ -119,7 +120,7 @@ export function withErrorHandler(handler: RouteHandler): RouteHandler {
         return validationErrorResponse(error);
       }
 
-      console.error("[API Error]", error);
+      logger.error("[API Error]", error);
       return internalErrorResponse();
     }
   };
