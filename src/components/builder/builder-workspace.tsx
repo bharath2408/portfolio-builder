@@ -800,6 +800,8 @@ export function BuilderWorkspace({
   });
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
   const dragStartPositions = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const resizeSnapshotPushed = useRef(false);
+  const lastSnapshotTime = useRef(0);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     portfolio.sections[0]?.id ?? null,
   );
@@ -1096,6 +1098,7 @@ export function BuilderWorkspace({
 
   const handleBlockDragStart = useCallback(
     (blockId: string) => {
+      builderStore.pushSnapshot("move-block");
       if (!selectedSectionId) return;
       const section = portfolio.sections.find((s) => s.id === selectedSectionId);
       if (!section) return;
@@ -1164,6 +1167,10 @@ export function BuilderWorkspace({
 
   const moveFrame = useCallback(
     (sectionId: string, newX: number, newY: number) => {
+      if (!resizeSnapshotPushed.current) {
+        builderStore.pushSnapshot("move-frame");
+        resizeSnapshotPushed.current = true;
+      }
       const section = portfolio.sections.find((s) => s.id === sectionId);
       if (!section) return;
       const ss = section.styles as SectionStyles;
@@ -1176,6 +1183,10 @@ export function BuilderWorkspace({
 
   const resizeFrame = useCallback(
     (sectionId: string, newW: number, newH: number) => {
+      if (!resizeSnapshotPushed.current) {
+        builderStore.pushSnapshot("resize-frame");
+        resizeSnapshotPushed.current = true;
+      }
       const section = portfolio.sections.find((s) => s.id === sectionId);
       if (!section) return;
       const ss = section.styles as SectionStyles;
@@ -1194,6 +1205,10 @@ export function BuilderWorkspace({
       newX: number,
       newY: number,
     ) => {
+      if (!resizeSnapshotPushed.current) {
+        builderStore.pushSnapshot("resize-block");
+        resizeSnapshotPushed.current = true;
+      }
       if (!selectedSectionId) return;
       const block = portfolio.sections
         .find((s) => s.id === selectedSectionId)
@@ -1226,7 +1241,12 @@ export function BuilderWorkspace({
     sectionId: string,
     updates: { content?: Record<string, unknown>; styles?: BlockStyles },
   ) => {
-    builderStore.pushSnapshot("update-block");
+    // Debounce snapshots — only push if last one was 500ms+ ago (avoids flooding on rapid edits)
+    const now = Date.now();
+    if (now - lastSnapshotTime.current > 500) {
+      builderStore.pushSnapshot("update-block");
+      lastSnapshotTime.current = now;
+    }
     const device = builderStore.devicePreview;
     if (device === "desktop" || !updates.styles) {
       portfolioStore.updateBlockInSection(sectionId, blockId, updates as Partial<BlockWithStyles>);
@@ -1621,6 +1641,7 @@ export function BuilderWorkspace({
   }, [batchSave, portfolio, builderStore]);
 
   const handleBlockDragOrResizeEnd = useCallback(() => {
+    resizeSnapshotPushed.current = false;
     builderStore.setDirty(true);
     saveBackup(portfolio);
     batchSave();
