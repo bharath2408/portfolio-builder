@@ -169,6 +169,8 @@ import type {
   ThemeTokens,
   SectionStyles,
   PortfolioStatus,
+  ContentType,
+  ContentEntry,
 } from "@/types";
 
 // ─── Block Icon Lookup ────────────────────────────────────────────
@@ -836,7 +838,7 @@ export function BuilderWorkspace({
     ? { bg: "#0c0c10", border: "rgba(255,255,255,0.15)", text: "#e4e4e7", textMuted: "#a1a1aa", hover: "#1f1f24", separator: "rgba(255,255,255,0.08)" }
     : { bg: "#ffffff", border: "rgba(0,0,0,0.14)", text: "#1c1917", textMuted: "#44403c", hover: "#e8e4dd", separator: "rgba(0,0,0,0.07)" };
 
-  const [leftTab, setLeftTab] = useState<"layers" | "elements" | "shapes" | "assets">("layers");
+  const [leftTab, setLeftTab] = useState<"layers" | "elements" | "shapes" | "assets" | "content">("layers");
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(false);
@@ -853,6 +855,26 @@ export function BuilderWorkspace({
   const filteredAssets = assetSearch
     ? assets.filter((a) => a.name.toLowerCase().includes(assetSearch.toLowerCase()))
     : assets;
+
+  const [cmsTypes, setCmsTypes] = useState<ContentType[]>([]);
+  const [cmsEntries, setCmsEntries] = useState<ContentEntry[]>([]);
+  const [selectedCmsTypeId, setSelectedCmsTypeId] = useState<string | null>(null);
+  const [cmsLoading, setCmsLoading] = useState(false);
+
+  useEffect(() => {
+    apiGet<ContentType[]>(`/cms/types?portfolioId=${portfolio.id}`)
+      .then(setCmsTypes)
+      .catch(() => {});
+  }, [portfolio.id]);
+
+  useEffect(() => {
+    if (!selectedCmsTypeId) { setCmsEntries([]); return; }
+    setCmsLoading(true);
+    apiGet<ContentEntry[]>(`/cms/types/${selectedCmsTypeId}/entries?status=PUBLISHED`)
+      .then(setCmsEntries)
+      .catch(() => {})
+      .finally(() => setCmsLoading(false));
+  }, [selectedCmsTypeId]);
 
   const handleAssetUpload = async (file: File) => {
     if (!file.type.startsWith("image/") && file.type !== "image/svg+xml") return;
@@ -3458,6 +3480,7 @@ ${sectionsHtml}
               { id: "elements" as const, label: "Elements" },
               { id: "shapes" as const, label: "Shapes" },
               { id: "assets" as const, label: "Assets" },
+              { id: "content" as const, label: "Content" },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -3934,6 +3957,82 @@ ${sectionsHtml}
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Content Tab ────────────────────────────────────── */}
+          {leftTab === "content" && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex flex-shrink-0 items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid var(--b-border)" }}>
+                <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-4)" }}>
+                  Collections ({cmsTypes.length})
+                </span>
+                <a href="/dashboard/cms" target="_blank" rel="noopener noreferrer" className="text-[9px] font-semibold" style={{ color: "var(--b-accent)" }}>
+                  Manage
+                </a>
+              </div>
+              <div className="flex-1 overflow-y-auto py-1 scrollbar-thin scrollbar-auto">
+                {cmsTypes.length === 0 && (
+                  <div className="builder-empty-state flex flex-col items-center gap-3 px-4 py-12 text-center">
+                    <div className="builder-empty-icon flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}>
+                      <Layers className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>No collections</p>
+                      <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--b-text-4)" }}>
+                        Set up content types in the CMS dashboard
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {cmsTypes.map((ct) => (
+                  <div key={ct.id}>
+                    <button
+                      onClick={() => setSelectedCmsTypeId(selectedCmsTypeId === ct.id ? null : ct.id)}
+                      className="builder-layer-item flex w-full cursor-pointer items-center gap-2 px-3 py-[6px]"
+                      style={{
+                        backgroundColor: selectedCmsTypeId === ct.id ? "var(--b-accent-soft)" : "transparent",
+                        color: selectedCmsTypeId === ct.id ? "var(--b-accent)" : "var(--b-text-2)",
+                      }}
+                    >
+                      <ChevronRight
+                        className="h-3 w-3 transition-transform duration-150"
+                        style={{ transform: selectedCmsTypeId === ct.id ? "rotate(90deg)" : "rotate(0)" }}
+                      />
+                      <span className="flex-1 truncate text-[10.5px] font-semibold text-left">{ct.name}</span>
+                      <span className="rounded-full px-1.5 text-[8px] font-bold" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-4)" }}>
+                        {(ct._count as { entries: number })?.entries ?? 0}
+                      </span>
+                    </button>
+                    {selectedCmsTypeId === ct.id && (
+                      <div className="ml-4 border-l py-0.5" style={{ borderColor: "var(--b-accent-mid)" }}>
+                        {cmsLoading && <p className="px-4 py-2 text-[9px]" style={{ color: "var(--b-text-4)" }}>Loading...</p>}
+                        {!cmsLoading && cmsEntries.length === 0 && (
+                          <p className="px-4 py-2 text-[9px] italic" style={{ color: "var(--b-text-4)" }}>No published entries</p>
+                        )}
+                        {cmsEntries.map((entry) => (
+                          <button
+                            key={entry.id}
+                            onClick={() => {
+                              const targetSection = selectedSectionId ?? portfolio.sections[0]?.id;
+                              if (targetSection) {
+                                addBlock(targetSection, "cms_entry" as BlockType, {
+                                  content: { contentTypeId: ct.id, entryId: entry.id, layout: "card" },
+                                });
+                              }
+                            }}
+                            className="builder-layer-item flex w-full items-center gap-2 px-4 py-[5px] text-left"
+                            style={{ color: "var(--b-text-2)" }}
+                          >
+                            <span className="flex-1 truncate text-[10px]">{entry.title}</span>
+                            <span className="text-[8px] font-bold uppercase" style={{ color: "var(--b-success)" }}>Live</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
