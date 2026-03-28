@@ -54,6 +54,17 @@ export const COLOR_PRESETS = [
   { name: "Slate", primary: "#64748b", secondary: "#475569", accent: "#6366f1" },
 ] as const;
 
+export const GRADIENT_PRESETS = [
+  { name: "Sunset", value: "linear-gradient(135deg, #f43f5e 0%, #f59e0b 100%)" },
+  { name: "Ocean", value: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)" },
+  { name: "Aurora", value: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #f43f5e 100%)" },
+  { name: "Forest", value: "linear-gradient(135deg, #10b981 0%, #059669 100%)" },
+  { name: "Midnight", value: "linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%)" },
+  { name: "Peach", value: "linear-gradient(135deg, #fbbf24 0%, #f43f5e 100%)" },
+  { name: "Lavender", value: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" },
+  { name: "Slate", value: "linear-gradient(135deg, #64748b 0%, #334155 100%)" },
+] as const;
+
 export const SOCIAL_PLATFORMS = [
   { id: "github", label: "GitHub", icon: "Github", urlPrefix: "https://github.com/" },
   { id: "linkedin", label: "LinkedIn", icon: "Linkedin", urlPrefix: "https://linkedin.com/in/" },

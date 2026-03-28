@@ -292,6 +292,45 @@ export interface SectionStyles {
   };
 }
 
+// ─── Gradient Editor ────────────────────────────────────────────
+export interface GradientStop {
+  id: string;
+  color: string;
+  position: number;
+}
+
+export interface GradientState {
+  type: "linear" | "radial";
+  angle: number;
+  radialPosition: string;
+  stops: GradientStop[];
+}
+
+// ─── Asset Library ──────────────────────────────────────────────
+export interface Asset {
+  id: string;
+  userId: string;
+  name: string;
+  url: string;
+  thumbnailUrl: string | null;
+  type: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  createdAt: Date;
+}
+
+// ─── Custom Fonts ───────────────────────────────────────────────
+export interface CustomFont {
+  id: string;
+  userId: string;
+  portfolioId: string;
+  name: string;
+  url: string;
+  format: string;
+  createdAt: Date;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  RELATION TYPES
 // ═══════════════════════════════════════════════════════════════════
