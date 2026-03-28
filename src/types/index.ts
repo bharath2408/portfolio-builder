@@ -331,6 +331,48 @@ export interface CustomFont {
   createdAt: Date;
 }
 
+// ─── CMS ────────────────────────────────────────────────────────
+export type FieldType = "text" | "richtext" | "number" | "boolean" | "image" | "date" | "select" | "url" | "color";
+
+export interface FieldDefinition {
+  id: string;
+  name: string;
+  key: string;
+  type: FieldType;
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+}
+
+export interface ContentType {
+  id: string;
+  userId: string;
+  portfolioId: string;
+  name: string;
+  slug: string;
+  icon: string;
+  fields: FieldDefinition[];
+  isPreset: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  entries?: ContentEntry[];
+  _count?: { entries: number };
+}
+
+export interface ContentEntry {
+  id: string;
+  contentTypeId: string;
+  portfolioId: string;
+  title: string;
+  slug: string;
+  data: Record<string, unknown>;
+  status: "DRAFT" | "PUBLISHED";
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  contentType?: ContentType;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  RELATION TYPES
 // ═══════════════════════════════════════════════════════════════════
