@@ -37,6 +37,8 @@ model User {
   sessions   Session[]
   portfolios Portfolio[]
   communityTemplates CommunityTemplate[]
+  assets     Asset[]
+  customFonts CustomFont[]
 
   @@index([email])
   @@index([username])
@@ -118,6 +120,7 @@ model Portfolio {
   versions    PortfolioVersion[]
   communityTemplate CommunityTemplate?
   pages       Page[]
+  customFonts CustomFont[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -338,4 +341,44 @@ model CommunityTemplate {
   @@index([category])
   @@index([useCount])
   @@map("community_templates")
+}
+
+// ─── Assets (User uploads) ───────────────────────────────────────
+
+model Asset {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  url          String
+  thumbnailUrl String?
+  type         String
+  size         Int
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("assets")
+}
+
+// ─── Custom Fonts ─────────────────────────────────────────────────
+
+model CustomFont {
+  id          String   @id @default(cuid())
+  userId      String
+  portfolioId String
+  name        String
+  url         String
+  format      String
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, name])
+  @@index([portfolioId])
+  @@map("custom_fonts")
 }
