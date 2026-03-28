@@ -2149,7 +2149,7 @@ export function BuilderWorkspace({
     });
   }, [visibleSections]);
 
-  // ── Fit canvas to screen when switching pages ──
+  // ── Center canvas on visible frames when switching pages ──
   const prevPageId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     if (prevPageId.current === undefined) {
@@ -2158,10 +2158,36 @@ export function BuilderWorkspace({
     }
     if (prevPageId.current !== currentPageId) {
       prevPageId.current = currentPageId;
-      const t = setTimeout(fitToScreen, 50);
-      return () => clearTimeout(t);
+      // Compute transform from current page's visible sections
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const s of visibleSections) {
+        const ss = s.styles as SectionStyles;
+        const fx = ss.frameX ?? 0;
+        const fy = ss.frameY ?? 0;
+        const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+        const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+        minX = Math.min(minX, fx);
+        minY = Math.min(minY, fy);
+        maxX = Math.max(maxX, fx + fw);
+        maxY = Math.max(maxY, fy + fh);
+      }
+      if (!isFinite(minX)) {
+        setTransform({ x: 100, y: 100, scale: 0.6 });
+        return;
+      }
+      const padding = 80;
+      const contentW = maxX - minX + padding * 2;
+      const contentH = maxY - minY + padding * 2;
+      const scaleX = 900 / contentW;
+      const scaleY = 600 / contentH;
+      const scale = Math.min(scaleX, scaleY, 1);
+      setTransform({
+        scale,
+        x: -minX * scale + padding * scale + 50,
+        y: -minY * scale + padding * scale + 50,
+      });
     }
-  }, [currentPageId, fitToScreen]);
+  }, [currentPageId, visibleSections]);
 
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
@@ -3192,21 +3218,22 @@ ${sectionsHtml}
                 {device.icon}
               </button>
             ))}
+            {/* Auto-adapt — inside device group */}
+            <div className="mx-0.5 h-4 w-px" style={{ backgroundColor: "var(--b-border)" }} />
+            <button
+              className="flex h-7 w-7 items-center justify-center rounded-md transition-all"
+              style={{
+                backgroundColor: builderStore.devicePreview === "desktop" ? "transparent" : "transparent",
+                color: builderStore.devicePreview === "desktop" ? "var(--b-text-3)" : "var(--b-text-4)",
+                opacity: builderStore.devicePreview === "desktop" ? 1 : 0.35,
+              }}
+              onClick={() => setShowAdaptConfirm(true)}
+              disabled={builderStore.devicePreview !== "desktop"}
+              title={builderStore.devicePreview === "desktop" ? "Auto-generate responsive layouts" : "Switch to desktop view first"}
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <button
-            className="builder-toolbar-btn flex h-7 w-7 items-center justify-center rounded-md"
-            style={{
-              color: builderStore.devicePreview === "desktop" ? "var(--b-text-2)" : "var(--b-text-4)",
-              opacity: builderStore.devicePreview === "desktop" ? 1 : 0.4,
-            }}
-            onClick={() => setShowAdaptConfirm(true)}
-            disabled={builderStore.devicePreview !== "desktop"}
-            title={builderStore.devicePreview === "desktop" ? "Auto-generate responsive layouts" : "Switch to desktop view first"}
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-          </button>
-          <div className="builder-toolbar-divider mx-1" />
-
           <div className="builder-toolbar-divider" />
 
           {/* Light/Dark toggle */}
@@ -3427,10 +3454,10 @@ ${sectionsHtml}
             style={{ borderBottom: "1px solid var(--b-border)" }}
           >
             {([
-              { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
-              { id: "elements" as const, label: "Elements", icon: <Plus className="h-3 w-3" /> },
-              { id: "shapes" as const, label: "Shapes", icon: <Hexagon className="h-3 w-3" /> },
-              { id: "assets" as const, label: "Assets", icon: <Image className="h-3 w-3" /> },
+              { id: "layers" as const, label: "Layers" },
+              { id: "elements" as const, label: "Elements" },
+              { id: "shapes" as const, label: "Shapes" },
+              { id: "assets" as const, label: "Assets" },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -3440,10 +3467,7 @@ ${sectionsHtml}
                   color: leftTab === tab.id ? "var(--b-text)" : "var(--b-text-4)",
                 }}
               >
-                <span className="inline-flex items-center gap-1">
-                  {tab.icon}
-                  {tab.label}
-                </span>
+                {tab.label}
                 {leftTab === tab.id && (
                   <span className="builder-tab-indicator" />
                 )}
