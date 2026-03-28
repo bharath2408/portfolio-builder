@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Database,
   FileText,
   FolderKanban,
   LayoutDashboard,
@@ -37,6 +38,7 @@ const navigation = [
       { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { name: "Portfolios", href: "/dashboard/portfolios", icon: FolderKanban },
       { name: "Community", href: "/dashboard/community", icon: Users },
+      { name: "CMS", href: "/dashboard/cms", icon: Database },
       { name: "Resume", href: "/dashboard/resume", icon: FileText },
       { name: "Trash", href: "/dashboard/trash", icon: Trash2 },
     ],
@@ -54,6 +56,7 @@ const breadcrumbMap: Record<string, string> = {
   "/dashboard/portfolios": "Portfolios",
   "/dashboard/portfolios/new": "New Portfolio",
   "/dashboard/community": "Community",
+  "/dashboard/cms": "CMS",
   "/dashboard/resume": "Resume",
   "/dashboard/trash": "Trash",
   "/dashboard/settings": "Settings",
