@@ -4,6 +4,9 @@ import { Upload, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef } from "react";
 
+import { apiGet } from "@/lib/api";
+import type { Asset } from "@/types";
+
 interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
@@ -18,6 +21,17 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryAssets, setLibraryAssets] = useState<Asset[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+
+  const loadLibrary = () => {
+    if (libraryLoaded) { setShowLibrary(true); return; }
+    apiGet<Asset[]>("/assets")
+      .then((a) => { setLibraryAssets(a); setLibraryLoaded(true); setShowLibrary(true); })
+      .catch(() => setShowLibrary(true));
+  };
 
   const upload = async (file: File) => {
     setError(null);
@@ -120,21 +134,66 @@ export function ImageUpload({ value, onChange, compact }: ImageUploadProps) {
           </div>
         </div>
       ) : (
-        <div
-          className="flex cursor-pointer flex-col items-center gap-2 px-4 py-6"
-          onClick={() => inputRef.current?.click()}
-        >
-          {uploading ? (
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--b-accent)" }} />
+        <div className="p-2">
+          <div className="mb-2 flex gap-1">
+            <button
+              type="button"
+              onClick={() => setShowLibrary(false)}
+              className="flex-1 rounded-md py-1 text-[10px] font-semibold transition-colors"
+              style={{
+                backgroundColor: !showLibrary ? "var(--b-accent-soft, rgba(6,182,212,0.08))" : "transparent",
+                color: !showLibrary ? "var(--b-accent, #06b6d4)" : "var(--b-text-4, #52525b)",
+              }}
+            >
+              Upload
+            </button>
+            <button
+              type="button"
+              onClick={loadLibrary}
+              className="flex-1 rounded-md py-1 text-[10px] font-semibold transition-colors"
+              style={{
+                backgroundColor: showLibrary ? "var(--b-accent-soft, rgba(6,182,212,0.08))" : "transparent",
+                color: showLibrary ? "var(--b-accent, #06b6d4)" : "var(--b-text-4, #52525b)",
+              }}
+            >
+              Library
+            </button>
+          </div>
+          {showLibrary ? (
+            <div className="grid grid-cols-3 gap-1 max-h-[200px] overflow-y-auto rounded-lg" style={{ border: "1px solid var(--b-border, rgba(255,255,255,0.08))" }}>
+              {libraryAssets.filter((a) => a.type === "image" || a.type === "svg").map((asset) => (
+                <button
+                  key={asset.id}
+                  type="button"
+                  onClick={() => { onChange(asset.url); setShowLibrary(false); }}
+                  className="overflow-hidden transition-transform hover:scale-105"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={asset.thumbnailUrl ?? asset.url} alt={asset.name} loading="lazy" decoding="async" className="aspect-square w-full object-cover" />
+                </button>
+              ))}
+              {libraryAssets.filter((a) => a.type === "image" || a.type === "svg").length === 0 && (
+                <p className="col-span-3 py-4 text-center text-[10px]" style={{ color: "var(--b-text-4, #52525b)" }}>No images in library</p>
+              )}
+            </div>
           ) : (
-            <Upload className="h-6 w-6" style={{ color: "var(--b-text-4)" }} />
+            <div
+              className="flex cursor-pointer flex-col items-center gap-2 px-4 py-6"
+              onClick={() => inputRef.current?.click()}
+            >
+              {uploading ? (
+                <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--b-accent)" }} />
+              ) : (
+                <Upload className="h-6 w-6" style={{ color: "var(--b-text-4)" }} />
+              )}
+              <p className="text-[11px] font-medium" style={{ color: "var(--b-text-3)" }}>
+                {uploading ? "Uploading..." : "Drop image or click to browse"}
+              </p>
+              <p className="text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                PNG, JPG, GIF, WebP • Max 10MB
+              </p>
+            </div>
           )}
-          <p className="text-[11px] font-medium" style={{ color: "var(--b-text-3)" }}>
-            {uploading ? "Uploading..." : "Drop image or click to browse"}
-          </p>
-          <p className="text-[9px]" style={{ color: "var(--b-text-4)" }}>
-            PNG, JPG, GIF, WebP • Max 10MB
-          </p>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
