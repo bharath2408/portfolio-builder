@@ -19,6 +19,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
       pages: { orderBy: { sortOrder: "asc" } },
       theme: true,
       template: true,
+      customFonts: true,
       user: { select: { id: true, name: true, username: true, image: true } },
     },
   });
@@ -60,6 +61,7 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
       pages: { orderBy: { sortOrder: "asc" } },
       theme: true,
       template: true,
+      customFonts: true,
       user: { select: { id: true, name: true, username: true, image: true } },
     },
   });

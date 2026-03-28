@@ -45,6 +45,7 @@ const getPortfolioData = cache(async (
       pages: { orderBy: { sortOrder: "asc" } },
       theme: true,
       template: true,
+      customFonts: true,
       user: {
         select: { id: true, name: true, username: true, image: true },
       },

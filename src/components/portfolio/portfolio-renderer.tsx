@@ -78,6 +78,24 @@ export function PortfolioRenderer({ portfolio }: PortfolioRendererProps) {
     };
   }, [theme.fontHeading, theme.fontBody, theme.fontMono]);
 
+  // ── Load custom fonts via @font-face ──
+  useEffect(() => {
+    if (!portfolio.customFonts || (portfolio.customFonts as unknown[]).length === 0) return;
+    const styleId = "custom-fonts-style";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    const fonts = portfolio.customFonts as Array<{ name: string; url: string; format: string }>;
+    const css = fonts
+      .map((f) => `@font-face { font-family: "${f.name}"; src: url("${f.url}") format("${f.format === "ttf" ? "truetype" : f.format}"); font-display: swap; }`)
+      .join("\n");
+    styleEl.textContent = css;
+    return () => { if (styleEl) styleEl.textContent = ""; };
+  }, [portfolio.customFonts]);
+
   const visibleSections = [...portfolio.sections]
     .filter((s) => s.isVisible)
     .sort((a, b) => a.sortOrder - b.sortOrder);

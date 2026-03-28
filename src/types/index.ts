@@ -356,6 +356,7 @@ export type PortfolioWithRelations = Portfolio & {
   theme: Theme | null;
   template: Template | null;
   user: Pick<User, "id" | "name" | "username" | "image">;
+  customFonts?: CustomFont[];
 };
 
 export type PortfolioListItem = Pick<

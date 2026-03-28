@@ -1,14 +1,14 @@
 "use client";
 
-import { ChevronRight, Save, Droplets } from "lucide-react";
+import { ChevronRight, Save, Droplets, Upload, Trash2 } from "lucide-react";
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 
 import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { COLOR_PRESETS, FONT_OPTIONS } from "@/config/constants";
-import { apiPatch } from "@/lib/api";
+import { apiGet, apiPost, apiDelete, apiPatch } from "@/lib/api";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
-import type { Theme, ThemeMode } from "@/types";
+import type { Theme, ThemeMode, CustomFont } from "@/types";
 
 // ─── Props ───────────────────────────────────────────────────────
 
@@ -71,6 +71,8 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
   const { setDirty } = useBuilderStore();
   const { updateTheme } = usePortfolioStore();
   const [saving, setSaving] = useState(false);
+  const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
+  const [uploadingFont, setUploadingFont] = useState(false);
 
   const [mode, setMode] = useState<ThemeMode>(theme?.mode ?? "DARK");
   const [primaryColor, setPrimaryColor] = useState(theme?.primaryColor ?? "#06b6d4");
@@ -95,6 +97,46 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
       setBorderRadius(theme.borderRadius);
     }
   }, [theme]);
+
+  useEffect(() => {
+    apiGet<CustomFont[]>(`/portfolios/${portfolioId}/fonts`)
+      .then(setCustomFonts)
+      .catch(() => {});
+  }, [portfolioId]);
+
+  const handleFontUpload = async (file: File) => {
+    const validExts = [".woff2", ".woff", ".ttf"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!validExts.includes(ext)) return;
+    if (file.size > 2 * 1024 * 1024) return;
+    setUploadingFont(true);
+    try {
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+      if (!cloudName || !uploadPreset) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.secure_url) return;
+      const name = file.name.replace(/\.(woff2?|ttf)$/i, "");
+      const format = ext.replace(".", "");
+      const font = await apiPost<CustomFont>(`/portfolios/${portfolioId}/fonts`, { name, url: data.secure_url, format });
+      setCustomFonts((prev) => [font, ...prev]);
+    } catch { /* ignore */ }
+    setUploadingFont(false);
+  };
+
+  const handleDeleteFont = async (fontId: string) => {
+    try {
+      await apiDelete(`/portfolios/${portfolioId}/fonts/${fontId}`);
+      setCustomFonts((prev) => prev.filter((f) => f.id !== fontId));
+    } catch { /* ignore */ }
+  };
 
   // Push a single field change to the store immediately.
   // Only sends the changed field as a partial update — no stale closures.
@@ -312,6 +354,13 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
                 {FONT_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
                 ))}
+                {customFonts.length > 0 && (
+                  <optgroup label="Custom Fonts">
+                    {customFonts.map((f) => (
+                      <option key={f.id} value={f.name}>{f.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
             <div>
@@ -327,8 +376,46 @@ export function ThemeEditor({ portfolioId, theme }: ThemeEditorProps) {
                 {FONT_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
                 ))}
+                {customFonts.length > 0 && (
+                  <optgroup label="Custom Fonts">
+                    {customFonts.map((f) => (
+                      <option key={f.id} value={f.name}>{f.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
+            {/* Custom Font Upload */}
+            <div className="mt-2 flex items-center gap-1.5">
+              <label className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] font-semibold transition-colors" style={{ backgroundColor: "var(--b-surface)", color: "var(--b-text-3)", border: "1px dashed var(--b-border)" }}>
+                <Upload className="h-3 w-3" />
+                {uploadingFont ? "Uploading..." : "Upload font"}
+                <input
+                  type="file"
+                  accept=".woff2,.woff,.ttf"
+                  className="hidden"
+                  disabled={uploadingFont}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFontUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {customFonts.length > 0 && (
+              <div className="mt-2 space-y-1">
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-4)" }}>Custom ({customFonts.length}/5)</span>
+                {customFonts.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between rounded-md px-2 py-1" style={{ backgroundColor: "var(--b-surface)" }}>
+                    <span className="truncate text-[10px] font-medium" style={{ color: "var(--b-text-2)" }}>{f.name}</span>
+                    <button onClick={() => handleDeleteFont(f.id)} className="flex-shrink-0" style={{ color: "var(--b-danger)" }}>
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div>
               <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--b-text-4)" }}>
                 Border Radius

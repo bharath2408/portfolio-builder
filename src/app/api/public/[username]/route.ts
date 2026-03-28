@@ -37,6 +37,7 @@ export async function GET(_request: Request, context: RouteContext) {
         },
         theme: true,
         template: true,
+        customFonts: true,
       },
     });
 
