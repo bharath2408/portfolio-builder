@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
   Mail, MapPin, Phone, Quote as QuoteIcon,
@@ -132,6 +133,51 @@ function buildInlineStyles(styles: BlockWithStyles["styles"], theme: ThemeTokens
 const socialIconMap: Record<string, React.ComponentType<{className?: string}>> = {
   Github, Linkedin, Twitter, Globe, Mail,
 };
+
+function CmsEntryBlock({ entryId, layout, theme, isEditing }: { entryId: string; layout: string; theme: ThemeTokens; isEditing?: boolean }) {
+  const [entry, setEntry] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!entryId) return;
+    fetch(`/api/cms/entries/${entryId}`)
+      .then((r) => r.json())
+      .then((d) => setEntry(d))
+      .catch(() => {});
+  }, [entryId]);
+
+  if (!entry) {
+    return <p style={{ color: resolveColor("muted", theme), fontSize: 12 }}>Loading content...</p>;
+  }
+
+  const data = (entry.data as Record<string, unknown>) ?? {};
+  const title = (entry.title as string) ?? "Untitled";
+  const description = (data.description as string) ?? (data.excerpt as string) ?? "";
+  const coverImage = (data.coverImage as string) ?? "";
+
+  if (layout === "compact") {
+    return (
+      <div>
+        <p style={{ fontSize: 14, fontWeight: 600, color: resolveColor("text", theme) }}>{title}</p>
+        {description && <p style={{ fontSize: 12, color: resolveColor("muted", theme), marginTop: 4 }}>{description}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {coverImage && layout === "card" && (
+        <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 12 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverImage} alt={title} loading="lazy" style={{ width: "100%", height: 180, objectFit: "cover" }} />
+        </div>
+      )}
+      <p style={{ fontSize: layout === "full" ? 24 : 16, fontWeight: 700, color: resolveColor("text", theme), fontFamily: theme.fontHeading }}>{title}</p>
+      {description && (
+        <p style={{ fontSize: 13, color: resolveColor("muted", theme), marginTop: 8, lineHeight: 1.6 }}>{description}</p>
+      )}
+    </div>
+  );
+}
 
 export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId, counterAnimation }: BlockRendererProps) {
   const c = block.content as Record<string, unknown>;
@@ -944,6 +990,24 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
           <a href={buttonUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, backgroundColor: accentColor, color: "#fff", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
             {buttonText}
           </a>
+        </div>
+      );
+    }
+
+    // ── CMS ENTRY ──
+    case "cms_entry": {
+      const entryId = c.entryId as string;
+      const layout = (c.layout as string) ?? "card";
+      if (!entryId) {
+        return (
+          <div style={{ ...inlineStyles, padding: 24, textAlign: "center" as const }}>
+            <p style={{ color: resolveColor("muted", theme), fontSize: 13 }}>Select a CMS entry</p>
+          </div>
+        );
+      }
+      return (
+        <div style={{ ...inlineStyles, padding: layout === "compact" ? 12 : 20 }}>
+          <CmsEntryBlock entryId={entryId} layout={layout} theme={theme} isEditing={_isEditing} />
         </div>
       );
     }

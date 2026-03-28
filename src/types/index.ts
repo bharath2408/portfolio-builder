@@ -85,6 +85,7 @@ export const BLOCK_TYPES = {
   FEATURE_CARD: "feature_card",
   PRODUCT_CARD: "product_card",
   CTA_BANNER: "cta_banner",
+  CMS_ENTRY: "cms_entry",
 } as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];

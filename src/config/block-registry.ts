@@ -355,6 +355,15 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultContent: { html: "", height: 300 },
     defaultStyles: { width: "100%", borderRadius: 8, marginBottom: 16 },
   },
+  cms_entry: {
+    type: "cms_entry",
+    label: "CMS Entry",
+    icon: "FileText",
+    category: "integrations",
+    description: "Dynamic content from CMS collection",
+    defaultContent: { contentTypeId: "", entryId: "", layout: "card" },
+    defaultStyles: { marginBottom: 16, borderRadius: 12, overflow: "hidden" },
+  },
 
   // ── Shapes (Figma-style primitives) ────────────────────────────────
   rectangle: {
