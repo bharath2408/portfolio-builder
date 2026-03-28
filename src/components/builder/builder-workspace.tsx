@@ -90,7 +90,7 @@ import {
   Type,
   Undo2,
   Upload,
-  Wand2, // eslint-disable-line @typescript-eslint/no-unused-vars -- will be used in upcoming auto-adapt feature
+  Wand2,
   X,
   Zap,
   ZoomIn,
@@ -156,6 +156,7 @@ import { shareCommunityTemplate, type CommunityTemplateCategory } from "@/lib/ap
 import { saveBackup, markBackupSynced, getUnsyncedBackup, clearBackup } from "@/lib/idb-backup";
 import { getInitials } from "@/lib/utils";
 import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
+import { generateResponsiveLayouts } from "@/lib/utils/responsive-adapt";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type {
@@ -947,6 +948,7 @@ export function BuilderWorkspace({
   const [shareSuccess, setShareSuccess] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [guides, setGuides] = useState<GuideInfo[]>([]);
+  const [showAdaptConfirm, setShowAdaptConfirm] = useState(false);
 
   // ── Draw mode (Figma-style click-drag to create) ──────────────
   const [drawMode, setDrawMode] = useState<BlockType | null>(null);
@@ -1903,6 +1905,36 @@ export function BuilderWorkspace({
     saveBackup(portfolio);
     batchSave();
   }, [builderStore, batchSave, portfolio]);
+
+  // ── Auto-adapt: generate responsive layouts for all visible sections ──
+  const handleAutoAdapt = useCallback(() => {
+    builderStore.pushSnapshot("auto-adapt");
+
+    for (const section of visibleSections) {
+      const ss = section.styles as SectionStyles;
+      const fw = ss.frameWidth ?? DEFAULT_FRAME_WIDTH;
+      const fh = ss.frameHeight ?? DEFAULT_FRAME_HEIGHT;
+
+      const result = generateResponsiveLayouts(section.blocks, fw, fh);
+
+      for (const override of result.overrides) {
+        if (Object.keys(override.tabletStyles).length > 0) {
+          portfolioStore.updateBlockInSection(section.id, override.blockId, {
+            tabletStyles: override.tabletStyles,
+          } as Partial<BlockWithStyles>);
+        }
+        if (Object.keys(override.mobileStyles).length > 0) {
+          portfolioStore.updateBlockInSection(section.id, override.blockId, {
+            mobileStyles: override.mobileStyles,
+          } as Partial<BlockWithStyles>);
+        }
+      }
+    }
+
+    builderStore.setDirty(true);
+    scheduleAutoSave();
+    setShowAdaptConfirm(false);
+  }, [visibleSections, portfolioStore, builderStore, scheduleAutoSave]);
 
   // Cleanup idle timer on unmount
   useEffect(() => {
@@ -3161,6 +3193,18 @@ ${sectionsHtml}
               </button>
             ))}
           </div>
+          <button
+            className="builder-toolbar-btn flex h-7 w-7 items-center justify-center rounded-md"
+            style={{
+              color: builderStore.devicePreview === "desktop" ? "var(--b-text-2)" : "var(--b-text-4)",
+              opacity: builderStore.devicePreview === "desktop" ? 1 : 0.4,
+            }}
+            onClick={() => setShowAdaptConfirm(true)}
+            disabled={builderStore.devicePreview !== "desktop"}
+            title={builderStore.devicePreview === "desktop" ? "Auto-generate responsive layouts" : "Switch to desktop view first"}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+          </button>
           <div className="builder-toolbar-divider mx-1" />
 
           <div className="builder-toolbar-divider" />
@@ -4996,6 +5040,18 @@ ${sectionsHtml}
           </div>
         </div>
       )}
+
+      {/* ── Auto-adapt Confirm Dialog ───────────────────────── */}
+      <ConfirmDialog
+        open={showAdaptConfirm}
+        onClose={() => setShowAdaptConfirm(false)}
+        onConfirm={handleAutoAdapt}
+        title="Auto-generate responsive layouts?"
+        description="This will create tablet (768px) and mobile (375px) layouts based on your desktop design. Blocks with existing responsive overrides will be skipped."
+        confirmText="Generate"
+        variant="danger"
+        loading={false}
+      />
 
       {/* ── Keyboard Shortcuts Modal ─────────────────────────── */}
       <KeyboardShortcutsModal
