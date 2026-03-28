@@ -89,6 +89,8 @@ import {
   Trash2,
   Type,
   Undo2,
+  Upload,
+  Wand2, // eslint-disable-line @typescript-eslint/no-unused-vars -- will be used in upcoming auto-adapt feature
   X,
   Zap,
   ZoomIn,
@@ -157,6 +159,7 @@ import { mergeDeviceStyles, extractOverrides } from "@/lib/utils/device-styles";
 import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type {
+  Asset,
   PortfolioWithRelations,
   SectionWithBlocks,
   BlockWithStyles,
@@ -832,7 +835,60 @@ export function BuilderWorkspace({
     ? { bg: "#0c0c10", border: "rgba(255,255,255,0.15)", text: "#e4e4e7", textMuted: "#a1a1aa", hover: "#1f1f24", separator: "rgba(255,255,255,0.08)" }
     : { bg: "#ffffff", border: "rgba(0,0,0,0.14)", text: "#1c1917", textMuted: "#44403c", hover: "#e8e4dd", separator: "rgba(0,0,0,0.07)" };
 
-  const [leftTab, setLeftTab] = useState<"layers" | "elements" | "shapes">("layers");
+  const [leftTab, setLeftTab] = useState<"layers" | "elements" | "shapes" | "assets">("layers");
+
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [assetSearch, setAssetSearch] = useState("");
+
+  useEffect(() => {
+    setAssetsLoading(true);
+    apiGet<Asset[]>("/assets")
+      .then(setAssets)
+      .catch(() => {})
+      .finally(() => setAssetsLoading(false));
+  }, []);
+
+  const filteredAssets = assetSearch
+    ? assets.filter((a) => a.name.toLowerCase().includes(assetSearch.toLowerCase()))
+    : assets;
+
+  const handleAssetUpload = async (file: File) => {
+    if (!file.type.startsWith("image/") && file.type !== "image/svg+xml") return;
+    if (file.size > 10 * 1024 * 1024) return;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        const asset = await apiPost<Asset>("/assets", {
+          name: file.name,
+          url: data.secure_url,
+          thumbnailUrl: data.secure_url.replace("/upload/", "/upload/w_200,h_200,c_fill/"),
+          type: file.type.startsWith("image/svg") ? "svg" : "image",
+          size: file.size,
+          width: data.width ?? null,
+          height: data.height ?? null,
+        });
+        setAssets((prev) => [asset, ...prev]);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    try {
+      await apiDelete(`/assets/${assetId}`);
+      setAssets((prev) => prev.filter((a) => a.id !== assetId));
+    } catch { /* ignore */ }
+  };
 
   // ── Panel visibility ────────────────────────────────────────────
   const showLeftPanel = builderStore.leftPanelOpen;
@@ -3330,6 +3386,7 @@ ${sectionsHtml}
               { id: "layers" as const, label: "Layers", icon: <Layers className="h-3 w-3" /> },
               { id: "elements" as const, label: "Elements", icon: <Plus className="h-3 w-3" /> },
               { id: "shapes" as const, label: "Shapes", icon: <Hexagon className="h-3 w-3" /> },
+              { id: "assets" as const, label: "Assets", icon: <Image className="h-3 w-3" /> },
             ]).map((tab) => (
               <button
                 key={tab.id}
@@ -3716,6 +3773,99 @@ ${sectionsHtml}
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Assets Tab ─────────────────────────────────────── */}
+          {leftTab === "assets" && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex flex-shrink-0 items-center gap-1.5 px-2.5 py-2" style={{ borderBottom: "1px solid var(--b-border)" }}>
+                <input
+                  type="text"
+                  value={assetSearch}
+                  onChange={(e) => setAssetSearch(e.target.value)}
+                  placeholder="Search assets..."
+                  className="h-7 flex-1 rounded-md border-0 px-2 text-[11px] outline-none"
+                  style={{ backgroundColor: "var(--b-input-bg)", color: "var(--b-text)" }}
+                />
+                <label className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors" style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}>
+                  <Upload className="h-3.5 w-3.5" />
+                  <input
+                    type="file"
+                    accept="image/*,.svg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAssetUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              <div
+                className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-auto"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleAssetUpload(file);
+                }}
+              >
+                {assetsLoading && (
+                  <p className="py-8 text-center text-[11px]" style={{ color: "var(--b-text-4)" }}>Loading...</p>
+                )}
+                {!assetsLoading && filteredAssets.length === 0 && (
+                  <div className="builder-empty-state flex flex-col items-center gap-3 px-4 py-12 text-center">
+                    <div className="builder-empty-icon flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}>
+                      <Image className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>No assets yet</p>
+                      <p className="mt-1 text-[10px] leading-relaxed" style={{ color: "var(--b-text-4)" }}>
+                        Upload images to reuse across<br />your portfolio. Drag &amp; drop or click <span style={{ color: "var(--b-accent)" }}>+</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {filteredAssets.map((asset) => (
+                    <div
+                      key={asset.id}
+                      className="group relative cursor-pointer overflow-hidden rounded-lg transition-all duration-150"
+                      style={{ backgroundColor: "var(--b-surface)", border: "1px solid var(--b-border)" }}
+                      onClick={() => {
+                        const targetSection = selectedSectionId ?? portfolio.sections[0]?.id;
+                        if (targetSection) {
+                          addBlock(targetSection, "image" as BlockType, {
+                            content: { src: asset.url, alt: asset.name, objectFit: "cover", aspectRatio: "16/9" },
+                          });
+                        }
+                      }}
+                    >
+                      <div className="aspect-square overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={asset.thumbnailUrl ?? asset.url}
+                          alt={asset.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="px-1.5 py-1">
+                        <p className="truncate text-[9px] font-medium" style={{ color: "var(--b-text-3)" }}>{asset.name}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteAsset(asset.id); }}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100"
+                        style={{ backgroundColor: "var(--b-panel)", color: "var(--b-danger)" }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
