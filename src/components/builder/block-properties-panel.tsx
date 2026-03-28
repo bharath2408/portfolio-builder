@@ -9,6 +9,7 @@ import {
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 import { AdvancedColorInput } from "@/components/builder/color-picker";
+import { GradientEditor } from "@/components/builder/gradient-editor";
 import { IconPicker } from "@/components/builder/icon-picker";
 import { Tooltip } from "@/components/builder/tooltip";
 import { ImageUpload } from "@/components/common/image-upload";
@@ -405,6 +406,35 @@ export function BlockPropertiesPanel({
                 onChange={(v) => updateStyle("backgroundColor", v)}
                 placeholder="transparent"
               />
+            </div>
+
+            {/* Gradient */}
+            <div className="mt-2">
+              <div className="mb-1.5 flex items-center justify-between">
+                <SubLabel>Gradient</SubLabel>
+                <button
+                  onClick={() => {
+                    if (styles.backgroundGradient) {
+                      updateStyle("backgroundGradient", undefined);
+                    } else {
+                      updateStyle("backgroundGradient", "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)");
+                    }
+                  }}
+                  className="rounded px-1.5 py-0.5 text-[9px] font-semibold transition-colors"
+                  style={{
+                    backgroundColor: styles.backgroundGradient ? "var(--b-accent-soft)" : "var(--b-surface)",
+                    color: styles.backgroundGradient ? "var(--b-accent)" : "var(--b-text-4)",
+                  }}
+                >
+                  {styles.backgroundGradient ? "On" : "Off"}
+                </button>
+              </div>
+              {styles.backgroundGradient && (
+                <GradientEditor
+                  value={styles.backgroundGradient as string}
+                  onChange={(v) => updateStyle("backgroundGradient", v)}
+                />
+              )}
             </div>
 
             <div>
