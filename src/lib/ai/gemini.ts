@@ -12,8 +12,9 @@ export async function generateVibeDesign(
   const groqKey = process.env.GROQ_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
 
-  if (groqKey) return generateWithGroq(prompt, context, systemPrompt, groqKey);
+  // Prefer Gemini for design quality, fallback to Groq
   if (geminiKey) return generateWithGemini(prompt, context, systemPrompt, geminiKey);
+  if (groqKey) return generateWithGroq(prompt, context, systemPrompt, groqKey);
 
   return null;
 }
