@@ -208,9 +208,39 @@ export default function FormsPage() {
 
   if (status === "loading" || loadingPortfolios) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-32">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="mx-auto max-w-5xl space-y-6 p-4 lg:p-8">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-6 w-32 animate-pulse rounded-md bg-muted/60" />
+            <div className="mt-2 h-4 w-64 animate-pulse rounded bg-muted/40" />
+          </div>
+          <div className="h-8 w-48 animate-pulse rounded-md bg-muted/50" />
+        </div>
+        {/* Tabs skeleton */}
+        <div className="flex gap-1 rounded-lg bg-muted/20 p-1">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex-1 rounded-md py-2">
+              <div className="mx-auto h-4 w-20 animate-pulse rounded bg-muted/40" style={{ animationDelay: `${i * 80}ms` }} />
+            </div>
+          ))}
+        </div>
+        {/* Table skeleton */}
+        <div className="overflow-hidden rounded-lg border border-border/30">
+          <div className="grid grid-cols-4 gap-3 bg-muted/15 px-4 py-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-3 animate-pulse rounded bg-muted/40" style={{ animationDelay: `${i * 60}ms` }} />
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="grid grid-cols-4 gap-3 border-t border-border/15 px-4 py-3.5">
+              <div className="h-4 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 50}ms` }} />
+              <div className="h-4 animate-pulse rounded bg-muted/25" style={{ animationDelay: `${i * 50 + 30}ms` }} />
+              <div className="h-4 w-24 animate-pulse rounded bg-muted/20" style={{ animationDelay: `${i * 50 + 60}ms` }} />
+              <div className="h-5 w-14 animate-pulse rounded-full bg-muted/25" style={{ animationDelay: `${i * 50 + 90}ms` }} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -245,11 +275,16 @@ export default function FormsPage() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 lg:p-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Forms</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Manage form submissions, webhooks, and settings
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Mail className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">Forms</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Submissions, webhooks & settings
+            </p>
+          </div>
         </div>
 
         {/* Portfolio selector */}
@@ -321,8 +356,20 @@ export default function FormsPage() {
           </div>
 
           {loadingSubmissions ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="overflow-hidden rounded-lg border border-border/30">
+              <div className="grid grid-cols-4 gap-3 bg-muted/15 px-4 py-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-3 animate-pulse rounded bg-muted/40" />
+                ))}
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="grid grid-cols-4 gap-3 border-t border-border/15 px-4 py-3.5">
+                  <div className="h-4 animate-pulse rounded bg-muted/30" style={{ animationDelay: `${i * 60}ms` }} />
+                  <div className="h-4 animate-pulse rounded bg-muted/25" style={{ animationDelay: `${i * 60 + 30}ms` }} />
+                  <div className="h-4 w-24 animate-pulse rounded bg-muted/20" style={{ animationDelay: `${i * 60 + 60}ms` }} />
+                  <div className="h-5 w-14 animate-pulse rounded-full bg-muted/25" style={{ animationDelay: `${i * 60 + 90}ms` }} />
+                </div>
+              ))}
             </div>
           ) : filteredSubmissions.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -494,8 +541,16 @@ export default function FormsPage() {
 
           {/* Webhook list */}
           {loadingWebhooks ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg border border-border/30 px-4 py-3.5">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted/40" style={{ animationDelay: `${i * 80}ms` }} />
+                    <div className="h-3 w-24 animate-pulse rounded-full bg-muted/30" style={{ animationDelay: `${i * 80 + 40}ms` }} />
+                  </div>
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-muted/25" />
+                </div>
+              ))}
             </div>
           ) : webhooks.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
