@@ -124,6 +124,7 @@ import {
   type CanvasTransform,
 } from "@/components/builder/canvas-engine";
 import { HorizontalRuler, VerticalRuler, RulerCorner } from "@/components/builder/canvas-rulers";
+import { AiBar } from "@/components/builder/ai-bar";
 import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { CommandPalette } from "@/components/builder/command-palette";
 import { FrameTemplateDialog, type FrameTemplate } from "@/components/builder/frame-template-dialog";
@@ -974,6 +975,7 @@ export function BuilderWorkspace({
   const [showVersions, setShowVersions] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showSvgImport, setShowSvgImport] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // ── Canvas state ──────────────────────────────────────────────
   const [transform, setTransform] = useState<CanvasTransform>({
@@ -2006,6 +2008,82 @@ export function BuilderWorkspace({
     scheduleAutoSave();
     setShowAdaptConfirm(false);
   }, [visibleSections, portfolioStore, builderStore, scheduleAutoSave]);
+
+  // ── Vibe AI generation handler ──────────────────────────────────
+  const handleVibeGenerate = useCallback(async (prompt: string) => {
+    setAiGenerating(true);
+    try {
+      const context = {
+        existingSections: portfolio.sections.map((s) => ({
+          name: s.name,
+          blockCount: s.blocks.length,
+        })),
+        currentTheme: theme,
+        portfolioTitle: portfolio.title,
+      };
+
+      const res = await fetch("/api/ai/vibe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, context }),
+      });
+
+      const json = await res.json();
+      if (!json.success || !json.data) throw new Error("AI generation failed");
+
+      const design = json.data;
+
+      // Apply theme if provided
+      if (design.theme) {
+        try {
+          await apiPatch(`/portfolios/${portfolio.id}/theme`, design.theme);
+          portfolioStore.updateTheme(design.theme);
+        } catch { /* ignore */ }
+      }
+
+      // Create sections and blocks
+      if (design.sections && Array.isArray(design.sections)) {
+        for (const section of design.sections) {
+          try {
+            const sectionRes = await apiPost(`/portfolios/${portfolio.id}/sections`, {
+              name: section.name,
+              sortOrder: portfolio.sections.length,
+              styles: section.styles ?? { frameX: 0, frameY: 0, frameWidth: 1440, frameHeight: 800, layout: "absolute" },
+            });
+            const newSection = sectionRes as SectionWithBlocks;
+
+            if (section.blocks && Array.isArray(section.blocks)) {
+              for (const block of section.blocks) {
+                try {
+                  const blockRes = await apiPost(
+                    `/portfolios/${portfolio.id}/sections/${newSection.id}/blocks`,
+                    {
+                      type: block.type,
+                      sortOrder: block.sortOrder ?? 0,
+                      content: block.content ?? {},
+                      styles: block.styles ?? {},
+                    },
+                  );
+                  portfolioStore.addBlockToSection(newSection.id, blockRes as BlockWithStyles);
+                } catch { /* skip block */ }
+              }
+            }
+
+            portfolioStore.addSection(newSection);
+            setExpandedSections((prev) => new Set([...prev, newSection.id]));
+          } catch { /* skip section */ }
+        }
+      }
+
+      builderStore.setDirty(true);
+      scheduleAutoSave();
+    } catch (err) {
+      console.error("Vibe generation error:", err);
+      throw err;
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [portfolio, theme, portfolioStore, builderStore, scheduleAutoSave]);
 
   // Cleanup idle timer on unmount
   useEffect(() => {
@@ -4747,6 +4825,11 @@ ${sectionsHtml}
               </div>
             );
           })()}
+
+          {/* AI vibe bar — bottom center (hidden in preview) */}
+          {!showPreview && (
+            <AiBar onGenerate={handleVibeGenerate} isGenerating={aiGenerating} />
+          )}
 
           {/* Zoom controls — bottom left */}
           <div className="absolute bottom-3 left-3 z-30">
