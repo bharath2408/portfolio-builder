@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 export async function sendNotificationEmail(
   to: string,
@@ -9,7 +13,8 @@ export async function sendNotificationEmail(
   fields: Record<string, string>,
   portfolioTitle: string,
 ) {
-  if (!process.env.RESEND_API_KEY) return;
+  const r = getResend();
+  if (!r) return;
 
   const fieldRows = Object.entries(fields)
     .map(
@@ -19,7 +24,7 @@ export async function sendNotificationEmail(
     .join("");
 
   try {
-    await resend.emails.send({
+    await r.emails.send({
       from:
         process.env.NOTIFICATION_FROM_EMAIL ??
         "Foliocraft <noreply@resend.dev>",
@@ -49,7 +54,8 @@ export async function sendAutoResponse(
   body: string,
   variables: Record<string, string>,
 ) {
-  if (!process.env.RESEND_API_KEY) return;
+  const r = getResend();
+  if (!r) return;
 
   // Replace {{variable}} placeholders
   let processedBody = body;
@@ -61,7 +67,7 @@ export async function sendAutoResponse(
   }
 
   try {
-    await resend.emails.send({
+    await r.emails.send({
       from:
         process.env.NOTIFICATION_FROM_EMAIL ??
         "Foliocraft <noreply@resend.dev>",
