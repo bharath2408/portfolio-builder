@@ -21,6 +21,8 @@ import type { FormWebhook } from "@/types";
 interface PortfolioOption {
   id: string;
   title: string;
+  status: string;
+  _count?: { submissions: number };
 }
 
 interface Submission {
@@ -72,8 +74,11 @@ export default function FormsPage() {
       try {
         const data = await apiGet<PortfolioOption[]>("/portfolios");
         setPortfolios(data);
-        const first = data[0];
-        if (first) setPortfolioId(first.id);
+        // Default to portfolio with most submissions, or first published, or just first
+        const withSubs = data.filter((p) => (p._count?.submissions ?? 0) > 0);
+        const published = data.filter((p) => p.status === "PUBLISHED");
+        const best = withSubs[0] ?? published[0] ?? data[0];
+        if (best) setPortfolioId(best.id);
       } catch {
         // silent
       } finally {
@@ -90,8 +95,9 @@ export default function FormsPage() {
       const data = await apiGet<Submission[]>(
         `/portfolios/${pid}/submissions`,
       );
-      setSubmissions(data);
-    } catch {
+      setSubmissions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch submissions:", err);
       setSubmissions([]);
     } finally {
       setLoadingSubmissions(false);

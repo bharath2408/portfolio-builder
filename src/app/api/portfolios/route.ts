@@ -29,7 +29,7 @@ export async function GET() {
         updatedAt: true,
         isDefault: true,
         template: { select: { name: true, thumbnail: true } },
-        _count: { select: { sections: true } },
+        _count: { select: { sections: true, submissions: true } },
       },
       orderBy: { updatedAt: "desc" },
     });
