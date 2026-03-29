@@ -2043,35 +2043,61 @@ export function BuilderWorkspace({
 
       // Create sections and blocks
       if (design.sections && Array.isArray(design.sections)) {
-        for (const section of design.sections) {
+        let yOffset = portfolio.sections.reduce((max, s) => {
+          const ss = s.styles as SectionStyles;
+          return Math.max(max, (ss.frameY ?? 0) + (ss.frameHeight ?? 800));
+        }, 0);
+
+        for (let si = 0; si < design.sections.length; si++) {
+          const section = design.sections[si];
+          if (!section?.name) continue;
+
+          // Calculate frameY so sections stack vertically
+          const sectionStyles = {
+            frameX: 0,
+            frameWidth: 1440,
+            frameHeight: 800,
+            layout: "absolute" as const,
+            ...section.styles,
+            frameY: yOffset + (si > 0 ? 80 : 0),
+          };
+          yOffset = sectionStyles.frameY + (sectionStyles.frameHeight ?? 800);
+
           try {
             const sectionRes = await apiPost(`/portfolios/${portfolio.id}/sections`, {
               name: section.name,
-              sortOrder: portfolio.sections.length,
-              styles: section.styles ?? { frameX: 0, frameY: 0, frameWidth: 1440, frameHeight: 800, layout: "absolute" },
+              sortOrder: portfolio.sections.length + si,
+              styles: sectionStyles,
             });
             const newSection = sectionRes as SectionWithBlocks;
 
-            if (section.blocks && Array.isArray(section.blocks)) {
-              for (const block of section.blocks) {
-                try {
-                  const blockRes = await apiPost(
-                    `/portfolios/${portfolio.id}/sections/${newSection.id}/blocks`,
-                    {
-                      type: block.type,
-                      sortOrder: block.sortOrder ?? 0,
-                      content: block.content ?? {},
-                      styles: block.styles ?? {},
-                    },
-                  );
-                  portfolioStore.addBlockToSection(newSection.id, blockRes as BlockWithStyles);
-                } catch { /* skip block */ }
+            // Add section to store first so blocks can be added to it
+            portfolioStore.addSection({ ...newSection, blocks: [] } as SectionWithBlocks);
+            setExpandedSections((prev) => new Set([...prev, newSection.id]));
+
+            // Then create blocks
+            const blocks = section.blocks ?? [];
+            for (let bi = 0; bi < blocks.length; bi++) {
+              const block = blocks[bi];
+              if (!block?.type) continue;
+              try {
+                const blockRes = await apiPost(
+                  `/portfolios/${portfolio.id}/sections/${newSection.id}/blocks`,
+                  {
+                    type: block.type,
+                    sortOrder: block.sortOrder ?? bi,
+                    content: block.content ?? {},
+                    styles: block.styles ?? {},
+                  },
+                );
+                portfolioStore.addBlockToSection(newSection.id, blockRes as BlockWithStyles);
+              } catch (blockErr) {
+                console.error(`Failed to create block ${bi} in ${section.name}:`, blockErr);
               }
             }
-
-            portfolioStore.addSection(newSection);
-            setExpandedSections((prev) => new Set([...prev, newSection.id]));
-          } catch { /* skip section */ }
+          } catch (secErr) {
+            console.error(`Failed to create section ${section.name}:`, secErr);
+          }
         }
       }
 
