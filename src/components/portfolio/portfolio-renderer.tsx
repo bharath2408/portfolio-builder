@@ -290,6 +290,39 @@ function PortfolioSection({
 
   return (
     <section ref={containerRef} id={`section-${section.id}`} style={sectionStyle}>
+      {/* Background video */}
+      {ss.backgroundVideo && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+          src={ss.backgroundVideo}
+        />
+      )}
+      {/* Background overlay (darkens video) */}
+      {ss.backgroundVideo && ss.backgroundOverlay && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: ss.backgroundOverlay,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+      )}
       {/* Background pattern overlay */}
       {patternCss && (
         <div

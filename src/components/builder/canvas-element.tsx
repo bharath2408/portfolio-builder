@@ -460,6 +460,7 @@ export interface FrameProps {
   height: number;
   backgroundColor?: string;
   patternStyle?: React.CSSProperties;
+  backgroundVideo?: string;
   isSelected: boolean;
   canvasScale?: number;
   onSelect: (id: string) => void;
@@ -478,6 +479,7 @@ export const CanvasFrame = memo(function CanvasFrame({
   height,
   backgroundColor,
   patternStyle,
+  backgroundVideo,
   isSelected,
   canvasScale = 1,
   onSelect,
@@ -627,6 +629,26 @@ export const CanvasFrame = memo(function CanvasFrame({
         {isSelected && onResize && HANDLES.map((pos) => (
           <ResizeHandle key={pos} position={pos} onResizeStart={handleFrameResizeStart} />
         ))}
+        {/* Background video */}
+        {backgroundVideo && (
+          <video
+            src={backgroundVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              pointerEvents: "none",
+              zIndex: 0,
+              borderRadius: 10,
+            }}
+          />
+        )}
         {/* Pattern overlay */}
         {patternStyle && Object.keys(patternStyle).length > 0 && (
           <div

@@ -4136,6 +4136,7 @@ ${sectionsHtml}
                         : theme.backgroundColor
                     }
                     patternStyle={framePatternStyle}
+                    backgroundVideo={ss.backgroundVideo}
                     isSelected={
                       selectedSectionId === section.id && selectedBlockIds.size === 0
                     }
@@ -4921,6 +4922,35 @@ ${sectionsHtml}
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Background Video */}
+                    <div style={{ borderBottom: "1px solid var(--b-border)" }} className="px-3 py-3">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--b-text-3)" }}>
+                          Background Video
+                        </span>
+                        {ss.backgroundVideo && (
+                          <button
+                            onClick={() => updateSec({ backgroundVideo: undefined } as Partial<SectionStyles>)}
+                            className="text-[9px] font-semibold transition-colors"
+                            style={{ color: "var(--b-danger)" }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        value={ss.backgroundVideo ?? ""}
+                        onChange={(e) => updateSec({ backgroundVideo: e.target.value || undefined } as Partial<SectionStyles>)}
+                        placeholder="https://example.com/video.mp4"
+                        className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+                        style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                      />
+                      <p className="mt-1 text-[9px]" style={{ color: "var(--b-text-4)" }}>
+                        MP4 URL — plays as looping muted background
+                      </p>
                     </div>
 
                     {/* Frame Dimensions */}

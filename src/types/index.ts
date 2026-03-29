@@ -273,6 +273,7 @@ export interface SectionStyles {
   backgroundColor?: string;
   backgroundGradient?: string;
   backgroundImage?: string;
+  backgroundVideo?: string;  // MP4 URL — looping muted autoplay background
   backgroundOverlay?: string;
   borderTop?: boolean;
   borderBottom?: boolean;
