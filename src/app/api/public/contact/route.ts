@@ -3,6 +3,7 @@ import { z } from "zod";
 import { successResponse, validationErrorResponse, internalErrorResponse, notFoundResponse, rateLimitResponse } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { sendNotificationEmail } from "@/lib/email/resend";
+import { fireWebhooks } from "@/lib/form/fire-webhooks";
 import { checkRateLimit, isHoneypotTriggered } from "@/lib/form/rate-limiter";
 
 const contactSchema = z.object({
@@ -56,6 +57,14 @@ export async function POST(request: Request) {
         portfolio.title,
       ).catch(() => {});
     }
+
+    // Fire-and-forget: trigger webhooks
+    fireWebhooks(portfolio.id, "submission.created", {
+      portfolioId: portfolio.id,
+      portfolioTitle: portfolio.title,
+      formFields: parsed.data,
+      submittedAt: new Date().toISOString(),
+    }).catch(() => {});
 
     return successResponse({ submitted: true });
   } catch (error) {
