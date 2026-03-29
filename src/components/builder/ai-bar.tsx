@@ -30,7 +30,7 @@ export function AiBar({ onGenerate, isGenerating }: AiBarProps) {
 
   return (
     <div
-      className="absolute bottom-20 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center"
+      className="absolute bottom-[72px] left-1/2 z-30 flex -translate-x-1/2 flex-col items-center"
       style={{ width: "min(600px, calc(100% - 80px))" }}
     >
       {/* History */}
