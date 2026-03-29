@@ -11,6 +11,7 @@ import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
 import { getShapeById } from "@/config/shape-presets";
 import { evaluateConditions } from "@/lib/form/evaluate-conditions";
+import { resolveComponentInstance } from "@/lib/utils/component-resolver";
 import type { BlockWithStyles, FieldCondition, ThemeTokens } from "@/types";
 
 interface BlockRendererProps {
@@ -176,6 +177,83 @@ function CmsEntryBlock({ entryId, layout, theme, isEditing: _isEditing }: { entr
       {description && (
         <p style={{ fontSize: 13, color: resolveColor("muted", theme), marginTop: 8, lineHeight: 1.6 }}>{description}</p>
       )}
+    </div>
+  );
+}
+
+// ── Component Instance (renders resolved component) ──
+function ComponentInstanceBlock({ componentId, variantName, overrides, hiddenLayers, theme, isEditing }: {
+  componentId: string;
+  variantName: string;
+  overrides: Record<string, unknown>;
+  hiddenLayers: string[];
+  theme: ThemeTokens;
+  isEditing?: boolean;
+}) {
+  const [compData, setCompData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!componentId) return;
+    fetch(`/api/components/${componentId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const data = d?.data ?? d;
+        setCompData(data);
+      })
+      .catch(() => {});
+  }, [componentId]);
+
+  if (!compData) {
+    return <p style={{ color: resolveColor("muted", theme), fontSize: 12, padding: 16 }}>Loading component...</p>;
+  }
+
+  const masterData = (compData.masterData as Record<string, unknown>) ?? {};
+  const variants = (compData.variants as Array<{ name: string; overrides: Record<string, unknown> }>) ?? [];
+  const variant = variants.find((v) => v.name === variantName) ?? null;
+
+  const resolved = resolveComponentInstance(masterData, variant, overrides, hiddenLayers);
+
+  // Render the resolved block data
+  const resolvedContent = (resolved.content as Record<string, unknown>) ?? {};
+  const resolvedStyles = (resolved.styles as Record<string, unknown>) ?? {};
+  const resolvedType = (resolved.type as string) ?? "text";
+
+  // Create a virtual block and render it
+  const virtualBlock = {
+    id: "resolved",
+    type: resolvedType,
+    content: resolvedContent,
+    styles: resolvedStyles,
+    isVisible: true,
+    isLocked: false,
+    sortOrder: 0,
+    sectionId: "",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      {isEditing && (
+        <div style={{
+          position: "absolute",
+          top: -18,
+          left: 0,
+          fontSize: 9,
+          fontWeight: 600,
+          color: resolveColor("primary", theme),
+          opacity: 0.6,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase" as const,
+        }}>
+          {(compData.name as string) ?? "Component"}
+        </div>
+      )}
+      <BlockRenderer
+        block={virtualBlock as never}
+        theme={theme}
+        isEditing={isEditing}
+      />
     </div>
   );
 }
@@ -1107,6 +1185,35 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
       return (
         <div style={{ ...inlineStyles, padding: layout === "compact" ? 12 : 20 }}>
           <CmsEntryBlock entryId={entryId} layout={layout} theme={theme} isEditing={_isEditing} />
+        </div>
+      );
+    }
+
+    // ── COMPONENT INSTANCE ──
+    case "component_instance": {
+      const componentId = c.componentId as string;
+      const variantName = (c.variantName as string) ?? "Default";
+      const overrides = (c.overrides as Record<string, unknown>) ?? {};
+      const hiddenLayers = (c.hiddenLayers as string[]) ?? [];
+
+      if (!componentId) {
+        return (
+          <div style={{ ...inlineStyles, padding: 24, textAlign: "center" as const }}>
+            <p style={{ color: resolveColor("muted", theme), fontSize: 13 }}>Select a component</p>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ ...inlineStyles }}>
+          <ComponentInstanceBlock
+            componentId={componentId}
+            variantName={variantName}
+            overrides={overrides}
+            hiddenLayers={hiddenLayers}
+            theme={theme}
+            isEditing={_isEditing}
+          />
         </div>
       );
     }
