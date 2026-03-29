@@ -31,6 +31,8 @@ const ALL_DOCS = [
   { title: "Preview & Publish", href: "/docs/preview-publish" },
   { title: "SEO & Analytics", href: "/docs/seo-analytics" },
   { title: "Version History", href: "/docs/version-history" },
+  { title: "Content Management (CMS)", href: "/docs/cms" },
+  { title: "Asset Library & Fonts", href: "/docs/assets-fonts" },
   { title: "Account Settings", href: "/docs/account-settings" },
 ];
 
@@ -54,6 +56,25 @@ const SHORTCUTS = [
 ];
 
 const CHANGELOG = [
+  {
+    version: "v2.1",
+    date: "March 2026",
+    items: [
+      { text: "Headless CMS — create collections, manage content entries", tag: "new" },
+      { text: "TipTap rich text editor for CMS content", tag: "new" },
+      { text: "CMS block — insert dynamic content on canvas", tag: "new" },
+      { text: "Gradient editor — visual multi-stop gradient builder", tag: "new" },
+      { text: "Asset library — upload once, reuse across blocks", tag: "new" },
+      { text: "Custom font upload (.woff2, .woff, .ttf)", tag: "new" },
+      { text: "Responsive auto-adapt — generate tablet/mobile layouts", tag: "new" },
+      { text: "Content tab in studio for browsing CMS entries", tag: "new" },
+      { text: "Library tab in image picker for reusing assets", tag: "new" },
+      { text: "4 preset CMS collections — Blog, Project, Testimonial, FAQ", tag: "new" },
+      { text: "Schema editor for customizing collection fields", tag: "new" },
+      { text: "Studio UX polish — Lucide icons, better transitions", tag: "improvement" },
+      { text: "Page switch now auto-centers canvas on visible frames", tag: "improvement" },
+    ],
+  },
   {
     version: "v2.0",
     date: "March 2026",

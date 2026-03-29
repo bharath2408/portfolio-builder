@@ -33,6 +33,10 @@ export const COMMANDS: CommandDefinition[] = [
 
   // Tools
   { id: "show-shortcuts", label: "Keyboard Shortcuts", shortcut: "?", category: "tools", keywords: ["keyboard", "shortcuts", "keys", "help"] },
+  { id: "auto-adapt", label: "Auto-Adapt Responsive", category: "tools", keywords: ["responsive", "adapt", "tablet", "mobile", "auto", "generate"] },
+  { id: "open-cms", label: "Open CMS", category: "tools", keywords: ["cms", "content", "blog", "entries", "collections"] },
+  { id: "open-gradient", label: "Gradient Editor", category: "tools", keywords: ["gradient", "background", "color", "linear", "radial"] },
+  { id: "open-assets", label: "Asset Library", category: "tools", keywords: ["assets", "images", "library", "media", "upload"] },
 
   // Add blocks
   { id: "add-heading", label: "Add Heading", category: "add", keywords: ["heading", "title", "h1", "h2"] },
@@ -56,9 +60,11 @@ export const COMMANDS: CommandDefinition[] = [
   { id: "add-calendly", label: "Add Calendly", category: "add", keywords: ["calendly", "schedule", "booking"] },
   { id: "add-github_contrib", label: "Add GitHub Graph", category: "add", keywords: ["github", "contributions", "graph"] },
   { id: "add-custom_html", label: "Add Custom HTML", category: "add", keywords: ["html", "code", "custom", "script"] },
+  { id: "add-cms_entry", label: "Add CMS Entry", category: "add", keywords: ["cms", "content", "blog", "entry", "dynamic"] },
 
   // Help
   { id: "open-docs", label: "Open Documentation", category: "help", keywords: ["docs", "documentation", "help", "manual", "guide"] },
+  { id: "open-cms-docs", label: "CMS Documentation", category: "help", keywords: ["cms", "content", "headless", "guide"] },
 ];
 
 export const COMMAND_CATEGORIES: Record<string, string> = {
