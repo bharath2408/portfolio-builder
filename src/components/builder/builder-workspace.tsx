@@ -4940,17 +4940,83 @@ ${sectionsHtml}
                           </button>
                         )}
                       </div>
-                      <input
-                        type="url"
-                        value={ss.backgroundVideo ?? ""}
-                        onChange={(e) => updateSec({ backgroundVideo: e.target.value || undefined } as Partial<SectionStyles>)}
-                        placeholder="https://example.com/video.mp4"
-                        className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
-                        style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
-                      />
-                      <p className="mt-1 text-[9px]" style={{ color: "var(--b-text-4)" }}>
-                        MP4 URL — plays as looping muted background
-                      </p>
+                      {ss.backgroundVideo ? (
+                        <div className="space-y-2">
+                          <div className="relative overflow-hidden rounded-md" style={{ border: "1px solid var(--b-border)" }}>
+                            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                            <video
+                              src={ss.backgroundVideo}
+                              muted
+                              loop
+                              autoPlay
+                              playsInline
+                              className="h-24 w-full object-cover"
+                            />
+                          </div>
+                          <input
+                            type="url"
+                            value={ss.backgroundVideo}
+                            onChange={(e) => updateSec({ backgroundVideo: e.target.value || undefined } as Partial<SectionStyles>)}
+                            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+                            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                            placeholder="Or paste URL..."
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <label
+                            className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg py-4 transition-colors"
+                            style={{ backgroundColor: "var(--b-surface)", border: "1px dashed var(--b-border)" }}
+                          >
+                            <Upload className="h-4 w-4" style={{ color: "var(--b-text-4)" }} />
+                            <span className="text-[10px] font-medium" style={{ color: "var(--b-text-3)" }}>Upload video</span>
+                            <span className="text-[8px]" style={{ color: "var(--b-text-4)" }}>MP4, max 50MB</span>
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 50 * 1024 * 1024) return;
+                                const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+                                const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+                                if (!cloudName || !uploadPreset) return;
+                                const formData = new FormData();
+                                formData.append("file", file);
+                                formData.append("upload_preset", uploadPreset);
+                                formData.append("resource_type", "video");
+                                try {
+                                  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+                                    method: "POST",
+                                    body: formData,
+                                  });
+                                  const data = await res.json();
+                                  if (data.secure_url) {
+                                    updateSec({ backgroundVideo: data.secure_url } as Partial<SectionStyles>);
+                                  }
+                                } catch { /* ignore */ }
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-px flex-1" style={{ backgroundColor: "var(--b-border)" }} />
+                            <span className="text-[8px] font-semibold" style={{ color: "var(--b-text-4)" }}>OR</span>
+                            <div className="h-px flex-1" style={{ backgroundColor: "var(--b-border)" }} />
+                          </div>
+                          <input
+                            type="url"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) updateSec({ backgroundVideo: e.target.value } as Partial<SectionStyles>);
+                            }}
+                            placeholder="Paste video URL..."
+                            className="h-7 w-full rounded-md border px-2.5 text-[11px] outline-none transition-colors focus:border-[var(--b-accent)]"
+                            style={{ backgroundColor: "var(--b-surface)", borderColor: "var(--b-border)", color: "var(--b-text)" }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Frame Dimensions */}
