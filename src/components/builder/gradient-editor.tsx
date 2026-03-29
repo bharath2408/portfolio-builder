@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { GRADIENT_PRESETS } from "@/config/constants";

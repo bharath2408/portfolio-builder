@@ -111,7 +111,6 @@ import {
 
 import { BlockPropertiesPanel } from "@/components/builder/block-properties-panel";
 import { BlockRenderer } from "@/components/builder/block-renderer";
-import { ErrorBoundary } from "@/components/common/error-boundary";
 import {
   CanvasElement,
   CanvasFrame,
@@ -132,6 +131,7 @@ import { OnboardingTour } from "@/components/builder/onboarding-tour";
 import { SvgImportDialog } from "@/components/builder/svg-import-dialog";
 import { ThemeEditor } from "@/components/builder/theme-editor";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import { ImageUpload } from "@/components/common/image-upload";
 import { PortfolioRenderer } from "@/components/portfolio/portfolio-renderer";
 import {
@@ -3445,7 +3445,7 @@ ${sectionsHtml}
               }}
               title="Double-click to rename, right-click for options"
             >
-              {page.title}
+              {page.title.charAt(0).toUpperCase() + page.title.slice(1)}
             </button>
           ))}
           <button
@@ -3472,20 +3472,20 @@ ${sectionsHtml}
         >
           {/* Tab bar */}
           <div
-            className="flex flex-shrink-0 px-2 pt-2 pb-0"
+            className="flex flex-shrink-0 gap-0 px-1 pt-1.5 pb-0"
             style={{ borderBottom: "1px solid var(--b-border)" }}
           >
             {([
               { id: "layers" as const, label: "Layers" },
-              { id: "elements" as const, label: "Elements" },
+              { id: "elements" as const, label: "Add" },
               { id: "shapes" as const, label: "Shapes" },
               { id: "assets" as const, label: "Assets" },
-              { id: "content" as const, label: "Content" },
+              { id: "content" as const, label: "CMS" },
             ]).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setLeftTab(tab.id)}
-                className="relative flex-1 pb-2 text-center text-[10px] font-semibold tracking-wide transition-colors duration-150"
+                className="relative flex-1 pb-1.5 text-center text-[9px] font-semibold tracking-wide transition-colors duration-150"
                 style={{
                   color: leftTab === tab.id ? "var(--b-text)" : "var(--b-text-4)",
                 }}
@@ -3909,7 +3909,7 @@ ${sectionsHtml}
                 {!assetsLoading && filteredAssets.length === 0 && (
                   <div className="builder-empty-state flex flex-col items-center gap-3 px-4 py-12 text-center">
                     <div className="builder-empty-icon flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}>
-                      <Image className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
+                      <Image className="h-5 w-5" style={{ color: "var(--b-accent)" }} alt="" />
                     </div>
                     <div>
                       <p className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>No assets yet</p>

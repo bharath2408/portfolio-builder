@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { FileText, Plus, Search, Trash2 } from "lucide-react";
+import { useState, useMemo } from "react";
 
 import type { ContentEntry } from "@/types";
 
@@ -94,11 +94,13 @@ export function EntryTable({
         ) : (
           <div className="space-y-1">
             {filtered.map((entry) => (
-              <button
+              <div
                 key={entry.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onEdit(entry)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                onKeyDown={(e) => { if (e.key === "Enter") onEdit(entry); }}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
               >
                 <span className="flex-1 truncate text-[13px] font-medium">
                   {entry.title}
@@ -131,7 +133,7 @@ export function EntryTable({
                 >
                   <Trash2 size={13} />
                 </button>
-              </button>
+              </div>
             ))}
           </div>
         )}

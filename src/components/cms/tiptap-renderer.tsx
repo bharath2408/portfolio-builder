@@ -1,9 +1,8 @@
-import { useMemo } from "react";
-
-import { generateHTML, type JSONContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import { generateHTML, type JSONContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useMemo } from "react";
 
 /* ------------------------------------------------------------------ */
 /*  Shared extensions used for HTML generation                         */

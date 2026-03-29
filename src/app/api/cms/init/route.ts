@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+import { NextResponse } from "next/server";
+
+import { CMS_PRESETS } from "@/components/cms/cms-presets";
 import {
   errorResponse,
   withErrorHandler,
   requireAuth,
 } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { CMS_PRESETS } from "@/components/cms/cms-presets";
 
 // POST /api/cms/init — initialize preset collections for a portfolio (idempotent)
 export const POST = withErrorHandler(async (req) => {

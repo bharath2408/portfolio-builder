@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { useState, useCallback } from "react";
 
-import { apiPost, apiPatch } from "@/lib/api";
 import { FieldRenderer } from "@/components/cms/field-renderer";
+import { apiPost, apiPatch } from "@/lib/api";
 import type { ContentType, ContentEntry } from "@/types";
 
 /* ------------------------------------------------------------------ */

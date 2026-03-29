@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { GripVertical, Plus, Trash2, Save, X, Info } from "lucide-react";
+import { useState, useCallback } from "react";
 
 import { apiPatch } from "@/lib/api";
 import type { ContentType, FieldDefinition, FieldType } from "@/types";

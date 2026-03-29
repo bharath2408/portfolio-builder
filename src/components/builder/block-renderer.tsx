@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   ArrowRight, ExternalLink, Github, Linkedin, Twitter, Globe,
   Mail, MapPin, Phone, Quote as QuoteIcon,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { useState, useEffect } from "react";
 
 import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
@@ -134,14 +134,14 @@ const socialIconMap: Record<string, React.ComponentType<{className?: string}>> =
   Github, Linkedin, Twitter, Globe, Mail,
 };
 
-function CmsEntryBlock({ entryId, layout, theme, isEditing }: { entryId: string; layout: string; theme: ThemeTokens; isEditing?: boolean }) {
+function CmsEntryBlock({ entryId, layout, theme, isEditing: _isEditing }: { entryId: string; layout: string; theme: ThemeTokens; isEditing?: boolean }) {
   const [entry, setEntry] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!entryId) return;
     fetch(`/api/cms/entries/${entryId}`)
       .then((r) => r.json())
-      .then((d) => setEntry(d))
+      .then((d) => setEntry(d?.data ?? d))
       .catch(() => {});
   }, [entryId]);
 

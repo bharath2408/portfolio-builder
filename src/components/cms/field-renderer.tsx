@@ -1,11 +1,11 @@
 "use client";
 
-import type { FieldDefinition } from "@/types";
 import type { JSONContent } from "@tiptap/react";
 
+import { AdvancedColorInput } from "@/components/builder/color-picker";
 import { TipTapEditor } from "@/components/cms/tiptap-editor";
 import { ImageUpload } from "@/components/common/image-upload";
-import { AdvancedColorInput } from "@/components/builder/color-picker";
+import type { FieldDefinition } from "@/types";
 
 /* ------------------------------------------------------------------ */
 /*  Shared input styles                                                */

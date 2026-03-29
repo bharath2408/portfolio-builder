@@ -1,5 +1,10 @@
 "use client";
 
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
   Code,
@@ -17,12 +22,6 @@ import {
   Undo2,
 } from "lucide-react";
 import { useCallback } from "react";
-
-import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
