@@ -23,8 +23,9 @@ export async function generateVibeDesign(
   const client = getClient();
   if (!client) return null;
 
+  const modelName = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
   const model = client.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: modelName,
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 8192,
