@@ -37,6 +37,7 @@ export const COMMANDS: CommandDefinition[] = [
   { id: "open-cms", label: "Open CMS", category: "tools", keywords: ["cms", "content", "blog", "entries", "collections"] },
   { id: "open-gradient", label: "Gradient Editor", category: "tools", keywords: ["gradient", "background", "color", "linear", "radial"] },
   { id: "open-assets", label: "Asset Library", category: "tools", keywords: ["assets", "images", "library", "media", "upload"] },
+  { id: "create-component", label: "Create Component", category: "tools", keywords: ["component", "reusable", "create", "save"] },
 
   // Add blocks
   { id: "add-heading", label: "Add Heading", category: "add", keywords: ["heading", "title", "h1", "h2"] },
@@ -61,6 +62,7 @@ export const COMMANDS: CommandDefinition[] = [
   { id: "add-github_contrib", label: "Add GitHub Graph", category: "add", keywords: ["github", "contributions", "graph"] },
   { id: "add-custom_html", label: "Add Custom HTML", category: "add", keywords: ["html", "code", "custom", "script"] },
   { id: "add-cms_entry", label: "Add CMS Entry", category: "add", keywords: ["cms", "content", "blog", "entry", "dynamic"] },
+  { id: "add-component", label: "Insert Component", category: "add", keywords: ["component", "instance", "reusable", "insert"] },
 
   // Help
   { id: "open-docs", label: "Open Documentation", category: "help", keywords: ["docs", "documentation", "help", "manual", "guide"] },

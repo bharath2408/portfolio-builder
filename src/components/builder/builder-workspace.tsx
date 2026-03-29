@@ -49,6 +49,7 @@ import {
   Image,
   Layers,
   Layout,
+  Puzzle,
   LayoutGrid,
   Link as LinkIcon,
   List,
@@ -161,6 +162,7 @@ import { useBuilderStore } from "@/stores/builder-store";
 import { usePortfolioStore } from "@/stores/portfolio-store";
 import type {
   Asset,
+  ComponentDef,
   PortfolioWithRelations,
   SectionWithBlocks,
   BlockWithStyles,
@@ -875,6 +877,53 @@ export function BuilderWorkspace({
       .catch(() => {})
       .finally(() => setCmsLoading(false));
   }, [selectedCmsTypeId]);
+
+  // ── Components ──────────────────────────────────────────────────
+  const [components, setComponents] = useState<ComponentDef[]>([]);
+
+  useEffect(() => {
+    apiGet<ComponentDef[]>(`/components?portfolioId=${portfolio.id}`)
+      .then(setComponents)
+      .catch(() => {});
+  }, [portfolio.id]);
+
+  const handleCreateComponent = async (blockId?: string, sectionId?: string) => {
+    const name = window.prompt("Component name:");
+    if (!name?.trim()) return;
+
+    let masterData: Record<string, unknown>;
+    let sourceType: string;
+
+    if (blockId && sectionId) {
+      // Block or group
+      const section = portfolio.sections.find((s) => s.id === sectionId);
+      const block = section?.blocks.find((b) => b.id === blockId);
+      if (!block) return;
+      sourceType = block.type === "group" ? "group" : "block";
+      const children = sourceType === "group"
+        ? section?.blocks.filter((b) => b.parentId === blockId) ?? []
+        : [];
+      masterData = { ...block, children: children.map((c) => ({ ...c })) } as unknown as Record<string, unknown>;
+    } else if (sectionId) {
+      // Section
+      const section = portfolio.sections.find((s) => s.id === sectionId);
+      if (!section) return;
+      sourceType = "section";
+      masterData = { ...section } as unknown as Record<string, unknown>;
+    } else {
+      return;
+    }
+
+    try {
+      const comp = await apiPost<ComponentDef>("/components", {
+        portfolioId: portfolio.id,
+        name: name.trim(),
+        sourceType,
+        masterData,
+      });
+      setComponents((prev) => [comp, ...prev]);
+    } catch { /* ignore */ }
+  };
 
   const handleAssetUpload = async (file: File) => {
     if (!file.type.startsWith("image/") && file.type !== "image/svg+xml") return;
@@ -3732,6 +3781,47 @@ ${sectionsHtml}
 
               {/* Elements list */}
               <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-auto">
+                {/* My Components */}
+                {components.length > 0 && (
+                  <div className="mb-3">
+                    <p
+                      className="mb-1.5 flex items-center gap-1.5 px-1.5 text-[8px] font-extrabold uppercase tracking-[0.15em]"
+                      style={{ color: "var(--b-accent)", opacity: 0.8 }}
+                    >
+                      My Components
+                    </p>
+                    <div className="grid grid-cols-3 gap-1">
+                      {components.map((comp) => (
+                        <button
+                          key={comp.id}
+                          onClick={() => {
+                            const targetSection = selectedSectionId ?? portfolio.sections[0]?.id;
+                            if (targetSection) {
+                              addBlock(targetSection, "component_instance" as BlockType, {
+                                content: { componentId: comp.id, variantName: "Default", overrides: {}, hiddenLayers: [] },
+                              });
+                            }
+                          }}
+                          disabled={portfolio.sections.length === 0}
+                          className="builder-element-card group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-center"
+                        >
+                          <div
+                            className="element-icon flex h-8 w-8 items-center justify-center rounded-md"
+                            style={{ backgroundColor: "var(--b-accent-soft)", color: "var(--b-accent)" }}
+                          >
+                            <Puzzle className="h-3.5 w-3.5" />
+                          </div>
+                          <span
+                            className="w-full truncate text-[9px] font-medium leading-tight"
+                            style={{ color: "var(--b-text-3)" }}
+                          >
+                            {comp.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {BLOCK_CATEGORIES.map((cat) => {
                   const blocks = getBlocksByCategory(cat.id);
                   if (blocks.length === 0) return null;
@@ -4469,6 +4559,7 @@ ${sectionsHtml}
                       { label: sec?.isLocked ? "Unlock Frame" : "Lock Frame", action: act(() => { if (sec) portfolioStore.updateSection(sid, { isLocked: !sec.isLocked }); builderStore.setDirty(true); scheduleAutoSave(); }), icon: sec?.isLocked ? "🔓" : "🔒" },
                       { label: "---" },
                       { label: "Rename Frame", action: act(() => { const name = prompt("Frame name:", sec?.name); if (name && sec) { portfolioStore.updateSection(sid, { name }); builderStore.setDirty(true); scheduleAutoSave(); } }), icon: "✏" },
+                      { label: "Create Component", action: act(() => { handleCreateComponent(undefined, sid); }), icon: "🧩" },
                       { label: "---" },
                       { label: "Delete Frame", action: act(() => deleteSection(sid)), danger: true, icon: "🗑" },
                     ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
@@ -4499,6 +4590,8 @@ ${sectionsHtml}
                     ...((selectedBlockIds.size >= 2 || blk?.type === "group") ? [{ label: "---" }] : []),
                     { label: blk?.isLocked ? "Unlock" : "Lock", shortcut: blk?.isLocked ? "" : "", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isLocked: !blk?.isLocked }); builderStore.setDirty(true); }), icon: blk?.isLocked ? "🔓" : "🔒" },
                     { label: blk?.isVisible ? "Hide" : "Show", action: act(() => { portfolioStore.updateBlockInSection(sid, bid, { isVisible: !blk?.isVisible }); builderStore.setDirty(true); }), icon: blk?.isVisible ? "👁" : "🚫" },
+                    { label: "---" },
+                    { label: "Create Component", action: act(() => { handleCreateComponent(bid, sid); }), icon: "🧩" },
                     { label: "---" },
                     { label: "Delete", shortcut: "⌫", action: act(() => deleteBlock(bid, sid)), danger: true, icon: "🗑" },
                   ] as Array<{ label: string; shortcut?: string; action?: () => void; icon?: string; danger?: boolean }>;
