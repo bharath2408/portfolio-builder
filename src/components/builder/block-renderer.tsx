@@ -10,7 +10,8 @@ import { useState, useEffect } from "react";
 import { CounterStat } from "@/components/portfolio/counter-stat";
 import { SplitText } from "@/components/portfolio/split-text";
 import { getShapeById } from "@/config/shape-presets";
-import type { BlockWithStyles, ThemeTokens } from "@/types";
+import { evaluateConditions } from "@/lib/form/evaluate-conditions";
+import type { BlockWithStyles, FieldCondition, ThemeTokens } from "@/types";
 
 interface BlockRendererProps {
   block: BlockWithStyles;
@@ -176,6 +177,135 @@ function CmsEntryBlock({ entryId, layout, theme, isEditing: _isEditing }: { entr
         <p style={{ fontSize: 13, color: resolveColor("muted", theme), marginTop: 8, lineHeight: 1.6 }}>{description}</p>
       )}
     </div>
+  );
+}
+
+// ── Contact Form with multi-step + conditional fields ──
+function ContactFormBlock({
+  content,
+  inlineStyles,
+  theme,
+  isEditing,
+  portfolioId,
+}: {
+  content: Record<string, unknown>;
+  inlineStyles: React.CSSProperties;
+  theme: ThemeTokens;
+  isEditing?: boolean;
+  portfolioId?: string;
+}) {
+  const allFields = (content.fields as Array<Record<string, unknown>>) ?? [];
+  const steps = [...new Set(allFields.map((f) => (f.step as number) ?? 1))].sort((a, b) => a - b);
+  const isMultiStep = steps.length > 1;
+  const [currentStep, setCurrentStep] = useState(steps[0] ?? 1);
+  const [formData, setFormData] = useState<Record<string, string>>({});
+
+  const currentFields = allFields.filter((f) => ((f.step as number) ?? 1) === currentStep);
+  const visibleFields = currentFields.filter((f) =>
+    evaluateConditions(f.conditions as FieldCondition[] | undefined, formData),
+  );
+  const isLastStep = currentStep === steps[steps.length - 1];
+  const isFirstStep = currentStep === steps[0];
+  const stepIndex = steps.indexOf(currentStep);
+
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (isEditing) return;
+        const fd = new FormData(e.currentTarget);
+        const data = { ...formData, ...Object.fromEntries(fd.entries()) };
+        try {
+          await fetch("/api/public/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...data, portfolioId: portfolioId ?? "" }),
+          });
+          e.currentTarget.reset();
+          setFormData({});
+          setCurrentStep(steps[0] ?? 1);
+          const btn = e.currentTarget.querySelector("button[type=submit]");
+          if (btn) {
+            btn.textContent = "Sent!";
+            setTimeout(() => { btn.textContent = (content.submitText as string) ?? "Send Message"; }, 2000);
+          }
+        } catch { /* ignore */ }
+      }}
+      style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 16 }}
+    >
+      {isMultiStep && (
+        <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+          {steps.map((step, i) => (
+            <div
+              key={step}
+              style={{
+                flex: 1,
+                height: 3,
+                borderRadius: 2,
+                backgroundColor: i <= stepIndex
+                  ? resolveColor("primary", theme)
+                  : resolveColor("surface", theme),
+                transition: "background-color 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {visibleFields.map((field) => {
+        const name = field.name as string;
+        const label = field.label as string;
+        const type = field.type as string;
+        const placeholder = field.placeholder as string | undefined;
+        return (
+          <div key={name}>
+            <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.6, marginBottom: 6 }}>{label}</label>
+            {type === "textarea" ? (
+              <textarea
+                name={name}
+                rows={4}
+                placeholder={placeholder}
+                value={formData[name] ?? ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, [name]: e.target.value }))}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14, resize: "vertical" }}
+              />
+            ) : (
+              <input
+                name={name}
+                type={type}
+                placeholder={placeholder}
+                value={formData[name] ?? ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, [name]: e.target.value }))}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14 }}
+              />
+            )}
+          </div>
+        );
+      })}
+      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+        {!isFirstStep && (
+          <button
+            type="button"
+            onClick={() => setCurrentStep(steps[stepIndex - 1] ?? steps[0] ?? 1)}
+            style={{ padding: "8px 20px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${resolveColor("muted", theme)}`, color: resolveColor("text", theme), backgroundColor: "transparent", cursor: "pointer" }}
+          >
+            Back
+          </button>
+        )}
+        {isLastStep ? (
+          <button type="submit" style={{ padding: "12px 24px", borderRadius: parseInt(theme.borderRadius) || 6, backgroundColor: theme.primaryColor, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer" }}>
+            {(content.submitText as string) ?? "Send Message"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCurrentStep(steps[stepIndex + 1] ?? steps[steps.length - 1] ?? 1)}
+            style={{ padding: "8px 20px", borderRadius: parseInt(theme.borderRadius) || 6, backgroundColor: resolveColor("primary", theme), color: "#fff", border: "none", cursor: "pointer" }}
+          >
+            Next
+          </button>
+        )}
+      </div>
+    </form>
   );
 }
 
@@ -610,47 +740,16 @@ export function BlockRenderer({ block, theme, isEditing: _isEditing, portfolioId
     }
 
     // ── CONTACT FORM ──
-    case "contact_form": {
-      const fields = (c.fields as Array<{name: string; label: string; type: string; placeholder?: string}>) ?? [];
+    case "contact_form":
       return (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (_isEditing) return;
-            const formData = new FormData(e.currentTarget);
-            const data = Object.fromEntries(formData.entries());
-            try {
-              await fetch("/api/public/contact", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...data, portfolioId: portfolioId ?? "" }),
-              });
-              e.currentTarget.reset();
-              const btn = e.currentTarget.querySelector("button[type=submit]");
-              if (btn) {
-                btn.textContent = "Sent!";
-                setTimeout(() => { btn.textContent = (c.submitText as string) ?? "Send Message"; }, 2000);
-              }
-            } catch { /* ignore */ }
-          }}
-          style={{ ...inlineStyles, width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 16 }}
-        >
-          {fields.map((field) => (
-            <div key={field.name}>
-              <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, opacity: 0.6, marginBottom: 6 }}>{field.label}</label>
-              {field.type === "textarea" ? (
-                <textarea name={field.name} rows={4} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14, resize: "vertical" }} />
-              ) : (
-                <input name={field.name} type={field.type} placeholder={field.placeholder} style={{ width: "100%", padding: "10px 12px", borderRadius: parseInt(theme.borderRadius) || 6, border: `1px solid ${theme.surfaceColor}`, backgroundColor: "transparent", color: theme.textColor, fontSize: 14 }} />
-              )}
-            </div>
-          ))}
-          <button type="submit" style={{ padding: "12px 24px", borderRadius: parseInt(theme.borderRadius) || 6, backgroundColor: theme.primaryColor, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer" }}>
-            {(c.submitText as string) ?? "Send Message"}
-          </button>
-        </form>
+        <ContactFormBlock
+          content={c}
+          inlineStyles={inlineStyles}
+          theme={theme}
+          isEditing={_isEditing}
+          portfolioId={portfolioId}
+        />
       );
-    }
 
     // ── RECTANGLE ──
     case "rectangle": {
