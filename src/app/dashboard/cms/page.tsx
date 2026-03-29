@@ -335,92 +335,79 @@ export default function CmsPage() {
       {/* ── Main Content ──────────────────────────────────────────── */}
       <main className="flex flex-1 flex-col overflow-y-auto">
         {!selectedType ? (
-          <div className="flex flex-1 items-center justify-center text-muted-foreground">
-            <p className="text-sm">Select a collection to get started</p>
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
+              <FileText className="h-7 w-7 text-primary/40" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Select a collection</p>
+              <p className="mt-1 text-xs text-muted-foreground">Choose a content type from the sidebar to manage entries</p>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col p-6">
-            {/* Toolbar */}
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-semibold">{selectedType.name}</h1>
-                <p className="text-xs text-muted-foreground">
-                  {entries.length} {entries.length === 1 ? "entry" : "entries"}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {view === "list" && (
-                  <>
-                    <button
-                      onClick={() => setView("schema")}
-                      className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
-                    >
-                      <Settings className="h-3.5 w-3.5" />
-                      Schema
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingEntry(null);
-                        setView("edit");
-                      }}
-                      className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      New Entry
-                    </button>
-                  </>
-                )}
-                {(view === "edit" || view === "schema") && (
+          <div className="flex flex-1 flex-col">
+            {/* Toolbar — only show in list view since edit/schema have their own headers */}
+            {view === "list" && (
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-border/50 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    {ICON_MAP[selectedType.icon] ?? <FileText className="h-4 w-4 text-primary" />}
+                  </div>
+                  <div>
+                    <h1 className="text-[15px] font-semibold">{selectedType.name}</h1>
+                    <p className="text-[11px] text-muted-foreground">
+                      {entries.length} {entries.length === 1 ? "entry" : "entries"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setView("list");
-                      setEditingEntry(null);
-                    }}
-                    className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+                    onClick={() => setView("schema")}
+                    className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 px-3 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   >
-                    Back to List
+                    <Settings className="h-3.5 w-3.5" />
+                    Schema
                   </button>
-                )}
+                  <button
+                    onClick={() => { setEditingEntry(null); setView("edit"); }}
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-[12px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New Entry
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* View Content */}
-            {view === "list" && (
-              <EntryTable
-                entries={entries}
-                collectionName={selectedType.name}
-                onEdit={(entry) => {
-                  setEditingEntry(entry);
-                  setView("edit");
-                }}
-                onDelete={handleDeleteEntry}
-                onNew={() => {
-                  setEditingEntry(null);
-                  setView("edit");
-                }}
-              />
-            )}
+            <div className="flex-1 overflow-hidden">
+              {view === "list" && (
+                <EntryTable
+                  entries={entries}
+                  collectionName={selectedType.name}
+                  onEdit={(entry) => { setEditingEntry(entry); setView("edit"); }}
+                  onDelete={handleDeleteEntry}
+                  onNew={() => { setEditingEntry(null); setView("edit"); }}
+                />
+              )}
 
-            {view === "edit" && (
-              <EntryEditor
-                contentType={selectedType}
-                entry={editingEntry}
-                onSave={handleSaveEntry}
-                onBack={() => {
-                  setView("list");
-                  setEditingEntry(null);
-                }}
-              />
-            )}
+              {view === "edit" && (
+                <EntryEditor
+                  contentType={selectedType}
+                  entry={editingEntry}
+                  onSave={handleSaveEntry}
+                  onBack={() => { setView("list"); setEditingEntry(null); }}
+                />
+              )}
 
-            {view === "schema" && (
-              <SchemaEditor
-                contentType={selectedType}
-                onUpdate={handleUpdateSchema}
-                onClose={() => setView("list")}
-              />
-            )}
+              {view === "schema" && (
+                <SchemaEditor
+                  contentType={selectedType}
+                  onUpdate={handleUpdateSchema}
+                  onClose={() => setView("list")}
+                />
+              )}
+            </div>
           </div>
         )}
       </main>
