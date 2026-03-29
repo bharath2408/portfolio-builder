@@ -64,7 +64,6 @@
 | **A/B testing** | Webflow | Medium |
 | **Plugin/extension system** | WordPress, Webflow | Hard |
 | **Image editor (crop/filter)** | Wix, Canva | Medium |
-| **Component instances** (reusable) | Framer, Figma | Medium |
 
 ---
 
