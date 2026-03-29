@@ -10,8 +10,8 @@ import { VIBE_SYSTEM_PROMPT } from "@/lib/ai/vibe-prompt";
 export const POST = withErrorHandler(async (req) => {
   await requireAuth();
 
-  if (!process.env.GEMINI_API_KEY) {
-    return errorResponse("SERVICE_UNAVAILABLE", "AI not configured", 503);
+  if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
+    return errorResponse("SERVICE_UNAVAILABLE", "AI not configured. Set GROQ_API_KEY or GEMINI_API_KEY in .env", 503);
   }
 
   const body = await req.json();
