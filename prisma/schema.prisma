@@ -124,6 +124,7 @@ model Portfolio {
   customFonts    CustomFont[]
   contentTypes   ContentType[]
   contentEntries ContentEntry[]
+  webhooks       FormWebhook[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -425,5 +426,22 @@ model ContentEntry {
 
   @@unique([contentTypeId, slug])
   @@index([contentTypeId])
+  @@index([portfolioId])
+}
+
+// ─── Form Webhooks ──────────────────────────────────────────────
+
+model FormWebhook {
+  id          String   @id @default(cuid())
+  portfolioId String
+  url         String
+  events      String[]
+  secret      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
   @@index([portfolioId])
 }

@@ -375,6 +375,25 @@ export interface ContentEntry {
   contentType?: ContentType;
 }
 
+// ─── Form Workflows ─────────────────────────────────────────────
+export interface FieldCondition {
+  fieldKey: string;
+  operator: "equals" | "not_equals" | "contains" | "greater_than" | "less_than" | "is_empty" | "is_not_empty" | "matches";
+  value: string;
+  logic: "AND" | "OR";
+}
+
+export interface FormWebhook {
+  id: string;
+  portfolioId: string;
+  url: string;
+  events: string[];
+  secret: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  RELATION TYPES
 // ═══════════════════════════════════════════════════════════════════
