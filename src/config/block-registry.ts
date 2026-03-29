@@ -488,6 +488,17 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
       overflow: "visible",
     },
   },
+
+  // ── Reusable Components ────────────────────────────────────────
+  component_instance: {
+    type: "component_instance",
+    label: "Component",
+    icon: "Puzzle",
+    category: "layout",
+    description: "Instance of a reusable component",
+    defaultContent: { componentId: "", variantName: "Default", overrides: {}, hiddenLayers: [] },
+    defaultStyles: { marginBottom: 16 },
+  },
 };
 
 // ─── Grouped for the add-block panel ──────────────────────────────

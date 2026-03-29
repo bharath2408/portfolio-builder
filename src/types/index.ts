@@ -86,6 +86,7 @@ export const BLOCK_TYPES = {
   PRODUCT_CARD: "product_card",
   CTA_BANNER: "cta_banner",
   CMS_ENTRY: "cms_entry",
+  COMPONENT_INSTANCE: "component_instance",
 } as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[keyof typeof BLOCK_TYPES];
@@ -182,6 +183,7 @@ export type BlockContentMap = {
   feature_card: FeatureCardContent;
   product_card: ProductCardContent;
   cta_banner: CtaBannerContent;
+  component_instance: ComponentInstanceContent;
 };
 
 // ─── Block Styles (Figma design panel) ────────────────────────────
@@ -392,6 +394,32 @@ export interface FormWebhook {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ─── Reusable Components ────────────────────────────────────────
+export interface VariantDef {
+  name: string;
+  overrides: Record<string, unknown>;
+}
+
+export interface ComponentDef {
+  id: string;
+  userId: string;
+  portfolioId: string;
+  name: string;
+  icon: string;
+  sourceType: "block" | "group" | "section";
+  masterData: Record<string, unknown>;
+  variants: VariantDef[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ComponentInstanceContent {
+  componentId: string;
+  variantName: string;
+  overrides: Record<string, unknown>;
+  hiddenLayers: string[];
 }
 
 // ═══════════════════════════════════════════════════════════════════

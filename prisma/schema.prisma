@@ -40,6 +40,7 @@ model User {
   assets     Asset[]
   customFonts  CustomFont[]
   contentTypes ContentType[]
+  components   Component[]
 
   @@index([email])
   @@index([username])
@@ -125,6 +126,7 @@ model Portfolio {
   contentTypes   ContentType[]
   contentEntries ContentEntry[]
   webhooks       FormWebhook[]
+  components     Component[]
 
   @@unique([userId, slug])
   @@index([userId])
@@ -443,5 +445,26 @@ model FormWebhook {
 
   portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
+  @@index([portfolioId])
+}
+
+// ─── Reusable Components ──────────────────────────────────────────
+
+model Component {
+  id          String   @id @default(cuid())
+  userId      String
+  portfolioId String
+  name        String
+  icon        String   @default("Component")
+  sourceType  String
+  masterData  Json
+  variants    Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, name])
   @@index([portfolioId])
 }
