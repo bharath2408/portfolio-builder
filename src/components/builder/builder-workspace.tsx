@@ -2726,16 +2726,21 @@ ${sectionsHtml}
         return;
       }
 
-      // V → Select tool
-      if (!mod && e.key === "v") { setDrawMode(null); return; }
-      // R → Rectangle draw
-      if (!mod && e.key === "r") { setDrawMode("rectangle"); return; }
-      // O → Circle draw
-      if (!mod && e.key === "o") { setDrawMode("circle"); return; }
-      // L → Line draw
-      if (!mod && e.key === "l") { setDrawMode("line"); return; }
-      // T → Add text
-      if (!mod && e.key === "t" && selectedSectionId) { addBlock(selectedSectionId, "text"); return; }
+      // Single-key tool shortcuts — skip if user is typing in an input
+      const activeTag = (document.activeElement as HTMLElement)?.tagName;
+      const isTyping = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT" || (document.activeElement as HTMLElement)?.isContentEditable;
+      if (!isTyping) {
+        // V → Select tool
+        if (!mod && e.key === "v") { setDrawMode(null); return; }
+        // R → Rectangle draw
+        if (!mod && e.key === "r") { setDrawMode("rectangle"); return; }
+        // O → Circle draw
+        if (!mod && e.key === "o") { setDrawMode("circle"); return; }
+        // L → Line draw
+        if (!mod && e.key === "l") { setDrawMode("line"); return; }
+        // T → Add text
+        if (!mod && e.key === "t" && selectedSectionId) { addBlock(selectedSectionId, "text"); return; }
+      }
       // Escape → Exit draw mode
       if (e.key === "Escape" && drawMode) { setDrawMode(null); setDrawStart(null); setDrawRect(null); return; }
 
