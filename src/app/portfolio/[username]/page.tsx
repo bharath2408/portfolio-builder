@@ -32,7 +32,7 @@ const portfolioInclude = {
 
 // React cache deduplicates calls within the same request (metadata + page)
 const getPublicPortfolioData = cache(async (username: string): Promise<PortfolioWithRelations | null> => {
-  // Single query: find default published portfolio, fallback to any published
+  // Try by username first, then fall back to userId
   const portfolios = await db.portfolio.findMany({
     where: {
       user: { username },
@@ -43,7 +43,20 @@ const getPublicPortfolioData = cache(async (username: string): Promise<Portfolio
     take: 1,
   });
 
-  return (portfolios[0] as PortfolioWithRelations) ?? null;
+  if (portfolios[0]) return portfolios[0] as PortfolioWithRelations;
+
+  // Fallback: try treating the param as a userId
+  const byId = await db.portfolio.findMany({
+    where: {
+      userId: username,
+      status: "PUBLISHED",
+    },
+    include: portfolioInclude,
+    orderBy: { isDefault: "desc" },
+    take: 1,
+  });
+
+  return (byId[0] as PortfolioWithRelations) ?? null;
 });
 
 function parseDeviceType(userAgent: string | null): string {

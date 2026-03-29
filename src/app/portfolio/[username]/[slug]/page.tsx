@@ -18,8 +18,12 @@ const getPortfolioData = cache(async (
   username: string,
   slug: string,
 ): Promise<PortfolioWithRelations | null> => {
+  // Try by username first, then fall back to userId
   const user = await db.user.findUnique({
     where: { username },
+    select: { id: true },
+  }) ?? await db.user.findUnique({
+    where: { id: username },
     select: { id: true },
   });
 
