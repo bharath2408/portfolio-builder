@@ -3909,7 +3909,7 @@ ${sectionsHtml}
                 {!assetsLoading && filteredAssets.length === 0 && (
                   <div className="builder-empty-state flex flex-col items-center gap-3 px-4 py-12 text-center">
                     <div className="builder-empty-icon flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--b-accent-soft)", border: "1px dashed var(--b-accent-mid)" }}>
-                      <Image className="h-5 w-5" style={{ color: "var(--b-accent)" }} alt="" />
+                      <Image className="h-5 w-5" style={{ color: "var(--b-accent)" }} />
                     </div>
                     <div>
                       <p className="text-[11px] font-semibold" style={{ color: "var(--b-text-2)" }}>No assets yet</p>
