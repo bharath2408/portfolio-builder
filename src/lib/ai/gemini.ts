@@ -1,4 +1,4 @@
-// AI provider — supports Groq (default) and Gemini as fallback
+// AI provider — supports OpenRouter, Gemini, and Groq
 
 export async function generateVibeDesign(
   prompt: string,
@@ -9,19 +9,44 @@ export async function generateVibeDesign(
   },
   systemPrompt: string,
 ): Promise<string | null> {
-  const groqKey = process.env.GROQ_API_KEY;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
 
-  // Prefer Gemini for design quality, fallback to Groq
-  if (geminiKey) return generateWithGemini(prompt, context, systemPrompt, geminiKey);
-  if (groqKey) return generateWithGroq(prompt, context, systemPrompt, groqKey);
+  // Priority: OpenRouter > Gemini > Groq
+  if (openrouterKey) {
+    console.log("[Vibe AI] Using OpenRouter");
+    const result = await generateWithOpenAICompat(
+      prompt, context, systemPrompt, openrouterKey,
+      "https://openrouter.ai/api/v1/chat/completions",
+      process.env.AI_MODEL ?? "google/gemini-2.0-flash-exp:free",
+    );
+    if (result) return result;
+    console.log("[Vibe AI] OpenRouter failed, trying next provider");
+  }
+
+  if (geminiKey) {
+    console.log("[Vibe AI] Using Gemini");
+    const result = await generateWithGemini(prompt, context, systemPrompt, geminiKey);
+    if (result) return result;
+    console.log("[Vibe AI] Gemini failed, trying next provider");
+  }
+
+  if (groqKey) {
+    console.log("[Vibe AI] Using Groq");
+    return generateWithOpenAICompat(
+      prompt, context, systemPrompt, groqKey,
+      "https://api.groq.com/openai/v1/chat/completions",
+      process.env.AI_MODEL ?? "llama-3.3-70b-versatile",
+    );
+  }
 
   return null;
 }
 
-// ─── Groq (Llama 3.3 70B) ───────────────────────────────────────
+// ─── OpenAI-compatible API (Groq, OpenRouter, Together) ──────────
 
-async function generateWithGroq(
+async function generateWithOpenAICompat(
   prompt: string,
   context: {
     existingSections?: Array<{ name: string; blockCount: number }>;
@@ -30,12 +55,13 @@ async function generateWithGroq(
   },
   systemPrompt: string,
   apiKey: string,
+  baseUrl: string,
+  model: string,
 ): Promise<string | null> {
   const contextStr = buildContextStr(context);
-  const model = process.env.AI_MODEL ?? "llama-3.3-70b-versatile";
 
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch(baseUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,19 +81,19 @@ async function generateWithGroq(
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("Groq API error:", res.status, err);
+      console.error(`AI API error (${model}):`, res.status, err);
       return null;
     }
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? null;
   } catch (err) {
-    console.error("Groq API error:", err);
+    console.error(`AI API error (${model}):`, err);
     return null;
   }
 }
 
-// ─── Gemini (fallback) ───────────────────────────────────────────
+// ─── Gemini ──────────────────────────────────────────────────────
 
 async function generateWithGemini(
   prompt: string,
