@@ -219,12 +219,12 @@ export default function PortfoliosPage() {
                     Duplicate
                   </button>
 
-                  {portfolio.status === "PUBLISHED" && username && (
+                  {portfolio.status === "PUBLISHED" && (
                     <a
-                      href={`${APP_URL}/portfolio/${username}/${portfolio.slug}`}
+                      href={username ? `${APP_URL}/portfolio/${username}/${portfolio.slug}` : `${APP_URL}/portfolio/${session?.user?.id}/${portfolio.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10"
                       title="View live site"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
