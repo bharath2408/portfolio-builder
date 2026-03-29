@@ -2013,8 +2013,25 @@ export function BuilderWorkspace({
   const handleVibeGenerate = useCallback(async (prompt: string) => {
     setAiGenerating(true);
     try {
+      // If portfolio has no blocks (all sections empty or no sections), treat as fresh generation
+      const totalBlocks = portfolio.sections.reduce((sum, s) => sum + s.blocks.length, 0);
+      const isFreshGeneration = totalBlocks === 0 || portfolio.sections.length === 0;
+
+      // For fresh generation, clean up empty sections first
+      if (isFreshGeneration && portfolio.sections.length > 0) {
+        for (const s of portfolio.sections) {
+          if (s.blocks.length === 0) {
+            try {
+              await apiDelete(`/portfolios/${portfolio.id}/sections?sectionId=${s.id}`);
+              portfolioStore.removeSection(s.id);
+            } catch { /* ignore */ }
+          }
+        }
+      }
+
+      const currentSections = isFreshGeneration ? [] : portfolio.sections;
       const context = {
-        existingSections: portfolio.sections.map((s) => ({
+        existingSections: currentSections.map((s) => ({
           name: s.name,
           blockCount: s.blocks.length,
         })),

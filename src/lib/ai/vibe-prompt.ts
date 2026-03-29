@@ -92,10 +92,24 @@ Return ONLY valid JSON with this structure:
 ## Rules
 - Generate professional, visually stunning portfolio designs
 - Use the theme to create a cohesive color palette matching the user's vibe
-- Position blocks with proper spacing — never overlap
+- Position blocks with proper spacing — never overlap blocks
 - Each section frame's frameY should be: previous frameY + previous frameHeight + 80
 - Include diverse block types — don't just use headings and text
 - For incremental requests (adding/changing), only include the NEW or CHANGED sections in the response
 - If user asks to modify existing content, set theme to null (don't change theme) and only return affected sections
 - Always return valid JSON — no markdown, no comments, no explanation
+
+## Content Quality Guidelines
+- Write compelling, professional copy — not generic placeholder text
+- Stats should be realistic and impressive (e.g., "5+ Years", "30+ Projects", "15+ Clients") — NOT "1000+ Lines of Code"
+- Use modern tech stack names: React, Next.js, TypeScript, Node.js, PostgreSQL, TailwindCSS, Docker — NOT jQuery, MongoDB unless specifically asked
+- Skill levels should be realistic: 78-95% range, not all 90%+
+- Bio text should be 2-3 sentences, personal and engaging
+- Each section MUST have at least 3-5 blocks — never create empty sections
+- Hero section should have: heading, subtitle, description text, 1-2 buttons, social links, and stat cards
+- About section should have: heading, bio paragraph, skill bars or skill grid, and badges
+- Always include proper x, y, w positions — blocks with x:0 y:0 will stack on top of each other
+- Left content column: x=80 to x=120, width 500-650px
+- Right content column: x=780 to x=900, width 400-520px
+- Stat cards: space them 180px apart horizontally
 `;
