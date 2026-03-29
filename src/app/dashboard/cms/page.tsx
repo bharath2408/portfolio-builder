@@ -199,17 +199,56 @@ export default function CmsPage() {
 
   if (status === "loading" || loadingPortfolios) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="-mx-5 -mt-5 flex h-[calc(100vh-60px)] lg:-mx-8 lg:-mt-8">
+        {/* Sidebar skeleton */}
+        <div className="flex w-52 flex-shrink-0 flex-col border-r border-border/30 p-3">
+          <div className="mb-4 h-8 w-full animate-pulse rounded-md bg-muted/60" />
+          <div className="mb-3 h-3 w-24 animate-pulse rounded bg-muted/40" />
+          <div className="space-y-1.5">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-2.5 rounded-md px-2 py-2" style={{ animationDelay: `${i * 80}ms` }}>
+                <div className="h-4 w-4 animate-pulse rounded bg-muted/50" style={{ animationDelay: `${i * 80}ms` }} />
+                <div className="h-3.5 flex-1 animate-pulse rounded bg-muted/50" style={{ animationDelay: `${i * 80}ms` }} />
+                <div className="h-5 w-5 animate-pulse rounded-full bg-muted/40" style={{ animationDelay: `${i * 80}ms` }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Main content skeleton */}
+        <div className="flex-1 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 animate-pulse rounded-lg bg-muted/50" />
+              <div>
+                <div className="h-4 w-28 animate-pulse rounded bg-muted/60" />
+                <div className="mt-1.5 h-3 w-16 animate-pulse rounded bg-muted/40" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 w-20 animate-pulse rounded-lg bg-muted/40" />
+              <div className="h-8 w-28 animate-pulse rounded-lg bg-primary/20" />
+            </div>
+          </div>
+          <div className="mt-8 flex flex-col items-center py-16">
+            <div className="h-16 w-16 animate-pulse rounded-2xl bg-muted/30" />
+            <div className="mt-4 h-4 w-32 animate-pulse rounded bg-muted/40" />
+            <div className="mt-2 h-3 w-48 animate-pulse rounded bg-muted/30" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (portfolios.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
-        <p className="text-sm">No portfolios found.</p>
-        <p className="mt-1 text-xs">Create a portfolio first to use the CMS.</p>
+      <div className="flex flex-col items-center justify-center gap-4 py-32">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
+          <FileText className="h-7 w-7 text-primary/40" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium">No portfolios found</p>
+          <p className="mt-1 text-xs text-muted-foreground">Create a portfolio first to use the CMS</p>
+        </div>
       </div>
     );
   }
@@ -219,7 +258,7 @@ export default function CmsPage() {
   return (
     <div className="-mx-5 -mt-5 flex h-[calc(100vh-60px)] lg:-mx-8 lg:-mt-8">
       {/* ── Sidebar ───────────────────────────────────────────────── */}
-      <aside className="flex w-56 flex-shrink-0 flex-col border-r border-border/50 bg-card">
+      <aside className="flex w-52 flex-shrink-0 flex-col border-r border-border/30">
         {/* Portfolio selector */}
         <div className="border-b border-border/50 p-3">
           <div className="relative">
@@ -257,7 +296,7 @@ export default function CmsPage() {
         </div>
 
         {/* Collections list */}
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="overflow-y-auto p-3">
           <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50">
             Collections
           </p>
@@ -318,13 +357,11 @@ export default function CmsPage() {
               })}
             </div>
           )}
-        </div>
 
-        {/* New collection button */}
-        <div className="border-t border-border/50 p-3">
+          {/* New collection button — inline after collections */}
           <button
             onClick={handleNewCollection}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             New Collection

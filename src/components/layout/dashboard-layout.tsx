@@ -325,7 +325,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto w-full max-w-[1100px] p-5 lg:p-8">
+          <div className="mx-auto w-full max-w-[1200px] p-5 lg:p-8">
             {children}
           </div>
         </div>
