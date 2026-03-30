@@ -19,7 +19,7 @@ export async function generateVibeDesign(
     const result = await generateWithOpenAICompat(
       prompt, context, systemPrompt, openrouterKey,
       "https://openrouter.ai/api/v1/chat/completions",
-      process.env.AI_MODEL ?? "anthropic/claude-sonnet-4",
+      process.env.AI_MODEL ?? "qwen/qwen3-coder:free",
     );
     if (result) return result;
     console.log("[Vibe AI] OpenRouter failed, trying next provider");
