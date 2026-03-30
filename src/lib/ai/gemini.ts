@@ -9,17 +9,29 @@ export async function generateVibeDesign(
   },
   systemPrompt: string,
 ): Promise<string | null> {
+  const openaiKey = process.env.OPENAI_API_KEY;
   const openrouterKey = process.env.OPENROUTER_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey = process.env.GROQ_API_KEY;
 
-  // Priority: OpenRouter > Gemini > Groq
+  // Priority: OpenAI > OpenRouter > Gemini > Groq
+  if (openaiKey) {
+    console.log("[Vibe AI] Using OpenAI GPT-4o");
+    const result = await generateWithOpenAICompat(
+      prompt, context, systemPrompt, openaiKey,
+      "https://api.openai.com/v1/chat/completions",
+      process.env.AI_MODEL ?? "gpt-4o",
+    );
+    if (result) return result;
+    console.log("[Vibe AI] OpenAI failed, trying next provider");
+  }
+
   if (openrouterKey) {
     console.log("[Vibe AI] Using OpenRouter");
     const result = await generateWithOpenAICompat(
       prompt, context, systemPrompt, openrouterKey,
       "https://openrouter.ai/api/v1/chat/completions",
-      process.env.AI_MODEL ?? "qwen/qwen3-coder:free",
+      process.env.AI_MODEL ?? "gpt-4o",
     );
     if (result) return result;
     console.log("[Vibe AI] OpenRouter failed, trying next provider");
