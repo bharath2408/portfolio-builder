@@ -14,13 +14,24 @@ export async function generateVibeDesign(
   const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey = process.env.GROQ_API_KEY;
 
-  // Priority: OpenAI > OpenRouter > Gemini > Groq
+  // Priority: Groq > OpenAI > OpenRouter > Gemini
+  if (groqKey) {
+    console.log("[Vibe AI] Using Groq");
+    const result = await generateWithOpenAICompat(
+      prompt, context, systemPrompt, groqKey,
+      "https://api.groq.com/openai/v1/chat/completions",
+      process.env.AI_MODEL ?? "llama-3.3-70b-versatile",
+    );
+    if (result) return result;
+    console.log("[Vibe AI] Groq failed, trying next provider");
+  }
+
   if (openaiKey) {
-    console.log("[Vibe AI] Using OpenAI GPT-4o");
+    console.log("[Vibe AI] Using OpenAI");
     const result = await generateWithOpenAICompat(
       prompt, context, systemPrompt, openaiKey,
       "https://api.openai.com/v1/chat/completions",
-      process.env.AI_MODEL ?? "gpt-4o",
+      "gpt-4o",
     );
     if (result) return result;
     console.log("[Vibe AI] OpenAI failed, trying next provider");
@@ -42,15 +53,6 @@ export async function generateVibeDesign(
     const result = await generateWithGemini(prompt, context, systemPrompt, geminiKey);
     if (result) return result;
     console.log("[Vibe AI] Gemini failed, trying next provider");
-  }
-
-  if (groqKey) {
-    console.log("[Vibe AI] Using Groq");
-    return generateWithOpenAICompat(
-      prompt, context, systemPrompt, groqKey,
-      "https://api.groq.com/openai/v1/chat/completions",
-      process.env.AI_MODEL ?? "llama-3.3-70b-versatile",
-    );
   }
 
   return null;
